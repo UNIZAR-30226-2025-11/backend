@@ -1,0 +1,10 @@
+services:
+  backend:
+    container_name: KatBoom
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: app
+    env_file: ../.env
+    ports:
+      - "8000:8000"
