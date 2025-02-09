@@ -7,7 +7,7 @@ git clone https://github.com/UNIZAR-30226-2025-11/backend
 # Or use ssh:
 # git clone git@github.com:UNIZAR-30226-2025-11/backend
 cd backend
-npm i
+npm install
 ```
 
 ## Run
@@ -33,7 +33,7 @@ npm run test
 
 ## Docker
 
-A Docker Compose file is provided to easily create and start the backend as container
+A Docker Compose file is provided to easily run a containerized version of the app:
 
 ```bash
 npm run docker:build        # Build image
