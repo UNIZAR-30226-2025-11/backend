@@ -14,14 +14,14 @@ export function protectRoute(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies.access_token;
 
   if (!token) {
-    res.status(403).send({ message: "No access token" });
+    res.status(401).send({ message: "No access token" });
     return;
   }
 
   try {
     jwt.verify(token, JWT_SECRET);
   } catch (_) {
-    res.status(403).send({ message: "Invalid token" });
+    res.status(401).send({ message: "Invalid token" });
     return;
   }
 

@@ -16,6 +16,8 @@ export class UserRepository {
   /**
     Create new user.
 
+    NOTE: Password MUST be hashed BEFORE this method is called
+
     @returns An User has been created
     @throws User already exists
   */

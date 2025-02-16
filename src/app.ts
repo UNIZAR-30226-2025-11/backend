@@ -10,17 +10,17 @@ export const server = createServer(app);
 export const io = new Server(server);
 
 /** Handle uncaught errors gracefully and return an ISE */
-function handleErrors(
-  error: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-) {
-  console.error(error);
-  res
-    .status(500)
-    .send({ message: "Oops, something went wrong from our side..." });
-}
+//function handleErrors(
+//  error: Error,
+//  _req: Request,
+//  res: Response,
+//  _next: NextFunction,
+//) {
+//  console.error(error);
+//  res
+//    .status(500)
+//    .send({ message: "Oops, something went wrong from our side..." });
+//}
 
 app.use(cors()); // Allow Cross-Origin requests by parsing OPTION requests
 app.use(express.json()); // Parse JSON

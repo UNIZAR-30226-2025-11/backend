@@ -6,6 +6,8 @@ import { server } from "../src/app.js";
 // https://socket.io/docs/v4/testing/
 // https://medium.com/@juaogei159/how-to-effectively-write-integration-tests-for-websockets-using-vitest-and-socket-io-360208978210
 
+// TODO: Remove
+
 // Return response as promise
 function waitFor(socket: ClientSocket, event: string) {
   return new Promise((resolve) => socket.once(event, resolve));
