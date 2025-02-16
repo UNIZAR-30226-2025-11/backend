@@ -31,6 +31,56 @@ export function protectRoute(req: Request, res: Response, next: NextFunction) {
 export const authRouter = Router();
 
 /**
+  Send a registration request
+
+  Request:
+  ```json
+  {
+    "username":
+    "password":
+  }
+  ```
+
+  Response:
+  ```json
+  {
+    "id":
+  }
+  ```
+
+  Error:
+  ```json
+  {
+    "message":
+  }
+  ```
+*/
+authRouter.route("/register").post(async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    if (!username) throw new Error("No username provided");
+    if (!password) throw new Error("No password provided");
+
+    const userExists = UserRepository.findByUsername(username);
+    if (!userExists) throw new Error("Username exists");
+
+    let id = crypto.randomUUID();
+    let hashedPw = await bcrypt.hash(password, 10);
+
+    await UserRepository.create({
+      id,
+      username,
+      password: hashedPw,
+    });
+
+    res.status(201).send({ id });
+  } catch (err: unknown) {
+    res.status(400).send({ message: (err as Error).message });
+  }
+});
+
+/**
   Handle login request
 
   Request:
@@ -81,56 +131,6 @@ authRouter.route("/login").post(async (req, res) => {
       .send(publicUser);
   } catch (err: unknown) {
     res.status(401).send({ message: (err as Error).message });
-  }
-});
-
-/**
-  Send a registration request
-
-  Request:
-  ```json
-  {
-    "username":
-    "password":
-  }
-  ```
-
-  Response:
-  ```json
-  {
-    "id":
-  }
-  ```
-
-  Error:
-  ```json
-  {
-    "message":
-  }
-  ```
-*/
-authRouter.route("/register").post(async (req, res) => {
-  const { username, password } = req.body;
-
-  try {
-    if (!username) throw new Error("No username provided");
-    if (!password) throw new Error("No password provided");
-
-    const userExists = UserRepository.findByUsername(username);
-    if (!userExists) throw new Error("Username exists");
-
-    let id = crypto.randomUUID();
-    let hashedPw = await bcrypt.hash(password, 10);
-
-    await UserRepository.create({
-      id,
-      username,
-      password: hashedPw,
-    });
-
-    res.status(201).send({ id });
-  } catch (err: unknown) {
-    res.status(400).send({ message: (err as Error).message });
   }
 });
 
