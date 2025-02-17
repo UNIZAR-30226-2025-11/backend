@@ -30,7 +30,7 @@ class Card {
     }
 
     static is_wild(type: CardType): boolean {
-        return type === CardType.RainbowCat || type === CardType.PotatoCat || type === CardType.TacoCat || type === CardType.HairyPotatoCat || type === CardType.Cattermelon || type === CardType.BeardCat;
+        return type == CardType.RainbowCat || type == CardType.PotatoCat || type == CardType.TacoCat || type == CardType.HairyPotatoCat || type == CardType.Cattermelon || type == CardType.BeardCat;
     }
 
     toString(): string {
@@ -183,7 +183,7 @@ class GameObject {
     
     constructor(id: number, number_of_players: number, callSystem: CallSystem) {
         this.id = id;
-        this.callSystem = callSystem;l
+        this.callSystem = callSystem;
         const deck  = Deck.createStandardDeck(number_of_players);
         
         // Create players with 7 cards
@@ -252,7 +252,7 @@ class GameObject {
 
 
     play_card(card: Card, current_player:Player): void {
-        console.log(`Playing Card ${card.type}`);
+        console.log(`Playing Card ${CardType[card.type]}`);
         if (card.type == CardType.SeeFuture)
         {
             this.see_future(current_player);
