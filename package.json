@@ -45,12 +45,14 @@
     "vitest": "^3.0.5"
   },
   "dependencies": {
+    "@types/readline-sync": "^1.4.8",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "jsonwebtoken": "^9.0.2",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.13.1",
+    "readline-sync": "^1.4.10",
     "socket.io": "^4.8.1"
   }
 }

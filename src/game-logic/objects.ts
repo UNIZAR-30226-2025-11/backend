@@ -1,6 +1,6 @@
 export { CardType, Card, Deck, Player, GameObject };
 
-import readlineSync from 'readline-sync';
+import {CallSystem} from './calls.js';
 
 const INITIAL_HAND_SIZE = 7;
 
@@ -179,9 +179,11 @@ class GameObject {
     deck: Deck;
     turn: number;
     has_winner: boolean = false;
+    callSystem: CallSystem;
     
-    constructor(id: number, number_of_players: number) {
+    constructor(id: number, number_of_players: number, callSystem: CallSystem) {
         this.id = id;
+        this.callSystem = callSystem;l
         const deck  = Deck.createStandardDeck(number_of_players);
         
         // Create players with 7 cards
@@ -210,17 +212,18 @@ class GameObject {
             
             console.log(`Player ${current_player.id} turn`);
             console.log('Hand: ' + current_player.hand.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', '));
-            const response = readlineSync.question(`What card do you want to play (if any type -1)`);
-            if(response == '-1'){
+            const played_card_id:number = this.callSystem.get_played_cards();
+            
+            if(played_card_id == -1){
                 // Draw a cart
                 const newCards: Card = this.deck.draw(1)[0];
                 this.handle_new_card(newCards, current_player);
             } else 
             {
-                const card = current_player.hand[parseInt(response)];
+                const card = current_player.hand[played_card_id];
 
                 // Remove card from hand
-                current_player.hand.splice(parseInt(response), 1);
+                current_player.hand.splice(played_card_id, 1);
                 
                 this.play_card(card, current_player);   
             }
