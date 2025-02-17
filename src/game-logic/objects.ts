@@ -1,3 +1,7 @@
+export { CardType, Card, Deck, Player, GameObject };
+
+import readlineSync from 'readline-sync';
+
 const INITIAL_HAND_SIZE = 7;
 
 enum CardType {
@@ -23,6 +27,14 @@ class Card {
 
     constructor(type: CardType) {
         this.type = type;
+    }
+
+    static is_wild(type: CardType): boolean {
+        return type === CardType.RainbowCat || type === CardType.PotatoCat || type === CardType.TacoCat || type === CardType.HairyPotatoCat || type === CardType.Cattermelon || type === CardType.BeardCat;
+    }
+
+    toString(): string {
+        return `Card Type (${this.type})`;
     }
 }
 
@@ -77,6 +89,7 @@ class Deck {
         const deck: Deck = new Deck(cards);
         deck.shuffle();
         return deck;
+        
     }
 
     /**
@@ -126,6 +139,11 @@ class Deck {
         this.shuffle();
     }
 
+    toString(): string {
+        const str: string = this.cards.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', ');
+        return `Deck with Cards: ${str})`;
+    }
+
 }
 
 
@@ -141,33 +159,26 @@ class Player {
     static createStandarPlayer(id:number, deck: Deck): Player {
         // Create a hand with 7 cards
         const hand = deck.draw(INITIAL_HAND_SIZE);
-        
+
         // Add the deactive card 
         hand.push(new Card(CardType.Deactivate));
         return new Player(id, hand);
     }
-}
-
-
-class State {
-    active_players: Player[];
-    unactive_players: Player[];
-    deck: Deck;
-    turn: number;
     
-    constructor(active_players: Player[], unactive_players: Player[], deck: Deck, turn: number) {
-        this.active_players = active_players;
-        this.unactive_players = unactive_players;
-        this.deck = deck;
-        this.turn = turn;
+    toString(): string {
+        return 'Player' + this.id + ' with Cards' + this.hand.toString();
     }
-    
 }
+
 
 class GameObject {
     id: number;
     number_of_players: number;
-    state: State;
+    active_players: Player[];
+    unactive_players: Player[];
+    deck: Deck;
+    turn: number;
+    has_winner: boolean = false;
     
     constructor(id: number, number_of_players: number) {
         this.id = id;
@@ -183,7 +194,110 @@ class GameObject {
         deck.add_bombs(number_of_players);
         
         this.number_of_players = number_of_players;
-        this.state = new State(players, [], deck, 0);
+        this.active_players=players;
+        this.unactive_players= [];
+        this.deck=deck;
+        this.turn = 0;
+        this.has_winner=false;
     }
 
+    play_turn(): void {
+        
+        while(!this.has_winner){
+            
+            // Get the current player
+            const current_player: Player = this.active_players[this.turn];
+            
+            console.log(`Player ${current_player.id} turn`);
+            console.log('Hand: ' + current_player.hand.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', '));
+            const response = readlineSync.question(`What card do you want to play (if any type -1)`);
+            if(response == '-1'){
+                // Draw a cart
+                const newCards: Card = this.deck.draw(1)[0];
+                this.handle_new_card(newCards, current_player);
+            } else 
+            {
+                const card = current_player.hand[parseInt(response)];
+
+                // Remove card from hand
+                current_player.hand.splice(parseInt(response), 1);
+                
+                this.play_card(card, current_player);   
+            }
+        }
+    }
+
+    see_future(current_player: Player): void{
+        
+    }
+
+    attack(current_player: Player): void{
+        throw new Error('Not implemented');
+    }
+
+    nope(current_player: Player): void{
+        throw new Error('Not implemented');
+    }
+
+    favor(current_player: Player): void{
+        throw new Error('Not implemented');
+    }
+
+    play_wild_card(card_type: CardType, current_player: Player): void{
+        throw new Error('Not implemented');
+    }
+
+
+    play_card(card: Card, current_player:Player): void {
+        console.log(`Playing Card ${card.type}`);
+        if (card.type == CardType.SeeFuture)
+        {
+            this.see_future(current_player);
+        }
+        else if (card.type == CardType.Shuffle){
+            this.deck.shuffle();
+        }
+        else if (card.type == CardType.Skip){
+            this.turn = (this.turn + 1) % this.active_players.length;
+        }
+        else if (card.type == CardType.Attack){
+            this.attack(current_player);
+        } 
+        else if (card.type == CardType.Nope){
+            this.nope(current_player);
+        }
+        else if (card.type == CardType.Favor){
+            this.favor(current_player);
+        }
+        else if (Card.is_wild(card.type)){
+            this.play_wild_card(card.type, current_player);
+        }
+        else{
+            throw new Error('Invalid card type to play: ' + CardType[card.type]);
+        }
+
+    }
+
+    handle_new_card(newCard: Card, player: Player){
+        if (newCard.type === CardType.Bomb) {
+            const indexDeactivate = player.hand.findIndex( card => card.type === CardType.Deactivate );
+
+            if (indexDeactivate !== -1) {
+                console.log(`Player ${player.id} defused the bomb!`);
+                
+                player.hand.splice(indexDeactivate, 1); // Remove the deactivate card
+                
+                console.log("Putting back the bomb...")
+                this.deck.add_with_shuffle(newCard); // Put the bomb back
+
+            } else {
+                console.log(`Player ${player.id} exploded!`);
+                this.unactive_players.push(player);
+                this.active_players.splice(this.turn, 1);
+                this.turn = this.turn % this.active_players.length;
+            }
+        } else{
+            player.hand.push(newCard);
+        }
+    }
 }
