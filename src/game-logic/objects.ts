@@ -30,7 +30,7 @@ class Card {
     }
 
     static is_wild(type: CardType): boolean {
-        return type === CardType.RainbowCat || type === CardType.PotatoCat || type === CardType.TacoCat || type === CardType.HairyPotatoCat || type === CardType.Cattermelon || type === CardType.BeardCat;
+        return type == CardType.RainbowCat || type == CardType.PotatoCat || type == CardType.TacoCat || type == CardType.HairyPotatoCat || type == CardType.Cattermelon || type == CardType.BeardCat;
     }
 
     toString(): string {
@@ -261,22 +261,23 @@ class GameObject {
             
         console.log(`Player ${current_player.id} turn`);
         console.log('Hand: ' + current_player.hand.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', '));
-        const played_card_id:number = this.callSystem.get_played_cards();
-        
-        if(played_card_id == -1){
-            // Draw a cart
-            const newCards: Card = this.deck.draw(1)[0];
-            this.handle_new_card(newCards, current_player);
-
-        } else 
-        {
+        let played_card_id:number = this.callSystem.get_played_cards();
+        while (played_card_id !== -1){
             const card = current_player.hand[played_card_id];
 
             // Remove card from hand
             current_player.hand.splice(played_card_id, 1);
             
             this.play_card(card, current_player);   
+
+            console.log(`Player ${current_player.id} turn`);
+            console.log('Hand: ' + current_player.hand.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', '));
+            played_card_id = this.callSystem.get_played_cards();
         }
+        // Draw a cart
+        const newCards: Card = this.deck.draw(1)[0];
+        this.handle_new_card(newCards, current_player);
+
     }
 
     nope(current_player: Player): void{
@@ -303,7 +304,7 @@ class GameObject {
             // Agregar la carta robada a la mano del jugador actual
             current_player.hand.push(newCard);
         
-            console.log(`Player ${current_player} stole a ${CardType[newCard.type]} card from Player ${chose_player}`);
+            console.log(`Player ${current_player.id} stole a ${CardType[newCard.type]} card from Player ${chose_player}`);
         }
 
     }
