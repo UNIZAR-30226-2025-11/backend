@@ -131,6 +131,19 @@ class Deck {
     }
 
     /**
+     * Show the lasts card from the deck.
+     * @returns The drawn card.
+     * @throws Error if the deck is empty.
+     */
+    peek(n: number): Card[] {
+        if (this.cards.length < n) {
+            throw new Error('Not enough cards in the deck to peek at ' + n + ' cards');
+        }
+    
+        return this.cards.slice(-n); 
+    }    
+
+    /**
      * Adds a new card to the deck and shuffles it afterward.
      * @param card - The card to be added.
      */
@@ -183,7 +196,7 @@ class GameObject {
     
     constructor(id: number, number_of_players: number, callSystem: CallSystem) {
         this.id = id;
-        this.callSystem = callSystem;l
+        this.callSystem = callSystem;
         const deck  = Deck.createStandardDeck(number_of_players);
         
         // Create players with 7 cards
@@ -218,6 +231,8 @@ class GameObject {
                 // Draw a cart
                 const newCards: Card = this.deck.draw(1)[0];
                 this.handle_new_card(newCards, current_player);
+                this.turn = (this.turn+1) % this.active_players.length;
+
             } else 
             {
                 const card = current_player.hand[played_card_id];
@@ -231,11 +246,37 @@ class GameObject {
     }
 
     see_future(current_player: Player): void{
-        
+        console.log( `Player ${current_player.id} see the future` );
+        const nextCards = this.deck.peek(3);
+        console.log( `The next cards are `+ nextCards.reverse().map((card:Card, index: number) => `${index + 1}. ${CardType[card.type]}` ).join(', '));
+
+            
     }
 
     attack(current_player: Player): void{
-        throw new Error('Not implemented');
+        this.turn = (this.turn + 1) % this.active_players.length;
+
+        // Get the new current player
+        current_player = this.active_players[this.turn];
+            
+        console.log(`Player ${current_player.id} turn`);
+        console.log('Hand: ' + current_player.hand.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', '));
+        const played_card_id:number = this.callSystem.get_played_cards();
+        
+        if(played_card_id == -1){
+            // Draw a cart
+            const newCards: Card = this.deck.draw(1)[0];
+            this.handle_new_card(newCards, current_player);
+
+        } else 
+        {
+            const card = current_player.hand[played_card_id];
+
+            // Remove card from hand
+            current_player.hand.splice(played_card_id, 1);
+            
+            this.play_card(card, current_player);   
+        }
     }
 
     nope(current_player: Player): void{
@@ -247,7 +288,24 @@ class GameObject {
     }
 
     play_wild_card(card_type: CardType, current_player: Player): void{
-        throw new Error('Not implemented');
+        const chose_player=this.callSystem.get_played_favor(this.number_of_players);
+        const length: number = this.active_players[chose_player].hand.length;
+
+        if (length === 0) {
+            console.log(`Player ${chose_player} has no cards to steal.`);
+        } else {
+            // Chose a random value
+            const randomIndex = Math.floor(Math.random() * length);
+        
+            // extract the card
+            const newCard: Card = this.active_players[chose_player].hand.splice(randomIndex, 1)[0];
+        
+            // Agregar la carta robada a la mano del jugador actual
+            current_player.hand.push(newCard);
+        
+            console.log(`Player ${current_player} stole a ${CardType[newCard.type]} card from Player ${chose_player}`);
+        }
+
     }
 
 
