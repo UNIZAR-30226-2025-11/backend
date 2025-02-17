@@ -171,6 +171,36 @@ class Player {
 }
 
 
+class Move {
+    played_card: Card;
+    player: Player;
+
+    constructor(played_card: Card, player: Player) {
+        this.played_card = played_card;
+        this.player = player;
+    }
+}
+
+
+class MoveHistory {
+    moves: Move[];
+
+    constructor() {
+        this.moves = [];
+    }
+
+    add_move(move: Move): void {
+        this.moves.push(move);
+    }
+
+    pop_last_move(): Move {
+        if (this.moves.length === 0) {
+            throw new Error('No moves to pop from the history');
+        }
+        return this.moves.pop()!;
+    }
+}
+
 class GameObject {
     id: number;
     number_of_players: number;
@@ -180,10 +210,13 @@ class GameObject {
     turn: number;
     has_winner: boolean = false;
     callSystem: CallSystem;
+    movesHistory: MoveHistory;
     
     constructor(id: number, number_of_players: number, callSystem: CallSystem) {
         this.id = id;
         this.callSystem = callSystem;
+        this.movesHistory = new MoveHistory();
+        
         const deck  = Deck.createStandardDeck(number_of_players);
         
         // Create players with 7 cards
@@ -202,6 +235,8 @@ class GameObject {
         this.turn = 0;
         this.has_winner=false;
     }
+
+
 
     play_turn(): void {
         
@@ -230,22 +265,27 @@ class GameObject {
         }
     }
 
+    // Sonia
     see_future(current_player: Player): void{
         
     }
 
+    // Sonia
     attack(current_player: Player): void{
         throw new Error('Not implemented');
     }
 
+    // David
     nope(current_player: Player): void{
         throw new Error('Not implemented');
     }
 
+    // David
     favor(current_player: Player): void{
         throw new Error('Not implemented');
     }
 
+    // David
     play_wild_card(card_type: CardType, current_player: Player): void{
         throw new Error('Not implemented');
     }
