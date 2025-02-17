@@ -1,0 +1,1 @@
+npx tsx .\src\game-logic\main.ts

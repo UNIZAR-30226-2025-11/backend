@@ -22,4 +22,8 @@ class Server extends CallSystem {
     makeCall(): void {
         console.log("Making a call from the server.");
     }
+
+    get_played_cards(): number {
+        throw new Error("Method not implemented.");
+    }
 }
