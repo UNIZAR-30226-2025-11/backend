@@ -31,6 +31,7 @@ class Card {
 
     static is_wild(type: CardType): boolean {
         return type == CardType.RainbowCat || type == CardType.PotatoCat || type == CardType.TacoCat || type == CardType.HairyPotatoCat || type == CardType.Cattermelon || type == CardType.BeardCat;
+        return type == CardType.RainbowCat || type == CardType.PotatoCat || type == CardType.TacoCat || type == CardType.HairyPotatoCat || type == CardType.Cattermelon || type == CardType.BeardCat;
     }
 
     toString(): string {
@@ -89,20 +90,6 @@ class CardArray {
         for (let i = 0; i < n; i++) {
             const card = this.values.pop(); // Remove the last card
             newCards.push(card!);
-        };
-
-        return new CardArray(newCards);
-    }
-
-    get_n(n: number): CardArray {
-        if (this.values.length < n) {
-            throw new Error('No enough cards in the array to get ' + n + ' cards');
-        }
-        
-        const newCards : Card[] =[];
-        for (let i = 0; i < n; i++) {
-            const card = this.values[this.values.length-1-i]; // Remove the last card
-            newCards.push(card);
         };
 
         return new CardArray(newCards);
@@ -204,9 +191,18 @@ class Deck {
         return this.cards.pop();
     }
 
-    get_n(n: number): CardArray {
-        return this.cards.get_n(n);
-    }
+    /**
+     * Show the lasts card from the deck.
+     * @returns The drawn card.
+     * @throws Error if the deck is empty.
+     */
+    peek_n(n: number): CardArray {
+        if (this.cards.length() < n) {
+            throw new Error('Not enough cards in the deck to peek at ' + n + ' cards');
+        }
+    
+        return new CardArray(this.cards.values.slice(-n)); 
+    }    
 
 
     /**
@@ -326,6 +322,7 @@ class GameObject {
     play_turn(): void {
         
         while(!this.has_winner){
+            // While there is no winner
             
             // Get the current player
             const current_player: Player = this.active_players[this.turn];
@@ -348,6 +345,8 @@ class GameObject {
 
                 // Handle the new card received
                 this.handle_new_card(newCards, current_player);
+                this.turn = (this.turn+1) % this.active_players.length;
+
             } else 
             {
                 // If the player plays a card
@@ -360,7 +359,7 @@ class GameObject {
             }
 
             // Check if the player has won
-            if(current_player.hand.length() === 0){
+            if(this.active_players.length === 1){
                 this.has_winner = true;
             }
         }
@@ -369,6 +368,7 @@ class GameObject {
         this.callSystem.broad_cast_notify_winner(this.active_players[0]);
     }
 
+
     /**
      * Function that handles the playing of a card
      * @param card - The card to play
@@ -376,6 +376,9 @@ class GameObject {
      */
     play_card(card: Card, current_player:Player): void {
         
+        // Notify the players that the card has been used
+        this.callSystem.broad_cast_card_used(current_player, card.type);
+
         if (card.type == CardType.SeeFuture){
             this.see_future(current_player);
         }
@@ -399,6 +402,8 @@ class GameObject {
         }
     }
 
+
+    
     /**
      * Handle the reception of a new card.
      * @param newCard - The new card to handle
@@ -452,28 +457,6 @@ class GameObject {
         }
     }
 
-
-
-
-
-
-    shuffle(): void{
-        this.deck.shuffle();
-    }
-
-    skip_turn(current_player:Player): void{
-
-        const following_player = this.active_players[(this.turn + 1) % this.number_of_players];
-        if(!this.resolve_nope_chain(current_player, following_player, CardType.Skip, AttackType.Skip))
-        {
-            return;
-        }
-
-        this.turn = (this.turn + 1) % this.number_of_players;
-    }
-
-
-
     resolve_nope_chain(current_player:Player, attacked_player:Player, card_type:CardType, type_attack:AttackType): boolean {
         this.callSystem.notify_attack(attacked_player, type_attack);
         
@@ -501,53 +484,158 @@ class GameObject {
 
     }
 
+    /**
+     * Shuffle the deck.
+     */
+    shuffle(): void{
+
+        // Randomly shuffle the deck
+        this.deck.shuffle();
+    }
 
     /**
-     * See the next 3 cards of the deck
+     * Tries to skip the turn if the following player doesn't nope him.
+     * @param current_player - The player who is playing the card
+     */
+    skip_turn(current_player:Player): void{
+
+        const following_player = this.active_players[(this.turn + 1) % this.number_of_players];
+        if(!this.resolve_nope_chain(current_player, following_player, CardType.Skip, AttackType.Skip))
+        {
+            return;
+        }
+
+        // Change the turn
+        this.turn = (this.turn + 1) % this.number_of_players;
+    }
+
+
+    /**
+     * Shows the next 3 cards of the deck to the current player.
      * @param current_player - The player who is playing the card
      */
     see_future(current_player: Player): void{
-        const cards: CardArray = this.deck.get_n(3);
 
-        this.callSystem.notify_hidden_cards(cards, current_player);
+        // Get the next 3 cards
+        const nextCards: CardArray = this.deck.peek_n(3);
 
+        // Notify the player of the next cards
+        this.callSystem.notify_hidden_cards(nextCards, current_player);
     }
 
-    // Sonia
+    /**
+     * Performs an attack to the next player.
+     * @param current_player - The player who is playing the card
+     */
     attack(current_player: Player): void{
-        throw new Error('Not implemented');
+        this.turn = (this.turn + 1) % this.active_players.length;
+
+        // Get the new current player
+        current_player = this.active_players[this.turn];
+            
+        console.log(`Player ${current_player.id} turn`);
+        console.log(`Hand: ${current_player.hand.toString()}`);
+        let played_card_id:number = this.callSystem.get_played_cards();
+        while (played_card_id !== -1){
+            const card:Card = current_player.hand.pop_nth(played_card_id);
+            
+            this.play_card(card, current_player);   
+
+            console.log(`Player ${current_player.id} turn`);
+            console.log(`Hand: ${current_player.hand.toString()}`);
+            played_card_id = this.callSystem.get_played_cards();
+        }
+        // Draw a cart
+        const newCards: Card = this.deck.draw_last();
+        this.handle_new_card(newCards, current_player);
+
     }
 
-    // David
+    /**
+     * ASks a player to give a card to another player.
+     * @param current_player - The player who is playing the card
+     */
     favor(current_player: Player): void{
-        const player_to_steal: Player = this.active_players.get_by_id(this.callSystem.get_a_player_id());
+
+        // Get the player to steal from
+        const player_to_steal: Player = this.active_players[this.callSystem.get_a_player_id()];
 
         if(player_to_steal.hand.length() === 0){
+            // If the player has no cards to steal
             throw new Error('Player has no cards to steal');
         }
 
         if(player_to_steal === current_player){
+            // If the player tries to steal from itself
             throw new Error('Player cannot steal from itself');
         }
 
         if(!this.resolve_nope_chain(current_player, player_to_steal, CardType.Favor, AttackType.Favor)){
+            // If the player is noped dont do anything
             return;
         }
         
-        const card_id: number = this.callSystem.give_a_selected_card(player_to_steal);
+        // Get the card id to steal
+        const card_id: number = this.callSystem.get_a_selected_card(player_to_steal);
+
+        // Steal the card
         const card_to_steal: Card = player_to_steal.hand.pop_nth(card_id);
 
+        // Notify the player who has been stolen of his new cards
+        this.callSystem.notify_new_cards(player_to_steal);
+
+        // Add the card to the current player
         current_player.hand.push(card_to_steal);
 
+        // Notify the current player of his new cards
         this.callSystem.notify_new_cards(current_player);
         
     }
 
-    // David
+    /**
+     * Play a wild card.
+     * @param card_type - Wild card type to be played
+     * @param current_player - The player who is playing the card
+     * @returns 
+     */
     play_wild_card(card_type: CardType, current_player: Player): void{
-        throw new Error('Not implemented');
+        
+        // Get the player to steal from
+        const player_to_steal: Player = this.active_players[this.callSystem.get_a_player_id()];
+
+        // Get the number of cards of the player to steal
+        const length_cards: number = player_to_steal.hand.length();
+
+        if(length_cards === 0){
+            // If the player has no cards to steal
+            throw new Error('Player has no cards to steal');
+        }
+
+        if(player_to_steal === current_player){
+            // If the player tries to steal from itself
+            throw new Error('Player cannot steal from itself');
+        }
+
+        if(!this.resolve_nope_chain(current_player, player_to_steal, CardType.Favor, AttackType.Favor)){
+            // If the player is noped dont do anything
+            return;
+        }
+        
+        // Chose a random value
+        const randomIndex: number = Math.floor(Math.random() * length_cards);
+    
+        // Extract the card
+        const newCard: Card = player_to_steal.hand.pop_nth(randomIndex);
+
+        // Notify the player who has been stolen of his new cards
+        this.callSystem.notify_new_cards(player_to_steal);
+    
+        // Agregar la carta robada a la mano del jugador actual
+        current_player.hand.push(newCard);
+    
+        // Notify the current player of his new cards
+        this.callSystem.notify_new_cards(current_player);
+        
     }
-
-
 
 }

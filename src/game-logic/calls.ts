@@ -8,7 +8,7 @@ abstract class CallSystem {
     // Call methods
     
     abstract get_played_cards(): number;
-    abstract give_a_selected_card(player_to_steal: Player): number;
+    abstract get_a_selected_card(player_to_steal: Player): number;
     abstract get_a_player_id(): number;
     abstract get_nope_card(): boolean;
 
@@ -30,6 +30,7 @@ abstract class CallSystem {
     abstract broad_cast_notify_bomb_defused(player: Player): void;
     abstract broad_cast_notify_bomb_exploded(player: Player): void;
     abstract broad_cast_notify_winner(player: Player): void;
+    abstract broad_cast_card_used(player: Player, card_type: CardType): void;
 }
 
 class Terminal extends CallSystem {
@@ -38,7 +39,7 @@ class Terminal extends CallSystem {
         return parseInt(readlineSync.question(`What card do you want to play (if any type -1): `));
     }
 
-    give_a_selected_card(player: Player): number {
+    get_a_selected_card(player: Player): number {
         return parseInt(readlineSync.question(`Player ${player.id}: What card do you want to give?`));
     }
 
@@ -96,4 +97,9 @@ class Terminal extends CallSystem {
     broad_cast_notify_winner(player: Player): void {
         console.log(`BroadCast: Player ${player.id} has won the game!`);
     }
+
+    broad_cast_card_used(player: Player, card_type: CardType): void {
+        console.log(`BroadCast: Player ${player.id} has used a ${CardType[card_type]} card!`);
+    }
+
 }
