@@ -288,7 +288,8 @@ class GameObject {
         throw new Error('Not implemented');
     }
 
-    play_wild_card(card_type: CardType, current_player: Player): void{
+    
+    catch_one_card_random(current_player: Player):void{
         const chose_player=this.callSystem.get_played_favor(this.number_of_players);
         const length: number = this.active_players[chose_player].hand.length;
 
@@ -305,6 +306,62 @@ class GameObject {
             current_player.hand.push(newCard);
         
             console.log(`Player ${current_player.id} stole a ${CardType[newCard.type]} card from Player ${chose_player}`);
+        }
+    }
+    catch_an_specific_card(current_player: Player):void{
+        const chose_player=this.callSystem.get_played_favor(this.number_of_players);
+        const cardtype=this.callSystem.get_a_wild_card();
+
+        const hand = this.active_players[chose_player].hand;
+
+        if (hand.length === 0) {
+            console.log(`Player ${chose_player} has no cards to steal.`);
+        } else {
+            
+            const index = hand.findIndex((card: Card) => card.type === cardtype);
+
+            if (index === -1) {
+                console.log(`Player ${chose_player} does not have a ${CardType[cardtype]} card to steal.`);
+            } else {
+                const newCard: Card = hand.splice(index, 1)[0];
+
+                current_player.hand.push(newCard);
+
+                console.log(`Player ${current_player.id} stole a ${CardType[newCard.type]} card from Player ${chose_player}`);
+            }
+        }
+    }
+
+
+    play_wild_card(card_type: CardType, current_player: Player): void{
+
+        let n_cards: number=1;
+        let cont: boolean=true;
+
+        while (cont && n_cards<4){
+            console.log('Hand: ' + current_player.hand.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', '));
+            const newCard: number=this.callSystem.get_other_wild_card();
+            if (newCard==-1){
+                cont=false;
+                if (n_cards<2){
+                    console.log(`Yo don't have enough ${card_type} cards`);
+                    current_player.hand.push(new Card(card_type));
+                }
+                else if (n_cards==2){
+                    this.catch_one_card_random(current_player);
+                }
+                else{
+                    this.catch_an_specific_card(current_player);
+                }
+                return;
+            }
+
+            const card : Card = current_player.hand[newCard];
+            if (card_type === card.type){
+                console.log(`Wild card matched: ${card.type}`);
+                current_player.hand.splice(newCard, 1);
+                n_cards++;
+            }
         }
 
     }
