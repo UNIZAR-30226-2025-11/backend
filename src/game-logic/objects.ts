@@ -132,19 +132,19 @@ class Deck {
         // Add a specific number of each type of card to the deck
         const cardCounts: { [key in CardType]: number } = {
             [CardType.Bomb]: 0,
-            [CardType.SeeFuture]: 5,
-            [CardType.Shuffle]: 4,
-            [CardType.Skip]: 4,
-            [CardType.Attack]: 4,
-            [CardType.Nope]: 5,
-            [CardType.Favor]: 4,
+            [CardType.SeeFuture]: 0,
+            [CardType.Shuffle]: 0,
+            [CardType.Skip]: 10,
+            [CardType.Attack]: 10,
+            [CardType.Nope]: 10,
+            [CardType.Favor]: 10,
             [CardType.Deactivate]: 6-n_players,
-            [CardType.RainbowCat]: 4,
-            [CardType.PotatoCat]: 4,
-            [CardType.TacoCat]: 4,
-            [CardType.HairyPotatoCat]: 4,
-            [CardType.Cattermelon]: 4,
-            [CardType.BeardCat]: 4
+            [CardType.RainbowCat]: 0,
+            [CardType.PotatoCat]: 0,
+            [CardType.TacoCat]: 0,
+            [CardType.HairyPotatoCat]: 0,
+            [CardType.Cattermelon]: 0,
+            [CardType.BeardCat]: 0
         };
 
         for (const type in cardCounts) {
@@ -201,7 +201,7 @@ class Deck {
             throw new Error('Not enough cards in the deck to peek at ' + n + ' cards');
         }
     
-        return new CardArray(this.cards.values.slice(-n)); 
+        return new CardArray(this.cards.values.slice(-n).reverse()); 
     }    
 
 
@@ -288,6 +288,7 @@ class GameObject {
     unactive_players: Player[];
     deck: Deck;
     turn: number;
+    number_of_turns_left: number;
     has_winner: boolean = false;
     callSystem: CallSystem;
     movesHistory: MoveHistory;
@@ -314,6 +315,20 @@ class GameObject {
         this.deck=deck;
         this.turn = 0;
         this.has_winner=false;
+        this.number_of_turns_left = 1;
+    }
+
+    next_player(): number {
+        return (this.turn + 1) % this.active_players.length;
+    }
+
+    set_next_turn(): void {
+        if(this.number_of_turns_left > 1)
+        {
+            this.number_of_turns_left -= 1;
+        } else {
+            this.turn = (this.turn + 1) % this.active_players.length;
+        }
     }
 
     /**
@@ -345,7 +360,9 @@ class GameObject {
 
                 // Handle the new card received
                 this.handle_new_card(newCards, current_player);
-                this.turn = (this.turn+1) % this.active_players.length;
+                
+                // Set the next turn
+                this.set_next_turn();
 
             } else 
             {
@@ -430,6 +447,7 @@ class GameObject {
                 // Notify the rest of the players that the bomb has been defused and it will go back to the deck
                 this.callSystem.broad_cast_notify_bomb_defused(player);
 
+                this.callSystem.notify_new_cards(player);
                 // Add the bomb back to the deck
                 this.deck.add_with_shuffle(newCard);
                 
@@ -457,29 +475,63 @@ class GameObject {
         }
     }
 
+    /**
+     * Function that resolves the Nope chain of cards.
+     * @param current_player - Current player who is playing the card
+     * @param attacked_player - Player who is being attacked
+     * @param card_type - Card type that is being played
+     * @param type_attack - Type of attack that is being played
+     * @returns True if the attack is successful, false otherwise
+     */
     resolve_nope_chain(current_player:Player, attacked_player:Player, card_type:CardType, type_attack:AttackType): boolean {
+        
+        // Notify the attack
         this.callSystem.notify_attack(attacked_player, type_attack);
         
-        let resolved = false;
+        let resolved: boolean = false;
         const players = [current_player, attacked_player];
         let player_to_nope = 1;
+
         while(!resolved){
+            // While the nope chain is not resolved
+
+            // Check if the player has a nope card
             const index_nope = players[player_to_nope].hand.has_card(CardType.Nope);
+            
             if(index_nope !== -1){
+                // If the player has a nope card
+
+                // Ask the player if he wants to use the nope card
                 const used_nope = this.callSystem.get_nope_card();
                 if(used_nope){
+                    // If the player uses the nope card
+
+                    // Remove the nope card from the player
                     players[player_to_nope].hand.pop_nth(index_nope);
+
+                    // Notify the rest of the players that the nope card has been used
+                    this.callSystem.broad_cast_card_used(players[player_to_nope], CardType.Nope);
+
+                    // Switch the player to nope
                     player_to_nope = (player_to_nope + 1) % 2;
                 } else {
+                    // If the player does not use the nope card
+
+                    // The nope chain is resolved
                     resolved = true;
                 }
             } else {
+                // If the player does not have a nope card
+
+                // The nope chain is resolved
                 resolved = true;
             }
         }
 
+        // Notify the result of the attack
         this.callSystem.notify_attack_result(attacked_player, current_player, type_attack, player_to_nope===1);
         
+        // Return if the attack is successful
         return player_to_nope === 1;
 
     }
@@ -499,14 +551,14 @@ class GameObject {
      */
     skip_turn(current_player:Player): void{
 
-        const following_player = this.active_players[(this.turn + 1) % this.number_of_players];
+        const following_player = this.active_players[this.next_player()];
         if(!this.resolve_nope_chain(current_player, following_player, CardType.Skip, AttackType.Skip))
         {
             return;
         }
 
-        // Change the turn
-        this.turn = (this.turn + 1) % this.number_of_players;
+        // If the skip is not noped, change the turn
+        this.set_next_turn();
     }
 
 
@@ -528,26 +580,19 @@ class GameObject {
      * @param current_player - The player who is playing the card
      */
     attack(current_player: Player): void{
-        this.turn = (this.turn + 1) % this.active_players.length;
 
-        // Get the new current player
-        current_player = this.active_players[this.turn];
-            
-        console.log(`Player ${current_player.id} turn`);
-        console.log(`Hand: ${current_player.hand.toString()}`);
-        let played_card_id:number = this.callSystem.get_played_cards();
-        while (played_card_id !== -1){
-            const card:Card = current_player.hand.pop_nth(played_card_id);
-            
-            this.play_card(card, current_player);   
+        // Get the attacked player
+        const attacked_player:Player = this.active_players[this.next_player()];
 
-            console.log(`Player ${current_player.id} turn`);
-            console.log(`Hand: ${current_player.hand.toString()}`);
-            played_card_id = this.callSystem.get_played_cards();
+
+        if(!this.resolve_nope_chain(current_player, attacked_player, CardType.Attack, AttackType.Attack)){
+            // If the player is noped dont do anything
+            return;
         }
-        // Draw a cart
-        const newCards: Card = this.deck.draw_last();
-        this.handle_new_card(newCards, current_player);
+        
+        // If the attack is a success, give two turn to the next one
+        this.turn = this.next_player();
+        this.number_of_turns_left = 2;
 
     }
 
