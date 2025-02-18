@@ -200,7 +200,7 @@ class Deck {
         return this.cards.pop_n(n);
     }
 
-    draw_one(): Card {
+    draw_last(): Card {
         return this.cards.pop();
     }
 
@@ -248,48 +248,6 @@ class Player {
     }
 }
 
-class PlayerArray {
-    values: Player[];
-    constructor(players: Player[]) {
-        this.values = players;
-    }
-    
-    get(n:number): Player {
-        try {
-            return this.values[n];
-        }
-        catch (error) {
-            throw new Error('Impossible to get the player ${n}');
-        }
-    }
-
-    get_by_id(id:number): Player {
-        try {
-            return this.values.find(player => player.id === id)!;
-        }
-        catch (error) {
-            throw new Error('Impossible to get the player ${id}');
-        }
-    }
-
-    toString(): string {
-        return this.values.map((player:Player) => `Player: ${player.id}`).join(', ');
-    }
-
-    length(): number {
-        return this.values.length;
-    }
-
-    remove(n: number): void {
-        this.values.splice(n, 1);
-    }
-
-    add(player: Player): void {
-        this.values.push(player);
-    }
-
-}
-
 
 class Move {
     played_card: Card;
@@ -323,14 +281,15 @@ class MoveHistory {
 
 enum AttackType {
     Attack,
-    Favor
+    Favor,
+    Skip
 }
 
 class GameObject {
     id: number;
     number_of_players: number;
-    active_players: PlayerArray;
-    unactive_players: PlayerArray;
+    active_players: Player[];
+    unactive_players: Player[];
     deck: Deck;
     turn: number;
     has_winner: boolean = false;
@@ -354,12 +313,166 @@ class GameObject {
         deck.add_bombs(number_of_players);
         
         this.number_of_players = number_of_players;
-        this.active_players=new PlayerArray(players);
-        this.unactive_players= new PlayerArray([]);
+        this.active_players= players;
+        this.unactive_players= [];
         this.deck=deck;
         this.turn = 0;
         this.has_winner=false;
     }
+
+    /**
+     * Play a turn of the game. It will keep playing until there is a winner.
+     */
+    play_turn(): void {
+        
+        while(!this.has_winner){
+            
+            // Get the current player
+            const current_player: Player = this.active_players[this.turn];
+            
+            // Broadcast the player turn
+            this.callSystem.broad_cast_player_turn(current_player);
+            
+
+            // Notify the current hand of the player
+            this.callSystem.notify_current_hand(current_player);
+            
+            // Get the played card
+            const played_card_id:number = this.callSystem.get_played_cards();
+            
+            if(played_card_id == -1){ 
+                // If the player does not play a card
+
+                // Draw the last card from the deck
+                const newCards: Card = this.deck.draw_last();
+
+                // Handle the new card received
+                this.handle_new_card(newCards, current_player);
+            } else 
+            {
+                // If the player plays a card
+
+                // Get the card from the player
+                const card = current_player.hand.pop_nth(played_card_id);
+                
+                // Play the card
+                this.play_card(card, current_player);   
+            }
+
+            // Check if the player has won
+            if(current_player.hand.length() === 0){
+                this.has_winner = true;
+            }
+        }
+
+        // Notify the winner
+        this.callSystem.broad_cast_notify_winner(this.active_players[0]);
+    }
+
+    /**
+     * Function that handles the playing of a card
+     * @param card - The card to play
+     * @param current_player - The player who is playing the card
+     */
+    play_card(card: Card, current_player:Player): void {
+        
+        if (card.type == CardType.SeeFuture){
+            this.see_future(current_player);
+        }
+        else if (card.type == CardType.Shuffle){
+            this.shuffle();
+        }
+        else if (card.type == CardType.Skip){
+            this.skip_turn(current_player);
+        }
+        else if (card.type == CardType.Attack){
+            this.attack(current_player);
+        } 
+        else if (card.type == CardType.Favor){
+            this.favor(current_player);
+        }
+        else if (Card.is_wild(card.type)){
+            this.play_wild_card(card.type, current_player);
+        }
+        else{
+            throw new Error('Invalid card type to play: ' + CardType[card.type]);
+        }
+    }
+
+    /**
+     * Handle the reception of a new card.
+     * @param newCard - The new card to handle
+     * @param player - The player who receives the card
+     */
+    handle_new_card(newCard: Card, player: Player){
+
+        
+        if (newCard.type === CardType.Bomb) {
+            // If the card is a bomb
+
+            // Check if the player has a deactivate card
+            const indexDeactivate = player.hand.values.findIndex( card => card.type === CardType.Deactivate );
+
+            if (indexDeactivate !== -1) {
+                // If the player has a deactivate card
+                
+                // Notify the player that the bomb has been defused
+                this.callSystem.notify_bomb_defused(player);
+                
+                // Remove the deactivate card from the player
+                player.hand.pop_nth(indexDeactivate); 
+                
+                // Notify the rest of the players that the bomb has been defused and it will go back to the deck
+                this.callSystem.broad_cast_notify_bomb_defused(player);
+
+                // Add the bomb back to the deck
+                this.deck.add_with_shuffle(newCard);
+                
+            } else {
+                // If the player does not have a deactivate card
+
+                // Notify the rest of the players that the bomb has exploded and therefore the player is out of the game
+                this.callSystem.broad_cast_notify_bomb_exploded(player);
+                
+                // Remove the player from the active players
+                this.active_players.splice(this.turn, 1);
+
+                // Add the player to the unactive players
+                this.unactive_players.push(player);
+
+            }
+        } else{
+            // If the card is not a bomb
+
+            // Add the card to the player's hand
+            player.hand.push(newCard);
+
+            // Notify the player that it has new cards
+            this.callSystem.notify_new_cards(player);
+        }
+    }
+
+
+
+
+
+
+    shuffle(): void{
+        this.deck.shuffle();
+    }
+
+    skip_turn(current_player:Player): void{
+
+        const following_player = this.active_players[(this.turn + 1) % this.number_of_players];
+        if(!this.resolve_nope_chain(current_player, following_player, CardType.Skip, AttackType.Skip))
+        {
+            return;
+        }
+
+        this.turn = (this.turn + 1) % this.number_of_players;
+    }
+
+
 
     resolve_nope_chain(current_player:Player, attacked_player:Player, card_type:CardType, type_attack:AttackType): boolean {
         this.callSystem.notify_attack(attacked_player, type_attack);
@@ -388,32 +501,6 @@ class GameObject {
 
     }
 
-    play_turn(): void {
-        
-        while(!this.has_winner){
-            
-            // Get the current player
-            const current_player: Player = this.active_players.get(this.turn);
-            
-            this.callSystem.broad_cast_player_turn(current_player);
-            
-            this.callSystem.notify_current_hand(current_player);
-            
-            const played_card_id:number = this.callSystem.get_played_cards();
-            
-            if(played_card_id == -1){
-                // Draw a cart
-                const newCards: Card = this.deck.draw_one();
-                this.handle_new_card(newCards, current_player);
-            } else 
-            {
-                // Get the card from the player
-                const card = current_player.hand.pop_nth(played_card_id);
-                
-                this.play_card(card, current_player);   
-            }
-        }
-    }
 
     /**
      * See the next 3 cards of the deck
@@ -462,57 +549,5 @@ class GameObject {
     }
 
 
-    play_card(card: Card, current_player:Player): void {
-        console.log(`Playing Card ${CardType[card.type]}`);
-        if (card.type == CardType.SeeFuture)
-        {
-            this.see_future(current_player);
-        }
-        else if (card.type == CardType.Shuffle){
-            this.deck.shuffle();
-        }
-        else if (card.type == CardType.Skip){
-            this.turn = (this.turn + 1) % this.active_players.length();
-        }
-        else if (card.type == CardType.Attack){
-            this.attack(current_player);
-        } 
-        else if (card.type == CardType.Favor){
-            this.favor(current_player);
-        }
-        else if (Card.is_wild(card.type)){
-            this.play_wild_card(card.type, current_player);
-        }
-        else{
-            throw new Error('Invalid card type to play: ' + CardType[card.type]);
-        }
 
-    }
-
-    handle_new_card(newCard: Card, player: Player){
-        if (newCard.type === CardType.Bomb) {
-            const indexDeactivate = player.hand.values.findIndex( card => card.type === CardType.Deactivate );
-
-            if (indexDeactivate !== -1) {
-
-                this.callSystem.notify_bomb_defused(player);
-                
-                player.hand.pop_nth(indexDeactivate); // Remove the deactivate card
-                
-                this.callSystem.broad_cast_notify_bomb_defused(player);
-                this.deck.add_with_shuffle(newCard);
-                
-            } else {
-
-                this.callSystem.broad_cast_notify_bomb_exploded(player);
-                
-                this.unactive_players.add(player);
-                this.active_players.remove(this.turn);
-
-            }
-        } else{
-            player.hand.push(newCard);
-            this.callSystem.notify_new_cards(player);
-        }
-    }
 }

@@ -29,6 +29,7 @@ abstract class CallSystem {
     abstract broad_cast_player_turn(player:Player): void;
     abstract broad_cast_notify_bomb_defused(player: Player): void;
     abstract broad_cast_notify_bomb_exploded(player: Player): void;
+    abstract broad_cast_notify_winner(player: Player): void;
 }
 
 class Terminal extends CallSystem {
@@ -90,5 +91,9 @@ class Terminal extends CallSystem {
 
     broad_cast_notify_bomb_exploded(player: Player): void {
         console.log(`BroadCast: Player ${player.id} has exploded the bomb! He is out of the game.`);
+    }
+
+    broad_cast_notify_winner(player: Player): void {
+        console.log(`BroadCast: Player ${player.id} has won the game!`);
     }
 }
