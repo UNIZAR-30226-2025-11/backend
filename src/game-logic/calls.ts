@@ -7,10 +7,11 @@ abstract class CallSystem {
     
     // Call methods
     
-    abstract get_played_cards(): number;
+    abstract get_played_cards(player: Player): number[];
     abstract get_a_selected_card(player_to_steal: Player): number;
-    abstract get_a_player_id(): number;
-    abstract get_nope_card(): boolean;
+    abstract get_a_player_id(player: Player): number;
+    abstract get_nope_card(player: Player): boolean;
+    abstract get_a_card_type(player: Player): CardType;
 
 
     // Show methods
@@ -21,34 +22,66 @@ abstract class CallSystem {
     abstract notify_new_cards(player:Player): void;
     abstract notify_attack(player: Player, type_attack:AttackType): void;
     abstract notify_attack_result(attacked_player: Player, current_player:Player, type_attack:AttackType, result:boolean): void;
-
-
-
+    
     // Broadcast methods
 
+    abstract broad_cast_failed_steal(player: Player, player_to_steal: Player, card_type: CardType): void;
     abstract broad_cast_player_turn(player:Player): void;
     abstract broad_cast_notify_bomb_defused(player: Player): void;
     abstract broad_cast_notify_bomb_exploded(player: Player): void;
     abstract broad_cast_notify_winner(player: Player): void;
-    abstract broad_cast_card_used(player: Player, card_type: CardType): void;
+    abstract broad_cast_card_used(player: Player, card_type: CardType, number_of_played_cards:number): void;
 }
 
 class Terminal extends CallSystem {
 
-    get_played_cards(): number {
-        return parseInt(readlineSync.question(`What card do you want to play (if any type -1): `));
+    get_played_cards(player: Player): number[] {
+        let cards: number[] = [];
+        const str:string = readlineSync.question(`What cards/s do you want to play (if any type -1, if multiple split with comma): `);
+        if (str === "-1") {
+            return cards;
+        }
+        const split_str = str.split(',');
+        split_str.forEach((card) => {
+            cards.push(parseInt(card));
+        });
+
+        return cards;
     }
 
     get_a_selected_card(player: Player): number {
-        return parseInt(readlineSync.question(`Player ${player.id}: What card do you want to give?`));
+        return parseInt(readlineSync.question(`[PERSONAL ${player.id}] What card do you want to give?`));
     }
 
-    get_a_player_id(): number {
-        return parseInt(readlineSync.question(`What player do you want to select: `));
+    get_a_player_id(player: Player): number {
+        return parseInt(readlineSync.question(`[PERSONAL ${player.id}] What player do you want to select: `));
     }
 
-    get_nope_card(): boolean {
-        return readlineSync.keyInYNStrict(`Do you want to play a Nope card?`);
+    get_nope_card(player: Player): boolean {
+        return readlineSync.keyInYNStrict(`[PERSONAL ${player.id}] Do you want to play a Nope card?`);
+    }
+
+    get_a_card_type(player: Player): CardType {
+
+        const map_card_type_to_int: Map<string, CardType> = new Map([
+            ["SeeFuture", CardType.SeeFuture],
+            ["Shuffle", CardType.Shuffle],
+            ["Skip", CardType.Skip],
+            ["Attack", CardType.Attack],
+            ["Nope", CardType.Nope],
+            ["Favor", CardType.Favor],
+            ["Deactivate", CardType.Deactivate],
+            ["RainbowCat", CardType.RainbowCat],
+            ["PotatoCat", CardType.PotatoCat],
+            ["TacoCat", CardType.TacoCat],
+            ["HairyPotatoCat", CardType.HairyPotatoCat],
+            ["Cattermelon", CardType.Cattermelon],
+            ["BeardCat", CardType.BeardCat]
+        ]);
+
+        const cardTypeStr = readlineSync.question(`[PERSONAL ${player.id}] What type of card do you want to play (example "Skip"): `);
+        return map_card_type_to_int.get(cardTypeStr) || CardType.Deactivate; // Default to Bomb if not found
+
     }
 
     notify_current_hand(player: Player): void {
@@ -81,6 +114,10 @@ class Terminal extends CallSystem {
         }
     }
 
+    broad_cast_failed_steal(player: Player, player_to_steal: Player, card_type: CardType): void {
+        console.log(`[BROADCAST] Player ${player.id} has failed to steal a card of type ${CardType[card_type]} from player ${player_to_steal.id}!`);
+    }
+
     
     broad_cast_player_turn(player:Player): void {
         console.log(`[BROADCAST] Player ${player.id} is playing.`);
@@ -98,8 +135,8 @@ class Terminal extends CallSystem {
         console.log(`[BROADCAST] Player ${player.id} has won the game!`);
     }
 
-    broad_cast_card_used(player: Player, card_type: CardType): void {
-        console.log(`[BROADCAST] Player ${player.id} has used a ${CardType[card_type]} card!`);
+    broad_cast_card_used(player: Player, card_type: CardType, number_of_played_cards:number): void {
+        console.log(`[BROADCAST] Player ${player.id} has used ${number_of_played_cards} number of ${CardType[card_type]} cards!`);
     }
 
 }

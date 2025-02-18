@@ -31,7 +31,6 @@ class Card {
 
     static is_wild(type: CardType): boolean {
         return type == CardType.RainbowCat || type == CardType.PotatoCat || type == CardType.TacoCat || type == CardType.HairyPotatoCat || type == CardType.Cattermelon || type == CardType.BeardCat;
-        return type == CardType.RainbowCat || type == CardType.PotatoCat || type == CardType.TacoCat || type == CardType.HairyPotatoCat || type == CardType.Cattermelon || type == CardType.BeardCat;
     }
 
     toString(): string {
@@ -140,7 +139,7 @@ class Deck {
             [CardType.Favor]: 10,
             [CardType.Deactivate]: 6-n_players,
             [CardType.RainbowCat]: 0,
-            [CardType.PotatoCat]: 0,
+            [CardType.PotatoCat]: 500,
             [CardType.TacoCat]: 0,
             [CardType.HairyPotatoCat]: 0,
             [CardType.Cattermelon]: 0,
@@ -349,10 +348,10 @@ class GameObject {
             // Notify the current hand of the player
             this.callSystem.notify_current_hand(current_player);
             
-            // Get the played card
-            const played_card_id:number = this.callSystem.get_played_cards();
+            // Get the played cards
+            const played_cards_ids:number[] = this.callSystem.get_played_cards(current_player);
             
-            if(played_card_id == -1){ 
+            if(played_cards_ids.length === 0 ){ 
                 // If the player does not play a card
 
                 // Draw the last card from the deck
@@ -366,13 +365,22 @@ class GameObject {
 
             } else 
             {
-                // If the player plays a card
+                // If the player plays cards
 
-                // Get the card from the player
-                const card = current_player.hand.pop_nth(played_card_id);
+                const card_played: Card = current_player.hand.pop_nth(played_cards_ids[0]);
+
+                for(let i=1;i<played_cards_ids.length;i++){
+                    const card:Card = current_player.hand.pop_nth(played_cards_ids[i]);
+                    if (card.type !== card_played.type){
+                        // If the cards played are not of the same type
+                        throw new Error('All played cards must be of the same type');
+                    }
+                }
+            
+                const number_of_played_cards = played_cards_ids.length;
                 
                 // Play the card
-                this.play_card(card, current_player);   
+                this.play_card(card_played, number_of_played_cards, current_player);   
             }
 
             // Check if the player has won
@@ -391,10 +399,10 @@ class GameObject {
      * @param card - The card to play
      * @param current_player - The player who is playing the card
      */
-    play_card(card: Card, current_player:Player): void {
+    play_card(card: Card, number_of_played_cards:number, current_player:Player): void {
         
         // Notify the players that the card has been used
-        this.callSystem.broad_cast_card_used(current_player, card.type);
+        this.callSystem.broad_cast_card_used(current_player, card.type, number_of_played_cards);
 
         if (card.type == CardType.SeeFuture){
             this.see_future(current_player);
@@ -412,7 +420,7 @@ class GameObject {
             this.favor(current_player);
         }
         else if (Card.is_wild(card.type)){
-            this.play_wild_card(card.type, current_player);
+            this.play_wild_card(card.type, number_of_played_cards, current_player);
         }
         else{
             throw new Error('Invalid card type to play: ' + CardType[card.type]);
@@ -502,7 +510,7 @@ class GameObject {
                 // If the player has a nope card
 
                 // Ask the player if he wants to use the nope card
-                const used_nope = this.callSystem.get_nope_card();
+                const used_nope = this.callSystem.get_nope_card(players[player_to_nope]);
                 if(used_nope){
                     // If the player uses the nope card
 
@@ -510,7 +518,7 @@ class GameObject {
                     players[player_to_nope].hand.pop_nth(index_nope);
 
                     // Notify the rest of the players that the nope card has been used
-                    this.callSystem.broad_cast_card_used(players[player_to_nope], CardType.Nope);
+                    this.callSystem.broad_cast_card_used(players[player_to_nope], CardType.Nope, 1);
 
                     // Switch the player to nope
                     player_to_nope = (player_to_nope + 1) % 2;
@@ -603,7 +611,7 @@ class GameObject {
     favor(current_player: Player): void{
 
         // Get the player to steal from
-        const player_to_steal: Player = this.active_players[this.callSystem.get_a_player_id()];
+        const player_to_steal: Player = this.active_players[this.callSystem.get_a_player_id(current_player)];
 
         if(player_to_steal.hand.length() === 0){
             // If the player has no cards to steal
@@ -643,10 +651,10 @@ class GameObject {
      * @param current_player - The player who is playing the card
      * @returns 
      */
-    play_wild_card(card_type: CardType, current_player: Player): void{
+    play_wild_card(card_type: CardType, number_of_played_cards:number, current_player: Player): void{
         
         // Get the player to steal from
-        const player_to_steal: Player = this.active_players[this.callSystem.get_a_player_id()];
+        const player_to_steal: Player = this.active_players[this.callSystem.get_a_player_id(current_player)];
 
         // Get the number of cards of the player to steal
         const length_cards: number = player_to_steal.hand.length();
@@ -665,22 +673,62 @@ class GameObject {
             // If the player is noped dont do anything
             return;
         }
+
+        if (number_of_played_cards == 1){
+            // If the player plays more than one wild card
+
+            // Notify the player that the action is invalid
+            throw new Error('Invalid action: Cannot play one wild card');
+        } else if (number_of_played_cards === 2 ){
+            // If the player plays two wild cards, steal a random card from the player
+            this.steal_random_card(player_to_steal, current_player);
+        } else if (number_of_played_cards === 3 ){
+            // If the player plays three wild cards, steal one card by type
+            this.steal_card_by_type(player_to_steal, current_player);
+        } else {
+            // If the player plays more than three wild cards
+            throw new Error('Invalid action: Cannot play more than three wild cards');
+        }
         
-        // Chose a random value
-        const randomIndex: number = Math.floor(Math.random() * length_cards);
-    
-        // Extract the card
-        const newCard: Card = player_to_steal.hand.pop_nth(randomIndex);
 
         // Notify the player who has been stolen of his new cards
         this.callSystem.notify_new_cards(player_to_steal);
-    
-        // Agregar la carta robada a la mano del jugador actual
-        current_player.hand.push(newCard);
     
         // Notify the current player of his new cards
         this.callSystem.notify_new_cards(current_player);
         
     }
 
+    steal_random_card(player_to_steal: Player, current_player: Player): void{
+        // Get the card id to steal
+        const card_id: number = Math.floor(Math.random() * player_to_steal.hand.length());
+
+        // Steal the card
+        const card_to_steal: Card = player_to_steal.hand.pop_nth(card_id);
+
+        // Add the card to the current player
+        current_player.hand.push(card_to_steal);
+    }
+
+    steal_card_by_type(player_to_steal: Player, current_player: Player): void{
+
+        // Get the card type to steal
+        const card_type: CardType = this.callSystem.get_a_card_type(current_player);
+
+        // Get the card id to steal
+        const card_id: number = player_to_steal.hand.values.findIndex(card => card.type === card_type);
+
+        if(card_id === -1){
+            // If the player does not have the card to steal
+
+            this.callSystem.broad_cast_failed_steal(current_player, player_to_steal, card_type);
+        }
+
+        // Steal the card
+        const card_to_steal: Card = player_to_steal.hand.pop_nth(card_id);
+
+        // Add the card to the current player
+        current_player.hand.push(card_to_steal);
+    }
 }
+
