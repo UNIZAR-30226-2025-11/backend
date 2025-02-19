@@ -29,6 +29,11 @@ class Card {
         this.type = type;
     }
 
+    /**
+     * Get if the card is a wild card
+     * @param type - Type of the card
+     * @returns True if it is a wild card, else False.
+     */
     static is_wild(type: CardType): boolean {
         return type == CardType.RainbowCat || type == CardType.PotatoCat || type == CardType.TacoCat || type == CardType.HairyPotatoCat || type == CardType.Cattermelon || type == CardType.BeardCat;
         return type == CardType.RainbowCat || type == CardType.PotatoCat || type == CardType.TacoCat || type == CardType.HairyPotatoCat || type == CardType.Cattermelon || type == CardType.BeardCat;
@@ -46,18 +51,33 @@ class CardArray {
         this.values = cards;
     }
 
+    /**
+     * Shuffle the cards
+     */
     shuffle(): void {
         this.values.sort(() => Math.random() - 0.5);
     }
 
+    /**
+     * Push the card
+     * @param card -Card we want to push
+     */
     push(card: Card): void {
         this.values.push(card);
     }
 
+    /**
+     * Give you the length of the hand
+     * @returns length of the hand
+     */
     length(): number {
         return this.values.length;
     }
 
+    /**
+     * Pop a card
+     * @returns the card we have pop
+     */
     pop(): Card {
         if (this.values.length === 0) {
             throw new Error('No cards to pop from the array');
@@ -65,6 +85,11 @@ class CardArray {
         return this.values.pop()!;
     }
 
+    /**
+     * Pop the card in a position.
+     * @param n - position of the card
+     * @returns The card in this position
+     */
     pop_nth(n: number): Card {
         try {
             const card:Card = this.values[n];
@@ -100,6 +125,11 @@ class CardArray {
         return this.values.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', ');
     }
 
+    /**
+     * Get if the card exist in a hand
+     * @param type - Type of the card
+     * @returns True if there is a card of this type, else False.
+     */
     has_card(type:CardType): number {
         return this.values.findIndex(card => card.type == type);
     }
@@ -188,6 +218,10 @@ class Deck {
         return this.cards.pop_n(n);
     }
 
+    /**
+     * Draws the last card from the deck.
+     * @returns The drawn card.
+     */
     draw_last(): Card {
         return this.cards.pop();
     }
@@ -231,6 +265,12 @@ class Player {
         this.hand = hand;
     }
     
+    /**
+     * Create a player
+     * @param id - Id of the player
+     * @param deck - Deck initial
+     * @returns A player
+     */
     static createStandarPlayer(id:number, deck: Deck): Player {
         // Create a hand with 7 cards
         const hand = deck.draw(INITIAL_HAND_SIZE);
@@ -458,6 +498,14 @@ class GameObject {
         }
     }
 
+    /**
+     * Resolve the nope card
+     * @param current_player - The player who is playing
+     * @param attacked_player - The player who is attacked
+     * @param card_type - Type of card
+     * @param type_attack - Type of attack
+     * @returns if has gone all ok whit the nope card.
+     */
     resolve_nope_chain(current_player:Player, attacked_player:Player, card_type:CardType, type_attack:AttackType): boolean {
         this.callSystem.notify_attack(attacked_player, type_attack);
         
@@ -639,6 +687,10 @@ class GameObject {
         
     }
     
+    /**
+     * Steal a card random from one player to another
+     * @param current_player - The player who is going to steal a card
+     */
     catch_one_card_random(current_player: Player):void{
         const chose_player: number =this.callSystem.get_played_favor(this.number_of_players);
         const length: number = this.active_players[chose_player].hand.length();
@@ -658,6 +710,11 @@ class GameObject {
             console.log(`Player ${current_player.id} stole a ${CardType[newCard.type]} card from Player ${chose_player}`);
         }
     }
+
+    /**
+     * Steal a card of a player
+     * @param current_player - player who is going to steal
+     */
     catch_an_specific_card(current_player: Player):void{
         const chose_player=this.callSystem.get_played_favor(this.number_of_players);
         const cardtype=this.callSystem.get_a_wild_card();
@@ -682,7 +739,12 @@ class GameObject {
         }
     }
 
-
+    /**
+     * Play a wild card.
+     * @param card_type - Wild card type to be played
+     * @param current_player - The player who is playing the card
+     * @returns 
+     */
     play_wild_card(card_type: CardType, current_player: Player): void{
 
         let n_cards: number=1;
