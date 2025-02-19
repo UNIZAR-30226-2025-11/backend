@@ -131,19 +131,19 @@ class Deck {
         // Add a specific number of each type of card to the deck
         const cardCounts: { [key in CardType]: number } = {
             [CardType.Bomb]: 0,
-            [CardType.SeeFuture]: 0,
-            [CardType.Shuffle]: 0,
-            [CardType.Skip]: 10,
-            [CardType.Attack]: 10,
-            [CardType.Nope]: 10,
-            [CardType.Favor]: 10,
+            [CardType.SeeFuture]: 5,
+            [CardType.Shuffle]: 5,
+            [CardType.Skip]: 5,
+            [CardType.Attack]: 3,
+            [CardType.Nope]: 5,
+            [CardType.Favor]: 5,
             [CardType.Deactivate]: 6-n_players,
-            [CardType.RainbowCat]: 0,
-            [CardType.PotatoCat]: 500,
-            [CardType.TacoCat]: 0,
-            [CardType.HairyPotatoCat]: 0,
-            [CardType.Cattermelon]: 0,
-            [CardType.BeardCat]: 0
+            [CardType.RainbowCat]: 5,
+            [CardType.PotatoCat]: 5,
+            [CardType.TacoCat]: 5,
+            [CardType.HairyPotatoCat]: 5,
+            [CardType.Cattermelon]: 5,
+            [CardType.BeardCat]: 5
         };
 
         for (const type in cardCounts) {
@@ -223,10 +223,12 @@ class Deck {
 class Player {
     id: number;
     hand: CardArray;
+    active: boolean
     
     constructor(id: number, hand: CardArray) {
         this.id = id;
         this.hand = hand;
+        this.active = true;
     }
     
     static createStandarPlayer(id:number, deck: Deck): Player {
@@ -283,8 +285,7 @@ enum AttackType {
 class GameObject {
     id: number;
     number_of_players: number;
-    active_players: Player[];
-    unactive_players: Player[];
+    players: Player[];
     deck: Deck;
     turn: number;
     number_of_turns_left: number;
@@ -306,11 +307,10 @@ class GameObject {
         }
         
         // Add bombs to the deck
-        deck.add_bombs(number_of_players);
+        deck.add_bombs(number_of_players+100);
         
         this.number_of_players = number_of_players;
-        this.active_players= players;
-        this.unactive_players= [];
+        this.players= players;
         this.deck=deck;
         this.turn = 0;
         this.has_winner=false;
@@ -318,7 +318,11 @@ class GameObject {
     }
 
     next_player(): number {
-        return (this.turn + 1) % this.active_players.length;
+        let candidate = ( this.turn + 1 ) % this.number_of_players;
+        while(!this.players[candidate].active){
+            candidate = ( candidate + 1 ) % this.number_of_players;
+        }
+        return candidate;
     }
 
     set_next_turn(): void {
@@ -326,10 +330,19 @@ class GameObject {
         {
             this.number_of_turns_left -= 1;
         } else {
-            this.turn = (this.turn + 1) % this.active_players.length;
+            this.turn = this.next_player();
+            this.number_of_turns_left = 1;
         }
     }
 
+    check_winner(): void {
+        const activePlayers = this.players.filter(player => player.active);
+        this.has_winner = activePlayers.length === 1;
+    }
+
+    get_winner(): Player {
+        return this.players.filter(player => player.active)[0];
+    }
     /**
      * Play a turn of the game. It will keep playing until there is a winner.
      */
@@ -339,7 +352,7 @@ class GameObject {
             // While there is no winner
             
             // Get the current player
-            const current_player: Player = this.active_players[this.turn];
+            const current_player: Player = this.players[this.turn];
             
             // Broadcast the player turn
             this.callSystem.broad_cast_player_turn(current_player);
@@ -366,16 +379,16 @@ class GameObject {
             } else 
             {
                 // If the player plays cards
+                
+                // Check all cards are of the same type
+                const card_played = current_player.hand.values[played_cards_ids[0]];
+                const all_same_type = played_cards_ids.every(id => current_player.hand.values[id].type === card_played.type);
 
-                const card_played: Card = current_player.hand.pop_nth(played_cards_ids[0]);
-
-                for(let i=1;i<played_cards_ids.length;i++){
-                    const card:Card = current_player.hand.pop_nth(played_cards_ids[i]);
-                    if (card.type !== card_played.type){
-                        // If the cards played are not of the same type
-                        throw new Error('All played cards must be of the same type');
-                    }
+                if (!all_same_type) {
+                    throw new Error('All played cards must be of the same type');
                 }
+
+                current_player.hand.values = current_player.hand.values.filter((_, index) => !played_cards_ids.includes(index));
             
                 const number_of_played_cards = played_cards_ids.length;
                 
@@ -383,14 +396,11 @@ class GameObject {
                 this.play_card(card_played, number_of_played_cards, current_player);   
             }
 
-            // Check if the player has won
-            if(this.active_players.length === 1){
-                this.has_winner = true;
-            }
+            this.check_winner();
         }
 
         // Notify the winner
-        this.callSystem.broad_cast_notify_winner(this.active_players[0]);
+        this.callSystem.broad_cast_notify_winner(this.get_winner());
     }
 
 
@@ -466,10 +476,8 @@ class GameObject {
                 this.callSystem.broad_cast_notify_bomb_exploded(player);
                 
                 // Remove the player from the active players
-                this.active_players.splice(this.turn, 1);
-
-                // Add the player to the unactive players
-                this.unactive_players.push(player);
+                this.players[player.id].active = false;
+                
 
             }
         } else{
@@ -559,7 +567,7 @@ class GameObject {
      */
     skip_turn(current_player:Player): void{
 
-        const following_player = this.active_players[this.next_player()];
+        const following_player = this.players[this.next_player()];
         if(!this.resolve_nope_chain(current_player, following_player, CardType.Skip, AttackType.Skip))
         {
             return;
@@ -590,7 +598,7 @@ class GameObject {
     attack(current_player: Player): void{
 
         // Get the attacked player
-        const attacked_player:Player = this.active_players[this.next_player()];
+        const attacked_player:Player = this.players[this.next_player()];
 
 
         if(!this.resolve_nope_chain(current_player, attacked_player, CardType.Attack, AttackType.Attack)){
@@ -611,7 +619,7 @@ class GameObject {
     favor(current_player: Player): void{
 
         // Get the player to steal from
-        const player_to_steal: Player = this.active_players[this.callSystem.get_a_player_id(current_player)];
+        const player_to_steal: Player = this.players[this.callSystem.get_a_player_id(current_player)];
 
         if(player_to_steal.hand.length() === 0){
             // If the player has no cards to steal
@@ -654,7 +662,7 @@ class GameObject {
     play_wild_card(card_type: CardType, number_of_played_cards:number, current_player: Player): void{
         
         // Get the player to steal from
-        const player_to_steal: Player = this.active_players[this.callSystem.get_a_player_id(current_player)];
+        const player_to_steal: Player = this.players[this.callSystem.get_a_player_id(current_player)];
 
         // Get the number of cards of the player to steal
         const length_cards: number = player_to_steal.hand.length();

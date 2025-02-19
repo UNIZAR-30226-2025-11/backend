@@ -3,7 +3,7 @@ import { CallSystem, Terminal } from './calls.js';
 
 
 function main() {
-    const gameObject = new GameObject(0, 5, new Terminal());
+    const gameObject = new GameObject(0, 3, new Terminal());
 
     gameObject.play_turn();
 
