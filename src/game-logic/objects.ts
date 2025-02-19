@@ -75,6 +75,7 @@ class CardArray {
         }
     }
 
+
     /**
      * Get the last cards from the array.
      * @param n - Number of cards to get
@@ -598,7 +599,7 @@ class GameObject {
      * @param current_player - The player who is playing the card
      * @returns 
      */
-    play_wild_card(card_type: CardType, current_player: Player): void{
+    play_wild_card_david(card_type: CardType, current_player: Player): void{
         
         // Get the player to steal from
         const player_to_steal: Player = this.active_players[this.callSystem.get_a_player_id()];
@@ -637,5 +638,83 @@ class GameObject {
         this.callSystem.notify_new_cards(current_player);
         
     }
+    
+    catch_one_card_random(current_player: Player):void{
+        const chose_player: number =this.callSystem.get_played_favor(this.number_of_players);
+        const length: number = this.active_players[chose_player].hand.length();
+
+        if (length === 0) {
+            console.log(`Player ${chose_player} has no cards to steal.`);
+        } else {
+            // Chose a random value
+            const randomIndex = Math.floor(Math.random() * length);
+        
+            // extract the card
+            const newCard: Card = this.active_players[chose_player].hand.pop_nth(randomIndex);
+        
+            // Agregar la carta robada a la mano del jugador actual
+            current_player.hand.push(newCard);
+        
+            console.log(`Player ${current_player.id} stole a ${CardType[newCard.type]} card from Player ${chose_player}`);
+        }
+    }
+    catch_an_specific_card(current_player: Player):void{
+        const chose_player=this.callSystem.get_played_favor(this.number_of_players);
+        const cardtype=this.callSystem.get_a_wild_card();
+
+        const hand = this.active_players[chose_player].hand;
+
+        if (hand.length() === 0) {
+            console.log(`Player ${chose_player} has no cards to steal.`);
+        } else {
+            
+            const index = hand.has_card(cardtype);
+
+            if (index === -1) {
+                console.log(`Player ${chose_player} does not have a ${CardType[cardtype]} card to steal.`);
+            } else {
+                const newCard: Card = this.active_players[chose_player].hand.pop_nth(index);
+
+                current_player.hand.push(newCard);
+
+                console.log(`Player ${current_player.id} stole a ${CardType[newCard.type]} card from Player ${chose_player}`);
+            }
+        }
+    }
+
+
+    play_wild_card(card_type: CardType, current_player: Player): void{
+
+        let n_cards: number=1;
+        let cont: boolean=true;
+
+        while (cont && n_cards<4){
+            this.callSystem.notify_current_hand(current_player);
+            const newCard: number=this.callSystem.get_other_wild_card();
+            if (newCard==-1){
+                cont=false;
+                if (n_cards<2){
+                    console.log(`Yo don't have enough ${card_type} cards`);
+                    current_player.hand.push(new Card(card_type));
+                }
+                else if (n_cards==2){
+                    this.catch_one_card_random(current_player);
+                }
+                else{
+                    this.catch_an_specific_card(current_player);
+                }
+                return;
+            }
+
+            const card : Card = current_player.hand.pop_nth(newCard);
+            if (card_type === card.type){
+                console.log(`Wild card matched: ${card.type}`);
+                current_player.hand.pop_nth(newCard);
+                n_cards++;
+            }
+        }
+
+    }
+
 
 }
