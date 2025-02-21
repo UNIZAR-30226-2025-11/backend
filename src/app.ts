@@ -3,11 +3,17 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
-import { authRouter, protectRoute } from "./auth.js";
+import { authRouter, protectRoute, protectSocket } from "./auth.js";
 
 export const app = express();
 export const server = createServer(app);
-export const io = new Server(server);
+export const io = new Server(server, {
+  cors: {
+    origin: "*",
+    credentials: true,
+    allowedHeaders: ["access_token"],
+  },
+});
 
 /** Handle uncaught errors gracefully and return an ISE */
 //function handleErrors(
@@ -41,6 +47,8 @@ app.route("/protected-hello").get(protectRoute, (_req, res) => {
 });
 
 //app.use(handleErrors); // This runs if an exception is not handled earlier
+
+io.use(protectSocket);
 
 io.on("connect", (socket) => {
   console.log(`Connected: ${socket.id}`);
