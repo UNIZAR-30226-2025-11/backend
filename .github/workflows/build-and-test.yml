@@ -11,8 +11,17 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+
+    environment: testing
+    env:
+      PORT: 8000
+      PGHOST: ${{ secrets.PGPORT }}
+      PGPORT: ${{ secrets.PGHOST}}
+      PGDATABASE: ${{ secrets.PGDATABASE }}
+      PGUSER: ${{ secrets.PGUSER }}
+      PGPASSWORD: ${{ secrets.PGPASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     strategy:
       matrix:
