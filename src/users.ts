@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 
 import { db } from "./db.js";
-import { Router } from "express";
+import { Request, Router } from "express";
 
 /** Data transfer type for user profiles */
 export interface UserEntity {
@@ -100,17 +100,23 @@ export class UserRepository {
   }
 
   /**
-    Update user.
+    Update user. This will update all fields.
 
     @returns User has been updates
   */
-  static async update(id: crypto.UUID, user: UserEntity): Promise<boolean> {
-    const QUERY = "UPDATE users SET username=$2 password=$3 WHERE id=$1";
-    const idExists = await this.findById(id);
+  static async update(
+    id: crypto.UUID,
+    user: Partial<UserEntity>,
+  ): Promise<boolean> {
+    const columns = Object.keys(user) as Array<keyof UserEntity>;
 
-    if (!idExists) throw new Error("User does not exist");
+    const setStatement = columns
+      .map((key, index) => `${key}=$${index + 2}`)
+      .join(", ");
+    const values = [id, ...columns.map((key) => user[key])];
 
-    const res = await db.query(QUERY, [id, user.username, user.password]);
+    const QUERY = `UPDATE users SET ${setStatement} WHERE id=$1`;
+    const res = await db.query(QUERY, values);
 
     return res.rowCount !== 0;
   }
@@ -182,11 +188,43 @@ usersRouter
 
     res.status(200).send(getPublicUser(user));
   })
-  .put((_req, res) => {
-    res.status(501).send();
+  .put(async (req, res) => {
+    let { username } = req.params;
+    let user = await UserRepository.findByUsername(username);
+
+    if (!user) {
+      res.status(404).send({ message: "User not found" });
+      return;
+    }
+
+    let data: Partial<UserEntity> = req.body;
+    if (Object.keys(data).length === 0) {
+      res.status(400).send({ message: "No data provided" });
+      return;
+    }
+
+    try {
+      await UserRepository.update(user.id, data);
+      res.status(200).send(getPublicUser({ ...user, ...data }));
+    } catch (err: unknown) {
+      res.status(400).send({ message: (err as Error).message });
+    }
   })
-  .delete((_req, res) => {
-    res.status(501).send();
+  .delete(async (req, res) => {
+    let { username } = req.params;
+    let user = await UserRepository.findByUsername(username);
+
+    if (!user) {
+      res.status(404).send({ message: "User not found" });
+      return;
+    }
+
+    try {
+      await UserRepository.delete(user.id);
+      res.status(200).send({});
+    } catch (err: unknown) {
+      res.status(400).send({ message: (err as Error).message });
+    }
   });
 
 usersRouter
@@ -202,9 +240,41 @@ usersRouter
 
     res.status(200).send(getPublicUser(user));
   })
-  .put((_req, res) => {
-    res.status(501).send();
+  .put(async (req, res) => {
+    let { uuid } = req.params;
+    let user = await UserRepository.findById(uuid as crypto.UUID);
+
+    if (!user) {
+      res.status(404).send({ message: "User not found" });
+      return;
+    }
+
+    let data: Partial<UserEntity> = req.body;
+    if (Object.keys(data).length === 0) {
+      res.status(400).send({ message: "No data provided" });
+      return;
+    }
+
+    try {
+      await UserRepository.update(user.id, data);
+      res.status(200).send(getPublicUser({ ...user, ...data }));
+    } catch (err: unknown) {
+      res.status(400).send({ message: (err as Error).message });
+    }
   })
-  .delete((_req, res) => {
-    res.status(501).send();
+  .delete(async (req, res) => {
+    let { uuid } = req.params;
+    let user = await UserRepository.findById(uuid as crypto.UUID);
+
+    if (!user) {
+      res.status(404).send({ message: "User not found" });
+      return;
+    }
+
+    try {
+      await UserRepository.delete(user.id);
+      res.status(200).send({});
+    } catch (err: unknown) {
+      res.status(400).send({ message: (err as Error).message });
+    }
   });
