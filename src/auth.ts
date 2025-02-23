@@ -43,7 +43,13 @@ export function protectUsersFromModification(
       id: string;
     };
 
-    if (decoded.username !== username || decoded.id !== uuid) {
+    console.log(decoded);
+    console.log(req.params);
+
+    if (
+      (username && decoded.username !== username) ||
+      (uuid && decoded.id !== uuid)
+    ) {
       res.status(403).send({ message: "Cannot modify other users data" });
       return;
     }
