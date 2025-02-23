@@ -1,25 +1,63 @@
 import crypto from "node:crypto";
+import bcrypt from "bcrypt";
 
 import { db } from "./db.js";
 import { Router } from "express";
-import { protectRoute } from "./auth.js";
 
 /** Data transfer type for user profiles */
-export class UserEntity {
-  id: crypto.UUID = crypto.randomUUID();
+export interface UserEntity {
+  id: crypto.UUID;
   username: string;
   password: string;
 
-  games_played: number = 0;
-  games_won: number = 0;
+  games_played: number;
+  games_won: number;
 
-  coins: number = 0;
+  coins: number;
+}
+
+/** Create a brand new user */
+export async function createNewUser(
+  username: string,
+  password: string,
+): Promise<UserEntity> {
+  return {
+    id: crypto.randomUUID(),
+    username,
+    password: await bcrypt.hash(password, 10),
+
+    games_played: 0,
+    games_won: 0,
+
+    coins: 0,
+  };
+}
+
+/** Return user without sensitive data */
+export function getPublicUser(user: UserEntity) {
+  let { password: _, ...publicUser } = user;
+  return publicUser;
+}
+
+export class User implements UserEntity {
+  id = crypto.randomUUID();
+  games_played = 0;
+  games_won = 0;
+  coins = 0;
 
   /** Create a brand-new user */
-  constructor(username: string, password: string) {
+  constructor(
+    public username: string,
+    public password: string,
+  ) {
     this.username = username;
     this.password = password;
   }
+
+  publicUser = () => {
+    const { password: _, ...publicUser } = this;
+    return publicUser;
+  };
 }
 
 /** Data access methods for user profiles */
@@ -120,21 +158,53 @@ export const usersRouter = Router();
 
 usersRouter
   .route("/users")
-  .get((_req, res) => {
-    res.status(501);
+  .get(async (_req, res) => {
+    res
+      .status(200)
+      .send(
+        (await UserRepository.findAll()).map((user) => getPublicUser(user)),
+      );
   })
   .post((_req, res) => {
-    res.status(501);
+    res.status(501).send();
   });
 
 usersRouter
   .route("/users/:username")
-  .get((_req, res) => {
-    res.status(501);
+  .get(async (req, res) => {
+    let { username } = req.params;
+    let user = await UserRepository.findByUsername(username);
+
+    if (!user) {
+      res.status(404).send({ message: "User not found" });
+      return;
+    }
+
+    res.status(200).send(getPublicUser(user));
   })
   .put((_req, res) => {
-    res.status(501);
+    res.status(501).send();
   })
   .delete((_req, res) => {
-    res.status(501);
+    res.status(501).send();
+  });
+
+usersRouter
+  .route("/users/id/:uuid")
+  .get(async (req, res) => {
+    let { uuid } = req.params;
+    let user = await UserRepository.findById(uuid as crypto.UUID);
+
+    if (!user) {
+      res.status(404).send({ message: "User not found" });
+      return;
+    }
+
+    res.status(200).send(getPublicUser(user));
+  })
+  .put((_req, res) => {
+    res.status(501).send();
+  })
+  .delete((_req, res) => {
+    res.status(501).send();
   });

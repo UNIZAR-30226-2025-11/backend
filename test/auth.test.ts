@@ -5,6 +5,7 @@ import * as bcrypt from "bcrypt";
 
 import { app as server } from "./src/app";
 import { UserEntity, UserRepository } from "./src/users";
+import { createNewUser } from "../src/users";
 
 describe("Auth routes", () => {
   let testAccessToken: string | undefined = undefined;
@@ -71,9 +72,9 @@ describe("Auth routes", () => {
       if (testUser) {
         await UserRepository.delete(testUser.id);
       } else {
-        const newUser = new UserEntity(
+        const newUser = await createNewUser(
           "testuser",
-          bcrypt.hashSync("super-secret-password", 10),
+          "super-secret-password",
         );
 
         await UserRepository.create(newUser);
