@@ -83,6 +83,38 @@ class Terminal extends CallSystem {
         return map_card_type_to_int.get(cardTypeStr) || CardType.Deactivate; // Default to Bomb if not found
 
     }
+    
+    get_other_wild_card(): number {
+        return parseInt(readlineSync.question(`You have to play another card like this (if any -1)`));
+    }
+
+    get_played_favor(n_players:number): number {
+        let playerId: number;
+    
+        do {
+            playerId = parseInt(readlineSync.question(`Who do you want to steal a card from? (${0}-${n_players-1}): `), 10);
+        } while (isNaN(playerId) || playerId < 0 || playerId > n_players-1);
+
+        return playerId;
+    }
+
+    get_a_wild_card(): CardType {
+        const answer = readlineSync.question(`Which card do you want to steal? `).trim();
+        
+        // Primero, intenta convertir la respuesta a número, por si el usuario ingresa un valor numérico.
+        const asNumber = parseInt(answer);
+        if (!isNaN(asNumber) && CardType[asNumber] !== undefined) {
+            return asNumber as CardType;
+        }
+
+        // Si no es numérico, intenta usar la cadena para obtener el valor del enum.
+        const cardType = CardType[answer as keyof typeof CardType];
+        if (cardType !== undefined) {
+            return cardType;
+        }
+
+        throw new Error(`Invalid card type provided: ${answer}`);
+    }
 
     notify_current_hand(player: Player): void {
         console.log(`[PERSONAL ${player.id}] Player ${player.id} has cards: ${player.hand.toString()}`);

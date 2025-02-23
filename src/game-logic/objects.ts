@@ -29,6 +29,11 @@ class Card {
         this.type = type;
     }
 
+    /**
+     * Get if the card is a wild card
+     * @param type - Type of the card
+     * @returns True if it is a wild card, else False.
+     */
     static is_wild(type: CardType): boolean {
         return type == CardType.RainbowCat || type == CardType.PotatoCat || type == CardType.TacoCat || type == CardType.HairyPotatoCat || type == CardType.Cattermelon || type == CardType.BeardCat;
     }
@@ -45,18 +50,33 @@ class CardArray {
         this.values = cards;
     }
 
+    /**
+     * Shuffle the cards
+     */
     shuffle(): void {
         this.values.sort(() => Math.random() - 0.5);
     }
 
+    /**
+     * Push the card
+     * @param card -Card we want to push
+     */
     push(card: Card): void {
         this.values.push(card);
     }
 
+    /**
+     * Give you the length of the hand
+     * @returns length of the hand
+     */
     length(): number {
         return this.values.length;
     }
 
+    /**
+     * Pop a card
+     * @returns the card we have pop
+     */
     pop(): Card {
         if (this.values.length === 0) {
             throw new Error('No cards to pop from the array');
@@ -64,6 +84,11 @@ class CardArray {
         return this.values.pop()!;
     }
 
+    /**
+     * Pop the card in a position.
+     * @param n - position of the card
+     * @returns The card in this position
+     */
     pop_nth(n: number): Card {
         try {
             const card:Card = this.values[n];
@@ -73,6 +98,7 @@ class CardArray {
             throw new Error('Impossible to get the card ${n}');
         }
     }
+
 
     /**
      * Get the last cards from the array.
@@ -98,6 +124,11 @@ class CardArray {
         return this.values.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', ');
     }
 
+    /**
+     * Get if the card exist in a hand
+     * @param type - Type of the card
+     * @returns True if there is a card of this type, else False.
+     */
     has_card(type:CardType): number {
         return this.values.findIndex(card => card.type == type);
     }
@@ -186,6 +217,10 @@ class Deck {
         return this.cards.pop_n(n);
     }
 
+    /**
+     * Draws the last card from the deck.
+     * @returns The drawn card.
+     */
     draw_last(): Card {
         return this.cards.pop();
     }
@@ -231,6 +266,12 @@ class Player {
         this.active = true;
     }
     
+    /**
+     * Create a player
+     * @param id - Id of the player
+     * @param deck - Deck initial
+     * @returns A player
+     */
     static createStandarPlayer(id:number, deck: Deck): Player {
         // Create a hand with 7 cards
         const hand = deck.draw(INITIAL_HAND_SIZE);
