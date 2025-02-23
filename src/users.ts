@@ -2,25 +2,34 @@ import crypto from "node:crypto";
 
 import { db } from "./db.js";
 
-// Basic structure for user access
-export type UserEntity = {
-  id: crypto.UUID;
+/** Data transfer type for user profiles */
+export class UserEntity {
+  id: crypto.UUID = crypto.randomUUID();
   username: string;
   password: string;
-};
 
+  games_played: number = 0;
+  games_won: number = 0;
+
+  coins: number = 0;
+
+  /** Create a brand-new user */
+  constructor(username: string, password: string) {
+    this.username = username;
+    this.password = password;
+  }
+}
+
+/** Data access methods for user profiles */
 export class UserRepository {
-  // Create new user. Returns true if row has been added. Throws Error if user
-  // exists or uses an unique attribute
-
   /**
-    Create new user.
-
-    NOTE: Password MUST be hashed BEFORE this method is called
-
-    @returns An User has been created
-    @throws User already exists
-  */
+   * Create new user.
+   *
+   * NOTE: Password MUST be hashed BEFORE this method is called
+   *
+   * @returns An User has been created
+   * @throws User already exists
+   */
   static async create(user: UserEntity): Promise<boolean> {
     const QUERY = `INSERT INTO users(id, username, password) VALUES ($1, $2, $3)`;
     const idExists = await this.findById(user.id);
@@ -33,15 +42,12 @@ export class UserRepository {
     return res.rowCount !== 0;
   }
 
-  // Delete user. Returns true if row has been deleted. Throws Error if user
-  // does not exist
-
   /**
-    Delete user.
-
-    @returns An User has been deleted
-    @throws User does not exists
-  */
+   * Delete user.
+   *
+   * @returns An User has been deleted
+   * @throws User does not exists
+   */
   static async delete(id: crypto.UUID): Promise<boolean> {
     const QUERY = `DELETE FROM users WHERE id=$1`;
     const idExists = await this.findById(id);
@@ -52,9 +58,6 @@ export class UserRepository {
 
     return res.rowCount !== 0;
   }
-
-  // Update user with given id: Returns true if row has been modified. Throws
-  // Error if user does not exist
 
   /**
     Update user.

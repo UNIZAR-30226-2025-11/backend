@@ -2,7 +2,7 @@ import { Request, Response, NextFunction, Router } from "express";
 import assert from "node:assert";
 import jwt from "jsonwebtoken";
 import * as bcrypt from "bcrypt";
-import { UserRepository } from "./users.js";
+import { UserEntity, UserRepository } from "./users.js";
 
 assert.ok(process.env.JWT_SECRET, "No JWT_SECRET provided");
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -65,16 +65,11 @@ authRouter.route("/register").post(async (req, res) => {
     const userExists = UserRepository.findByUsername(username);
     if (!userExists) throw new Error("Username exists");
 
-    let id = crypto.randomUUID();
-    let hashedPw = await bcrypt.hash(password, 10);
+    let newUser = new UserEntity(username, await bcrypt.hash(password, 10));
 
-    await UserRepository.create({
-      id,
-      username,
-      password: hashedPw,
-    });
+    await UserRepository.create(newUser);
 
-    res.status(201).send({ id });
+    res.status(201).send({ id: newUser.id });
   } catch (err: unknown) {
     res.status(400).send({ message: (err as Error).message });
   }
