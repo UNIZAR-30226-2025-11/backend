@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 
 import { db } from "./db.js";
+import { Router } from "express";
+import { protectRoute } from "./auth.js";
 
 /** Data transfer type for user profiles */
 export class UserEntity {
@@ -112,3 +114,27 @@ export class UserRepository {
     return res.rows ? res.rows.map((user) => user as UserEntity) : [];
   }
 }
+
+export const usersRouter = Router();
+//usersRouter.use(protectRoute);
+
+usersRouter
+  .route("/users")
+  .get((_req, res) => {
+    res.status(501);
+  })
+  .post((_req, res) => {
+    res.status(501);
+  });
+
+usersRouter
+  .route("/users/:username")
+  .get((_req, res) => {
+    res.status(501);
+  })
+  .put((_req, res) => {
+    res.status(501);
+  })
+  .delete((_req, res) => {
+    res.status(501);
+  });

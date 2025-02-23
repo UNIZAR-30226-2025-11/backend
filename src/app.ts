@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import { authRouter, protectRoute } from "./auth.js";
+import { usersRouter } from "./users.js";
 
 export const app = express();
 export const server = createServer(app);
@@ -27,6 +28,7 @@ app.use(express.json()); // Parse JSON
 app.use(cookieParser()); // Parse cookies, store them in req.cookies
 
 app.use(authRouter);
+app.use(usersRouter);
 
 // TODO: Remove
 app.route("/hello").get((_req, res) => {

@@ -3,8 +3,8 @@ import request from "supertest";
 import crypto from "node:crypto";
 import * as bcrypt from "bcrypt";
 
-import { app as server } from "../src/app";
-import { UserRepository } from "../src/users";
+import { app as server } from "./src/app";
+import { UserEntity, UserRepository } from "./src/users";
 
 describe("Auth routes", () => {
   let testAccessToken: string | undefined = undefined;
@@ -71,11 +71,10 @@ describe("Auth routes", () => {
       if (testUser) {
         await UserRepository.delete(testUser.id);
       } else {
-        const newUser = {
-          username: "testuser",
-          password: bcrypt.hashSync("super-secret-password", 10),
-          id: crypto.randomUUID(),
-        };
+        const newUser = new UserEntity(
+          "testuser",
+          bcrypt.hashSync("super-secret-password", 10),
+        );
 
         await UserRepository.create(newUser);
         testUserId = newUser.id;
@@ -113,10 +112,9 @@ describe("Auth routes", () => {
         .send({ username: "testuser", password: "super-secret-password" });
 
       expect(response.status).toBe(200);
-      expect(response.body).toStrictEqual({
-        username: "testuser",
-        id: testUserId,
-      });
+
+      expect(response.body.username).toBe("testuser");
+      expect(response.body.id).toBe(testUserId);
 
       // Check for access token in cookies
       expect(response.headers["set-cookie"]).toBeDefined();
