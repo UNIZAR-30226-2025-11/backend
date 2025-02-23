@@ -28,6 +28,33 @@ export function protectRoute(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+/** Prevent other users to modify user profiles that are not theirs */
+export function protectUsersFromModification(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const token = req.cookies.access_token;
+  const { username, uuid } = req.params;
+
+  try {
+    let decoded = jwt.verify(token, JWT_SECRET) as {
+      username: string;
+      id: string;
+    };
+
+    if (decoded.username !== username || decoded.id !== uuid) {
+      res.status(403).send({ message: "Cannot modify other users data" });
+      return;
+    }
+  } catch {
+    res.status(401).send({ message: "Invalid token" });
+    return;
+  }
+
+  next();
+}
+
 export const authRouter = Router();
 
 /**
@@ -112,7 +139,7 @@ authRouter.route("/login").post(async (req, res) => {
 
     const publicUser = getPublicUser(user);
 
-    const token = jwt.sign(user, JWT_SECRET, {
+    const token = jwt.sign(publicUser, JWT_SECRET, {
       expiresIn: "1h",
     });
 

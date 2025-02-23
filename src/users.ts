@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 
 import { db } from "./db.js";
 import { Request, Router } from "express";
+import { protectRoute, protectUsersFromModification } from "./auth.js";
 
 /** Data transfer type for user profiles */
 export interface UserEntity {
@@ -160,7 +161,7 @@ export class UserRepository {
 }
 
 export const usersRouter = Router();
-//usersRouter.use(protectRoute);
+usersRouter.use(protectRoute);
 
 usersRouter
   .route("/users")
@@ -188,7 +189,7 @@ usersRouter
 
     res.status(200).send(getPublicUser(user));
   })
-  .put(async (req, res) => {
+  .put(protectUsersFromModification, async (req, res) => {
     let { username } = req.params;
     let user = await UserRepository.findByUsername(username);
 
@@ -210,7 +211,7 @@ usersRouter
       res.status(400).send({ message: (err as Error).message });
     }
   })
-  .delete(async (req, res) => {
+  .delete(protectUsersFromModification, async (req, res) => {
     let { username } = req.params;
     let user = await UserRepository.findByUsername(username);
 
@@ -240,7 +241,7 @@ usersRouter
 
     res.status(200).send(getPublicUser(user));
   })
-  .put(async (req, res) => {
+  .put(protectUsersFromModification, async (req, res) => {
     let { uuid } = req.params;
     let user = await UserRepository.findById(uuid as crypto.UUID);
 
@@ -262,7 +263,7 @@ usersRouter
       res.status(400).send({ message: (err as Error).message });
     }
   })
-  .delete(async (req, res) => {
+  .delete(protectUsersFromModification, async (req, res) => {
     let { uuid } = req.params;
     let user = await UserRepository.findById(uuid as crypto.UUID);
 
