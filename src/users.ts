@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-import { db } from "./db.js";
+import { db } from "./db/db.js";
 
 // Basic structure for user access
 export type UserEntity = {
