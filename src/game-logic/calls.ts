@@ -172,3 +172,137 @@ class Terminal extends CallSystem {
     }
 
 }
+
+class j extends CallSystem {
+
+    /**
+     * JSON:
+     * username
+     * id[] (vacio -1)
+     */
+    get_played_cards(player: Player): number[]{
+        return []
+
+    }
+
+    /**
+     * JSON:
+     */
+    get_a_selected_card(player_to_steal: Player): number{
+        return 0
+
+    }
+
+    /**
+     * JSON:
+     */
+    get_a_player_id(player: Player): number{
+        return 0
+    }
+
+    /**
+     * JSON:
+     */
+    get_nope_card(player: Player): boolean{
+        return true
+    }
+
+    /**
+     * JSON:
+     */
+    get_a_card_type(player: Player): CardType{
+        return CardType.Nope
+    }
+
+
+    // Show methods
+
+    /**
+     * JSON:
+     */
+    notify_bomb_defused(player: Player): void{
+        return
+    }
+
+    /**
+     * JSON:
+     * N_Players: 
+     * PlayerS: []
+     * Cards: [name, id]
+     */
+    notify_current_hand(player:Player): void{
+        return 
+    }
+
+    /**
+     * JSON:
+     */
+    notify_hidden_cards(cards: CardArray, player:Player): void{
+        return
+    }
+
+    /**
+     * JSON:
+     */
+    notify_new_cards(player:Player): void{
+        return
+    }
+
+    /**
+     * JSON:
+     */
+    notify_attack(player: Player, type_attack:AttackType): void{
+        return
+    }
+
+    /**
+     * JSON:
+     */
+    notify_attack_result(attacked_player: Player, current_player:Player, type_attack:AttackType, result:boolean): void{
+        return
+    }
+    
+    // Broadcast methods
+
+    /**
+     * JSON:
+     */
+    broad_cast_failed_steal(player: Player, player_to_steal: Player, card_type: CardType): void{
+        return
+    }
+
+    /**
+     * JSON:
+     */
+    broad_cast_player_turn(player:Player): void{
+        return
+    }
+
+    /**
+     * JSON:
+     */
+    broad_cast_notify_bomb_defused(player: Player): void{
+        return
+    }
+
+    /**
+     * 
+     */
+    broad_cast_notify_bomb_exploded(player: Player): void{
+        return
+    }
+
+    /**
+     * 
+     */
+    broad_cast_notify_winner(player: Player): void{
+        return
+    }
+
+    /**
+     * 
+     */
+    broad_cast_card_used(player: Player, card_type: CardType, number_of_played_cards:number): void{
+        return
+    }
+}
