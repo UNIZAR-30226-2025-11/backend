@@ -1,6 +1,6 @@
 export { CardType, Card, Deck, Player, GameObject, CardArray, AttackType };
 
-import {CallSystem} from './calls.js';
+import {CallSystem, Sockets} from './calls.js';
 
 const INITIAL_HAND_SIZE = 7;
 
@@ -333,11 +333,13 @@ class GameObject {
     has_winner: boolean = false;
     callSystem: CallSystem;
     movesHistory: MoveHistory;
+    socket_players: Map<any, any>;
     
-    constructor(id: number, number_of_players: number, callSystem: CallSystem) {
+    constructor(id: number, number_of_players: number,socket_players: Map<any, any>) {
         this.id = id;
-        this.callSystem = callSystem;
+        this.callSystem = new Sockets(socket_players);
         this.movesHistory = new MoveHistory();
+        this.socket_players= socket_players;
         
         const deck  = Deck.createStandardDeck(number_of_players);
         

@@ -1,39 +1,46 @@
+import { Socket } from "socket.io";
 import { Card, Player, CardType, CardArray, AttackType } from "./objects.js";
 import readlineSync from 'readline-sync';
 
 export { CallSystem, Terminal };
 
-abstract class CallSystem {
+interface CallSystem {
     
+    initialize(number_of_players: number): void;
+
     // Call methods
     
-    abstract get_played_cards(player: Player): number[];
-    abstract get_a_selected_card(player_to_steal: Player): number;
-    abstract get_a_player_id(player: Player): number;
-    abstract get_nope_card(player: Player): boolean;
-    abstract get_a_card_type(player: Player): CardType;
+    get_played_cards(player: Player): number[];
+    get_a_selected_card(player_to_steal: Player): number;
+    get_a_player_id(player: Player): number;
+    get_nope_card(player: Player): boolean;
+    get_a_card_type(player: Player): CardType;
 
 
     // Show methods
 
-    abstract notify_bomb_defused(player: Player): void;
-    abstract notify_current_hand(player:Player): void;
-    abstract notify_hidden_cards(cards: CardArray, player:Player): void;
-    abstract notify_new_cards(player:Player): void;
-    abstract notify_attack(player: Player, type_attack:AttackType): void;
-    abstract notify_attack_result(attacked_player: Player, current_player:Player, type_attack:AttackType, result:boolean): void;
-    
+    notify_bomb_defused(player: Player): void;
+    notify_current_hand(player:Player): void;
+    notify_hidden_cards(cards: CardArray, player:Player): void;
+    notify_new_cards(player:Player): void;
+    notify_attack(player: Player, type_attack:AttackType): void;
+    notify_attack_result(attacked_player: Player, current_player:Player, type_attack:AttackType, result:boolean): void;
+
     // Broadcast methods
 
-    abstract broad_cast_failed_steal(player: Player, player_to_steal: Player, card_type: CardType): void;
-    abstract broad_cast_player_turn(player:Player): void;
-    abstract broad_cast_notify_bomb_defused(player: Player): void;
-    abstract broad_cast_notify_bomb_exploded(player: Player): void;
-    abstract broad_cast_notify_winner(player: Player): void;
-    abstract broad_cast_card_used(player: Player, card_type: CardType, number_of_played_cards:number): void;
+    broad_cast_failed_steal(player: Player, player_to_steal: Player, card_type: CardType): void;
+    broad_cast_player_turn(player:Player): void;
+    broad_cast_notify_bomb_defused(player: Player): void;
+    broad_cast_notify_bomb_exploded(player: Player): void;
+    broad_cast_notify_winner(player: Player): void;
+    broad_cast_card_used(player: Player, card_type: CardType, number_of_played_cards:number): void;
 }
 
-class Terminal extends CallSystem {
+class Terminal implements CallSystem {
+
+    initialize(number_of_players: number): void {
+        return;
+    }
 
     get_played_cards(player: Player): number[] {
         let cards: number[] = [];
@@ -173,7 +180,18 @@ class Terminal extends CallSystem {
 
 }
 
-class j extends CallSystem {
+export class Sockets implements CallSystem {
+
+    private socket_players: Map<any,any>;
+
+    constructor(current_players: Map<any,any>) {
+        this.socket_players = current_players;
+    }
+
+    initialize(number_of_players: number): void {
+        
+        
+    }
 
     /**
      * JSON:
@@ -231,7 +249,18 @@ class j extends CallSystem {
      * Cards: [name, id]
      */
     notify_current_hand(player:Player): void{
-        return 
+        if (!this.socket_players.get(player.id)) {
+            console.error(`Socket no encontrado para el jugador ${player.id}`);
+            return;
+        }
+
+        let msg = {
+            player: player.id,
+            cards: player.hand
+        };
+
+        console.log(msg)
+        this.socket_players.get(player.id).emit('current_hand', msg);
     }
 
     /**
