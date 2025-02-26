@@ -199,7 +199,12 @@ export class Sockets implements CallSystem {
      * id[] (vacio -1)
      */
     get_played_cards(player: Player): number[]{
-        return []
+        this.socket_players.get(player.id).on("play_cards", (data:any) => {
+            const { playerId, cards } = data;
+            //Deberíamos comprobar si playerId es igual al userm¡name que haya en la base de datos para player
+            return cards;
+        })
+        return [-1]
 
     }
 
