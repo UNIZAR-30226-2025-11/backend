@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 
 import { db } from "./db.js";
-import { Request, Router } from "express";
+import express from "express";
 import { protectRoute, protectUsersFromModification } from "./auth.js";
 
 /** Data transfer type for user profiles */
@@ -160,7 +160,7 @@ export class UserRepository {
   }
 }
 
-export const usersRouter = Router();
+export const usersRouter = express.Router();
 usersRouter.use(protectRoute);
 
 usersRouter
@@ -176,6 +176,8 @@ usersRouter
     res.status(501).send();
   });
 
+// TODO: Maybe move common part of /users/:username and /users/:uuid to same
+// function in order to ensure consistency between controllers
 usersRouter
   .route("/users/:username")
   .get(async (req, res) => {

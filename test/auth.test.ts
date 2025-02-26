@@ -1,10 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import crypto from "node:crypto";
-import * as bcrypt from "bcrypt";
 
-import { app as server } from "./src/app";
-import { UserEntity, UserRepository } from "./src/users";
+import { app as server } from "../src/app";
+import { UserRepository } from "../src/users";
 import { createNewUser } from "../src/users";
 
 describe("Auth routes", () => {
