@@ -1,9 +1,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 
-import { db } from "./db.js";
-import express from "express";
-import { protectRoute, protectUsersFromModification } from "./auth.js";
+import { db } from "../db.js";
 
 /** Data transfer type for user profiles */
 export interface UserEntity {
@@ -20,7 +18,7 @@ export interface UserEntity {
 /** Create a brand new user */
 export async function createNewUser(
   username: string,
-  password: string,
+  password: string
 ): Promise<UserEntity> {
   return {
     id: crypto.randomUUID(),
@@ -49,7 +47,7 @@ export class User implements UserEntity {
   /** Create a brand-new user */
   constructor(
     public username: string,
-    public password: string,
+    public password: string
   ) {
     this.username = username;
     this.password = password;
@@ -107,7 +105,7 @@ export class UserRepository {
   */
   static async update(
     id: crypto.UUID,
-    user: Partial<UserEntity>,
+    user: Partial<UserEntity>
   ): Promise<boolean> {
     const columns = Object.keys(user) as Array<keyof UserEntity>;
 
@@ -139,7 +137,7 @@ export class UserRepository {
     @returns User, if exists
   */
   static async findByUsername(
-    username: string,
+    username: string
   ): Promise<UserEntity | undefined> {
     const QUERY = `SELECT * FROM users WHERE username=$1`;
     const res = await db.query(QUERY, [username]);
@@ -159,125 +157,3 @@ export class UserRepository {
     return res.rows ? res.rows.map((user) => user as UserEntity) : [];
   }
 }
-
-export const usersRouter = express.Router();
-usersRouter.use(protectRoute);
-
-usersRouter
-  .route("/users")
-  .get(async (_req, res) => {
-    res
-      .status(200)
-      .send(
-        (await UserRepository.findAll()).map((user) => getPublicUser(user)),
-      );
-  })
-  .post((_req, res) => {
-    res.status(501).send();
-  });
-
-// TODO: Maybe move common part of /users/:username and /users/:uuid to same
-// function in order to ensure consistency between controllers
-usersRouter
-  .route("/users/:username")
-  .get(async (req, res) => {
-    let { username } = req.params;
-    let user = await UserRepository.findByUsername(username);
-
-    if (!user) {
-      res.status(404).send({ message: "User not found" });
-      return;
-    }
-
-    res.status(200).send(getPublicUser(user));
-  })
-  .put(protectUsersFromModification, async (req, res) => {
-    let { username } = req.params;
-    let user = await UserRepository.findByUsername(username);
-
-    if (!user) {
-      res.status(404).send({ message: "User not found" });
-      return;
-    }
-
-    let data: Partial<UserEntity> = req.body;
-    if (Object.keys(data).length === 0) {
-      res.status(400).send({ message: "No data provided" });
-      return;
-    }
-
-    try {
-      await UserRepository.update(user.id, data);
-      res.status(200).send(getPublicUser({ ...user, ...data }));
-    } catch (err: unknown) {
-      res.status(400).send({ message: (err as Error).message });
-    }
-  })
-  .delete(protectUsersFromModification, async (req, res) => {
-    let { username } = req.params;
-    let user = await UserRepository.findByUsername(username);
-
-    if (!user) {
-      res.status(404).send({ message: "User not found" });
-      return;
-    }
-
-    try {
-      await UserRepository.delete(user.id);
-      res.status(200).send({});
-    } catch (err: unknown) {
-      res.status(400).send({ message: (err as Error).message });
-    }
-  });
-
-usersRouter
-  .route("/users/id/:uuid")
-  .get(async (req, res) => {
-    let { uuid } = req.params;
-    let user = await UserRepository.findById(uuid as crypto.UUID);
-
-    if (!user) {
-      res.status(404).send({ message: "User not found" });
-      return;
-    }
-
-    res.status(200).send(getPublicUser(user));
-  })
-  .put(protectUsersFromModification, async (req, res) => {
-    let { uuid } = req.params;
-    let user = await UserRepository.findById(uuid as crypto.UUID);
-
-    if (!user) {
-      res.status(404).send({ message: "User not found" });
-      return;
-    }
-
-    let data: Partial<UserEntity> = req.body;
-    if (Object.keys(data).length === 0) {
-      res.status(400).send({ message: "No data provided" });
-      return;
-    }
-
-    try {
-      await UserRepository.update(user.id, data);
-      res.status(200).send(getPublicUser({ ...user, ...data }));
-    } catch (err: unknown) {
-      res.status(400).send({ message: (err as Error).message });
-    }
-  })
-  .delete(protectUsersFromModification, async (req, res) => {
-    let { uuid } = req.params;
-    let user = await UserRepository.findById(uuid as crypto.UUID);
-
-    if (!user) {
-      res.status(404).send({ message: "User not found" });
-      return;
-    }
-
-    try {
-      await UserRepository.delete(user.id);
-      res.status(200).send({});
-    } catch (err: unknown) {
-      res.status(400).send({ message: (err as Error).message });
-    }
-  });
