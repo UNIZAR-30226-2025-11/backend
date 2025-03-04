@@ -72,7 +72,7 @@ describe("Auth routes", () => {
       } else {
         const newUser = await createNewUser(
           "testuser",
-          "super-secret-password"
+          "super-secret-password",
         );
 
         await UserRepository.create(newUser);
@@ -153,7 +153,7 @@ describe("Auth routes", () => {
       expect(response.headers["set-cookie"][0]).toMatch(/^access_token=/);
       expect(response.headers["set-cookie"][0]).toContain("Expires=");
       expect(response.headers["set-cookie"][0]).toContain(
-        "Thu, 01 Jan 1970 00:00:00 GMT"
+        "Thu, 01 Jan 1970 00:00:00 GMT",
       );
     });
   });

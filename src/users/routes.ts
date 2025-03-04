@@ -16,7 +16,7 @@ usersRouter
     res
       .status(200)
       .send(
-        (await UserRepository.findAll()).map((user) => getPublicUser(user))
+        (await UserRepository.findAll()).map((user) => getPublicUser(user)),
       );
   })
   .post((_req, res) => {
