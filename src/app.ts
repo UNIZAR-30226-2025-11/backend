@@ -3,8 +3,8 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
-import { authRouter, protectRoute } from "./auth.js";
-import { usersRouter } from "./users.js";
+import { authRouter } from "./auth/routes.js";
+import { usersRouter } from "./users/routes.js";
 
 export const app = express();
 export const server = createServer(app);
@@ -29,18 +29,6 @@ app.use(cookieParser()); // Parse cookies, store them in req.cookies
 
 app.use(authRouter);
 app.use(usersRouter);
-
-// TODO: Remove
-app.route("/hello").get((_req, res) => {
-  res.send("Hello world!");
-});
-
-// TODO: Remove
-app.route("/protected-hello").get(protectRoute, (_req, res) => {
-  res.send(
-    "Hello world! This route should be only accessible if 'access_token' is set as a cookie and protectRoute validates the token",
-  );
-});
 
 //app.use(handleErrors); // This runs if an exception is not handled earlier
 

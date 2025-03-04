@@ -1,11 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import crypto from "node:crypto";
-import * as bcrypt from "bcrypt";
 
-import { app as server } from "./src/app";
-import { UserEntity, UserRepository } from "./src/users";
-import { createNewUser } from "../src/users";
+import { app as server } from "../src/app.js";
+import { createNewUser, UserRepository } from "../src/users/model.js";
 
 describe("Auth routes", () => {
   let testAccessToken: string | undefined = undefined;
@@ -74,7 +72,7 @@ describe("Auth routes", () => {
       } else {
         const newUser = await createNewUser(
           "testuser",
-          "super-secret-password",
+          "super-secret-password"
         );
 
         await UserRepository.create(newUser);
@@ -127,14 +125,14 @@ describe("Auth routes", () => {
   describe("Accessing protected routes", () => {
     // TODO: Replace with any other route down the line
     it("Should NOT be able to access a protected route without the access token", async () => {
-      const response = await request(server).get("/protected-hello");
+      const response = await request(server).get("/users");
 
       expect(response.status).toBe(401);
     });
 
     it("Should be able to access a protected route using the access token", async () => {
       const response = await request(server)
-        .get("/protected-hello")
+        .get("/users")
         .set("Cookie", testAccessToken!);
 
       expect(response.status).toBe(200);
@@ -155,7 +153,7 @@ describe("Auth routes", () => {
       expect(response.headers["set-cookie"][0]).toMatch(/^access_token=/);
       expect(response.headers["set-cookie"][0]).toContain("Expires=");
       expect(response.headers["set-cookie"][0]).toContain(
-        "Thu, 01 Jan 1970 00:00:00 GMT",
+        "Thu, 01 Jan 1970 00:00:00 GMT"
       );
     });
   });
