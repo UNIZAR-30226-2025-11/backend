@@ -22,9 +22,9 @@ describe("User routes", async () => {
 
   // Create new test users and log in
   beforeAll(async () => {
-    await UserRepository.create(users[0]);
-    await UserRepository.create(users[1]);
-    await UserRepository.create(users[2]);
+    for (let user of users) {
+      await UserRepository.create(user);
+    }
 
     const response = await agent
       .post("/login")
@@ -38,9 +38,10 @@ describe("User routes", async () => {
 
   // Remove all test users and log out
   afterAll(async () => {
-    await UserRepository.delete(users[0].id);
-    await UserRepository.delete(users[1].id);
-    await UserRepository.delete(users[2].id);
+    for (let user of users) {
+      await UserRepository.delete(user.id);
+    }
+
     await agent.post("/logout");
   });
 
@@ -71,23 +72,54 @@ describe("User routes", async () => {
   });
 
   describe("PUT/user/:username", () => {
-    it("Returns 200 OK and user if modified", () => {});
+    // Restore changes
 
-    it("Returns 400 Bad Request if no data is provided", () => {});
+    it("Returns 200 OK and user if modified", async () => {
+      const response = await agent
+        .put("/users/test-subject-1")
+        .send({ username: "cool-test-subject-1" });
 
+      expect(response.status).toBe(200);
+      expect(response.body.username).toBe("cool-test-subject-1");
+
+      // Revert change
+      await UserRepository.update(users[0].id, { username: "test-subject-1" });
+    });
+
+    it("Returns 400 Bad Request if no data is provided", async () => {
+      const response = await agent.put("/users/test-subject-1");
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe("No data provided");
+    });
+
+    // TODO
     it("Returns 400 Bad Request if non-user-modifiable data is provided", () => {});
-
-    it("Returns 404 Not Found if user not found", () => {});
   });
 
   describe("DELETE /user/:username", () => {
-    it("Returns 200 OK if user is deleted", () => {});
+    // Add the user back
+    afterAll(async () => {
+      UserRepository.create(users[0]);
+    });
 
-    it("Returns 404 Not Found if user not found", () => {});
+    it("Returns 200 OK if user is deleted", async () => {
+      const response = await agent.delete("/users/test-subject-1");
+
+      expect(response.status).toBe(200);
+    });
   });
 
   describe("403 Forbidden if wrong user tries to modify data", () => {
-    it("403 Forbidden for UPDATE", () => {});
-    it("403 Forbidden for DELETE", () => {});
+    it("403 Forbidden for UPDATE", async () => {
+      const response = await agent.put("/users/test-subject-3");
+
+      expect(response.status).toBe(403);
+    });
+    it("403 Forbidden for DELETE", async () => {
+      const response = await agent.put("/users/test-subject-3");
+
+      expect(response.status).toBe(403);
+    });
   });
 });
