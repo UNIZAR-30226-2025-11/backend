@@ -18,7 +18,7 @@ export interface UserEntity {
 /** Create a brand new user */
 export async function createNewUser(
   username: string,
-  password: string
+  password: string,
 ): Promise<UserEntity> {
   return {
     id: crypto.randomUUID(),
@@ -47,7 +47,7 @@ export class User implements UserEntity {
   /** Create a brand-new user */
   constructor(
     public username: string,
-    public password: string
+    public password: string,
   ) {
     this.username = username;
     this.password = password;
@@ -105,7 +105,7 @@ export class UserRepository {
   */
   static async update(
     id: crypto.UUID,
-    user: Partial<UserEntity>
+    user: Partial<UserEntity>,
   ): Promise<boolean> {
     const columns = Object.keys(user) as Array<keyof UserEntity>;
 
@@ -137,7 +137,7 @@ export class UserRepository {
     @returns User, if exists
   */
   static async findByUsername(
-    username: string
+    username: string,
   ): Promise<UserEntity | undefined> {
     const QUERY = `SELECT * FROM users WHERE username=$1`;
     const res = await db.query(QUERY, [username]);
