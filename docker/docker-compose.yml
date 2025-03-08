@@ -1,10 +1,44 @@
 services:
+  # === Backend service ===
   backend:
+    # --------------------------------------------------------------------------
     container_name: KatBoom
     build:
       context: ..
       dockerfile: docker/Dockerfile
       target: app
     env_file: ../.env
+    restart: unless-stopped
+    # --------------------------------------------------------------------------
     ports:
       - "8000:8000"
+
+  # https://medium.com/@vishal.sharma./run-postgresql-and-pgadmin-using-docker-compose-34120618bcf9
+  # === Database service ===
+  database:
+    # --------------------------------------------------------------------------
+    container_name: katboom_pg_db
+    image: postgres
+    env_file: ../.env.database
+    restart: unless-stopped
+    # --------------------------------------------------------------------------
+    ports:
+      - "5432:5432"
+    # --------------------------------------------------------------------------
+    volumes:
+      - data:/var/lib/postgresql/data
+      - ../sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # === Admin website for database ===
+  adminer:
+    container_name: katboom_pg_adminer
+    image: adminer
+    depends_on:
+      - database
+    restart: unless-stopped
+    # --------------------------------------------------------------------------
+    ports:
+      - "8080:8080"
+
+volumes:
+  data:
