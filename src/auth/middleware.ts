@@ -1,9 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import assert from "node:assert";
 
-assert.ok(process.env.JWT_SECRET, "No JWT_SECRET provided");
-const JWT_SECRET = process.env.JWT_SECRET;
+import { JWT_SECRET } from "../config.js";
 
 /**
  * Check for access token. If invalid, reject request.
@@ -32,7 +30,7 @@ export function protectRoute(req: Request, res: Response, next: NextFunction) {
 export function protectUsersFromModification(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const token = req.cookies.access_token;
   const { username, uuid } = req.params;

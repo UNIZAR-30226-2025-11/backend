@@ -1,16 +1,14 @@
 import { Router } from "express";
-import assert from "node:assert";
 import jwt from "jsonwebtoken";
 import * as bcrypt from "bcrypt";
+
+import { JWT_SECRET } from "../config.js";
 
 import {
   getPublicUser,
   createNewUser,
   UserRepository,
 } from "../users/model.js";
-
-assert.ok(process.env.JWT_SECRET, "No JWT_SECRET provided");
-const JWT_SECRET = process.env.JWT_SECRET;
 
 const authRouter = Router();
 
