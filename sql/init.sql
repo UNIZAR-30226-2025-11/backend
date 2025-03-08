@@ -11,3 +11,6 @@ CREATE TABLE IF NOT EXISTS users (
     -- Currency available
     coins integer NOT NULL CHECK (coins >= 0) DEFAULT 0
 )
+
+-- DO THIS AT THE END, CREATE A TESTING DB THAT IS A COPY OF THE ACTUAL ONE
+CREATE DATABASE katboom_testing WITH TEMPLATE katboom

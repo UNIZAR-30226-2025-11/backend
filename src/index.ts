@@ -20,7 +20,7 @@ server.listen(PORT, () => console.log(`Server up: http://localhost:${PORT}`));
       continue;
 
     }
-    catch (error) {
+    catch (_) {
       tries--;
       console.log(`Failed to connect, ${tries} tries remaining`)
       if (!tries) continue;
