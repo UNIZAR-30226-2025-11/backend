@@ -35,14 +35,14 @@ jobs:
         envkey_PGUSER: admin
         envkey_PGPASSWORD: ${{ secrets.PGPASSWORD }}
         envkey_PGDATABASE: "katboom_testing"
-        envkey_JWT_SECRET: ${{ secret.JWT_SECRET }}
+        envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
         file_name: .env.test
 
     - name: Make database envfile
       uses: SpicyPizza/create-envfile@v2.0
       with:
         envkey_POSTGRES_USER: admin
-        envkey_POSTGRES_PASSWORD: ${{ secret.PGPASSWORD }}
+        envkey_POSTGRES_PASSWORD: ${{ secrets.PGPASSWORD }}
         envkey_POSTGRES_DB: "katboom"
         file_name: .env.database
 
