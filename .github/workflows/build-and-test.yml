@@ -36,7 +36,7 @@ jobs:
         envkey_PGPASSWORD: ${{ secrets.PGPASSWORD }}
         envkey_PGDATABASE: "katboom"
         envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        file_name: .env.test
+        file_name: .env
 
     - name: Make backend .env.test
       uses: SpicyPizza/create-envfile@v2.0
