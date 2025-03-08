@@ -72,15 +72,15 @@ describe("User routes", async () => {
   });
 
   describe("PUT/user/:username", () => {
-    // Restore changes
-
     it("Returns 200 OK and user if modified", async () => {
       const response = await agent
         .put("/users/test-subject-1")
-        .send({ username: "cool-test-subject-1" });
+        .send({ username: "cool-test-subject-1", games_won: 999 });
 
       expect(response.status).toBe(200);
       expect(response.body.username).toBe("cool-test-subject-1");
+      // Also chech that some non-modifiable data is filtered
+      expect(response.body.games_won).toBe(0);
 
       // Revert change
       await UserRepository.update(users[0].id, { username: "test-subject-1" });
@@ -93,8 +93,6 @@ describe("User routes", async () => {
       expect(response.body.message).toBe("No data provided");
     });
 
-    // TODO
-    it("Returns 400 Bad Request if non-user-modifiable data is provided", () => {});
   });
 
   describe("DELETE /user/:username", () => {

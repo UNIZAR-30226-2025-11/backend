@@ -41,9 +41,6 @@ export function protectUsersFromModification(
       id: string;
     };
 
-    console.log(decoded);
-    console.log(req.params);
-
     if (
       (username && decoded.username !== username) ||
       (uuid && decoded.id !== uuid)

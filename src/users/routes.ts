@@ -6,6 +6,7 @@ import {
   protectUsersFromModification,
 } from "../auth/middleware.js";
 import { UserEntity, UserRepository, getPublicUser } from "./model.js";
+import { filterNonModifiableUserData } from "./middleware.js";
 
 const usersRouter = Router();
 usersRouter.use(protectRoute);
@@ -36,7 +37,7 @@ usersRouter
 
     res.status(200).send(getPublicUser(user));
   })
-  .put(protectUsersFromModification, async (req, res) => {
+  .put(protectUsersFromModification, filterNonModifiableUserData, async (req, res) => {
     let { username } = req.params;
     let user = await UserRepository.findByUsername(username);
 
@@ -88,7 +89,7 @@ usersRouter
 
     res.status(200).send(getPublicUser(user));
   })
-  .put(protectUsersFromModification, async (req, res) => {
+  .put(protectUsersFromModification, filterNonModifiableUserData, async (req, res) => {
     let { uuid } = req.params;
     let user = await UserRepository.findById(uuid as crypto.UUID);
 
