@@ -43,14 +43,34 @@ npm run clean       # Clean build files
 
 ### Run in a container
 
-A Docker Compose file is provided to easily run a containerized version of the app:
+A Docker Compose file is provided to easily run a containerized version of the app alongside a database:
 
 ```bash
 npm run docker:build        # Build image
 npm run compose:build
 npm run compose:up          # Start image with compose
-npm run compose:up -- -d    # Run as daemon
+
+# You can also pass arguments to the compose command
+npm run compose:up -- -d                        # Run as daemon
+npm run compose:up -- backend database          # Don't run Adminer
+npm run compose:up -- backend                   # Run backend server only
+npm run compose:up -- database                  # Run DB only
+
 npm run compose:down        # Stop the service
+```
+
+In order for the backend container to access the database container, the database's host must be `database` (which is the service's name). If the backend is run locally and the database is run in a container, use `localhost`.
+
+If the `sql/init.db` file has been updated, the container WILL NOT be updated, since the init script is run once on volume creation. You can force the database to reload the init script by stopping and restarting the container (compose down, compose up) and running this command:
+
+```bash
+docker exec -i katboom_pg_db psql -U admin -d katboom -f /docker-entrypoint-initdb.d/init.sql
+```
+
+You can also delete the volume by stopping the container and running:
+
+```bash
+docker volume rm database_data                  # The volume may have a different name, check with 'docker volume ls' first
 ```
 
 ## Environment
@@ -58,6 +78,8 @@ npm run compose:down        # Stop the service
 The project environment is defined in `.env`. When the app is started, either locally or in a containter, you will need to provide a configuration, such the the location and credentials of the database, or the port where the server should be launched.
 
 The variables used by the project are defined and explained in `.env.example`.
+
+If starting a database container, you should create `.env.database` and configure the environment. Check `.env.database.example` for details.
 
 ## Test
 
