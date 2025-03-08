@@ -65,7 +65,7 @@ jobs:
       run: npm run build --if-present
 
     - name: 'Start database'
-      run: 'npm run compose:up -d --wait database'
+      run: 'npm run compose:up -- -d --wait database'
 
     - name: 'Run tests'
       run: npm run test
