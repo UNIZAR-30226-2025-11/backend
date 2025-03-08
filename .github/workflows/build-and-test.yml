@@ -26,7 +26,19 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
-    - name: Make backend envfile
+    - name: Make backend .env
+      uses: SpicyPizza/create-envfile@v2.0
+      with:
+        envkey_PORT: 8000
+        envkey_PGHOST: localhost
+        envkey_PGPORT: 5432
+        envkey_PGUSER: admin
+        envkey_PGPASSWORD: ${{ secrets.PGPASSWORD }}
+        envkey_PGDATABASE: "katboom"
+        envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        file_name: .env.test
+
+    - name: Make backend .env.test
       uses: SpicyPizza/create-envfile@v2.0
       with:
         envkey_PORT: 8000
