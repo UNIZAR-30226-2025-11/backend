@@ -57,6 +57,7 @@ npm run compose:up -- backend                   # Run backend server only
 npm run compose:up -- database                  # Run DB only
 
 npm run compose:down        # Stop the service
+npm run compose:down -- -v  # Stop the service and DELETE the data in the database 
 ```
 
 In order for the backend container to access the database container, the database's host must be `database` (which is the service's name). If the backend is run locally and the database is run in a container, use `localhost`.
@@ -65,12 +66,6 @@ If the `sql/init.db` file has been updated, the container WILL NOT be updated, s
 
 ```bash
 docker exec -i katboom_pg_db psql -U admin -d katboom -f /docker-entrypoint-initdb.d/init.sql
-```
-
-You can also delete the volume by stopping the container and running:
-
-```bash
-docker volume rm database_data                  # The volume may have a different name, check with 'docker volume ls' first
 ```
 
 ## Environment
