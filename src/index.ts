@@ -6,7 +6,7 @@ server.listen(PORT, () => console.log(`Server up: http://localhost:${PORT}`));
 
 // Check if DB is reachable
 (async () => {
-  let success = false
+  let success = false;
   let tries = 3;
 
   while (!success && tries > 0) {
@@ -18,16 +18,16 @@ server.listen(PORT, () => console.log(`Server up: http://localhost:${PORT}`));
       );
       success = true;
       continue;
-
-    }
-    catch (_) {
+    } catch (_) {
       tries--;
-      console.log(`Failed to connect, ${tries} tries remaining`)
+      console.log(`Failed to connect, ${tries} tries remaining`);
       if (!tries) continue;
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, 2000));
     }
   }
 
   if (!success)
-    console.log("Couldn't connect to DB. If setup correctly, the DB may just be not up yet.")
-})()
+    console.log(
+      "Couldn't connect to DB. If setup correctly, the DB may just be not up yet.",
+    );
+})();

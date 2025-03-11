@@ -92,7 +92,6 @@ describe("User routes", async () => {
       expect(response.status).toBe(400);
       expect(response.body.message).toBe("No data provided");
     });
-
   });
 
   describe("DELETE /user/:username", () => {
