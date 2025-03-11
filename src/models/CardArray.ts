@@ -1,4 +1,4 @@
-import { Card, CardType } from './Card';
+import { Card, CardType } from './Card.js';
 
 export class CardArray {
     values: Card[];
