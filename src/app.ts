@@ -5,11 +5,13 @@ import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import { authRouter } from "./auth/routes.js";
 import { usersRouter } from "./users/routes.js";
+import { setupSocket } from "./socketSetup.js";
 
 export const app = express();
 export const server = createServer(app);
-export const io = new Server(server);
-
+const io = new Server(server, {
+    cors: { origin: "*" } // Allow React frontend
+});
 /** Handle uncaught errors gracefully and return an ISE */
 //function handleErrors(
 //  error: Error,
@@ -32,22 +34,5 @@ app.use(usersRouter);
 
 //app.use(handleErrors); // This runs if an exception is not handled earlier
 
-io.on("connect", (socket) => {
-  console.log(`Connected: ${socket.id}`);
-
-  // https://socket.io/docs/v4/emitting-events/
-
-  // Basic emit
-  socket.on("hello-req", () => {
-    socket.emit("hello-res", "Hello world");
-  });
-
-  // Emit with ack
-  socket.on("hello", (callback) => {
-    callback("Hello world");
-  });
-
-  socket.on("disconnect", () => {
-    console.log(`Disconnected: ${socket.id}`);
-  });
-});
+// Set up the sockets
+setupSocket(io);
