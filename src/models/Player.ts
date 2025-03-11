@@ -2,7 +2,7 @@ import { CardArray } from "./CardArray.js";
 import { Deck } from "./Deck.js";
 import { Card, CardType } from "./Card.js";
 import { INITIAL_HAND_SIZE } from "../constants/constants.js";
-import { PlayerJSON } from "../api/responses.js";
+import { PlayerJSON } from "../api/socketAPI.js";
 
 export class Player {
     id: number;

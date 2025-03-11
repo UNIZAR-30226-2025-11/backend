@@ -7,7 +7,7 @@ import {
     BackendStateUpdateJSON, 
     BackendWinnerJSON, 
     BackendGamePlayedCardsResponseJSON 
-} from "../api/responses.js";
+} from "../api/socketAPI.js";
 import { Card, CardType } from "./Card.js";
 import { CardArray } from "./CardArray.js";
 
