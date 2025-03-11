@@ -6,12 +6,14 @@ import { Server } from "socket.io";
 import { authRouter } from "./auth/routes.js";
 import { usersRouter } from "./users/routes.js";
 import { setupSocket } from "./socketSetup.js";
+import { FRONTEND_URL } from "./config.js";
 
 export const app = express();
 export const server = createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*" } // Allow React frontend
+  cors: { origin: FRONTEND_URL },
 });
+
 /** Handle uncaught errors gracefully and return an ISE */
 //function handleErrors(
 //  error: Error,
@@ -25,7 +27,13 @@ const io = new Server(server, {
 //    .send({ message: "Oops, something went wrong from our side..." });
 //}
 
-app.use(cors()); // Allow Cross-Origin requests by parsing OPTION requests
+// Allow Cross-Origin requests by parsing OPTION requests
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+  }),
+);
 app.use(express.json()); // Parse JSON
 app.use(cookieParser()); // Parse cookies, store them in req.cookies
 
