@@ -11,7 +11,7 @@ import { protectSocket } from "./auth/middleware.js";
 
 export const app = express();
 export const server = createServer(app);
-const io = new Server(server, {
+export const io = new Server(server, {
   cors: { origin: FRONTEND_URL, credentials: true },
 });
 

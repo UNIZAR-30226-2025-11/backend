@@ -1,5 +1,5 @@
-import { BackendStateUpdateJSON, BackendWinnerJSON, BackendGamePlayedCardsResponseJSON } from "../../api/responses";
-import { CardType, Card } from "../../models/Card";
+import { BackendStateUpdateJSON, BackendWinnerJSON, BackendGamePlayedCardsResponseJSON } from "../../api/socketAPI.js";
+import { CardType, Card } from "../../models/Card.js";
 
 // src/services/communicationHandler.ts
 export interface CommunicationHandler {

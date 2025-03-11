@@ -1,6 +1,6 @@
 // src/services/socketCommunicationHandler.ts
 import { Socket } from "socket.io";
-import { CommunicationHandler } from "./communicationHandler";
+import { CommunicationHandler } from "./communicationHandler.js";
 import { 
     BackendStateUpdateJSON, 
     BackendWinnerJSON, 
@@ -12,11 +12,11 @@ import {
     BackendGameSelectPlayerJSON,
     BackendGameSelectCardJSON,
     
-} from "../../api/responses";
-import { SocketManager } from "../socketManager";
-import { TIMEOUT_RESPONSE } from "../../constants/constants";
-import { CardType, Card } from "../../models/Card";
-import { handleError } from "../../constants/constants";
+} from "../../api/socketAPI.js";
+import { SocketManager } from "../socketManager.js";
+import { TIMEOUT_RESPONSE } from "../../constants/constants.js";
+import { CardType, Card } from "../../models/Card.js";
+import { handleError } from "../../constants/constants.js";
 
 export class SocketCommunicationHandler implements CommunicationHandler {
     private sockets: Map<number, Socket>; // Map player IDs to their sockets
