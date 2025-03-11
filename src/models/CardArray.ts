@@ -1,4 +1,4 @@
-import { Card, CardType } from './Card.js';
+import { Card, CardType } from './Card';
 
 export class CardArray {
     values: Card[];
@@ -84,6 +84,23 @@ export class CardArray {
         return this.values.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', ');
     }
 
+    arePlayable(): boolean {
+        if(!this.values.every(card => Card.isPlayable(card))){
+            return false;
+        }
+
+        if(!this.allSameType()){
+            return false;
+        }
+
+        if((this.length() <= 1 || this.length() > 3) && this.values.every(card => Card.isWild(card))){
+            return false;
+        }
+
+        return true;
+
+    }
+
     /**
      * Get if the card exist in a hand
      * @param type - Type of the card
@@ -105,8 +122,8 @@ export class CardArray {
 
     removeCards(cards: CardArray): void{
         cards.values.forEach(card => {
-            const index = this.values.findIndex(c => c.type === card.type);
-            if (index !== -1) {
+            const index = this.values.findIndex(c => c.type == card.type);
+            if (index != -1) {
                 this.values.splice(index, 1); // Remove only one occurrence
             }
         });
