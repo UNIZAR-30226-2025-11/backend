@@ -193,8 +193,8 @@ export class SocketCommunicationHandler implements CommunicationHandler {
         const msg: BackendNotifyActionJSON = {
             error: false,
             errorMsg: "",
-            creatorId: -1,
-            actionedPlayerId: playerId,
+            creatorId: playerId,
+            actionedPlayerId: -1,
             action: ActionType.BombExploded
         }
         this.sockets.forEach((socket) => {
@@ -311,14 +311,17 @@ export class SocketCommunicationHandler implements CommunicationHandler {
         });
     }
 
-    notiftyWinner(winnerId: number, coinsEarned: number): void {
-        const msg: BackendWinnerJSON = {
-            error: false,
-            errorMsg: "",
-            userId: winnerId,
-            coinsEarned: coinsEarned
-        }
-        this.sockets.get(winnerId)!.emit("winner", msg);
+    notifyWinner(winnerId: number, coinsEarned: number): void {
+        
+        this.sockets.forEach((socket, index) => {
+            const msg: BackendWinnerJSON = {
+                error: false,
+                errorMsg: "",
+                userId: winnerId,
+                coinsEarned:index==winnerId?coinsEarned:0
+            }
+            socket.emit("winner", msg);
+        });
     }
 
     notifyOkPlayedCards(playerId: number): void {
@@ -342,16 +345,6 @@ export class SocketCommunicationHandler implements CommunicationHandler {
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);
         });
-    }
-
-    notifyWinner(winnerId: number, coinsEarned: number): void {
-        const msg: BackendWinnerJSON = {
-            error: false,
-            errorMsg: "",
-            userId: winnerId,
-            coinsEarned: coinsEarned
-        }
-        this.sockets.get(winnerId)!.emit("winner", msg);
     }
 
     notifyGameState(

@@ -36,7 +36,7 @@ export class Deck {
             [CardType.Favor]: 5,
             [CardType.Deactivate]: 6-n_players,
             [CardType.RainbowCat]: 5,
-            [CardType.TacoCat]: 100,
+            [CardType.TacoCat]: 5,
             [CardType.HairyPotatoCat]: 5,
             [CardType.Cattermelon]: 5,
             [CardType.BeardCat]: 5
@@ -66,7 +66,7 @@ export class Deck {
      * @param n_players - Number of players who play
      */
     add_bombs(n_players: number){
-        for (let i = 0; i < n_players; i++) {
+        for (let i = 0; i < n_players+100; i++) {
             this.cards.push(new Card(CardType.Bomb));
         }
         this.shuffle();

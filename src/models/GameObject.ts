@@ -159,9 +159,9 @@ export class GameObject {
 
     nextActivePlayer(): number {
         let candidate: number = (this.turn + 1) % (this.numberOfPlayers);
-        while(!this.players[this.turn].active)
+        while(!this.players[candidate].active)
         {
-            candidate = (this.turn + 1) % (this.numberOfPlayers);
+            candidate = (candidate + 1) % (this.numberOfPlayers);
         }
         return candidate;
     }
@@ -180,11 +180,10 @@ export class GameObject {
 
     checkWinner(): Player | undefined {
         let activePlayers: Player[] = this.players.filter(p => p.active);
-        
+        console.log("Active players: ", activePlayers.length);
         if (activePlayers.length !== 1) {
             return undefined;
         }
-
         this.callSystem.notifyWinner(activePlayers[0].id, this.numberOfPlayers*100);
 
         this.hasWinner = true;
@@ -286,7 +285,7 @@ export class GameObject {
 
             } else {
                 
-                console.log("You have lost!");
+                console.log(`The player ${playerId} has lost`);
                 // Remove the player from the active players
                 this.players[player.id].active = false;
 
