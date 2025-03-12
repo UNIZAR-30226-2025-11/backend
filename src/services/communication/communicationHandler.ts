@@ -23,5 +23,5 @@ export interface CommunicationHandler {
     notifyWinner(winnerId: number, coinsEarned: number): void;
     notifyOkPlayedCards(playerId: number): void;
     notifyFavorAction(creatorId: number, targetId: number): void;
-
+    notifyStartGame(): void;
 }

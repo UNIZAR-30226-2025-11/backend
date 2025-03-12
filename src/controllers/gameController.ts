@@ -1,56 +1,14 @@
 import { Socket } from "socket.io";
 import { GameManager } from "../services/gameManager.js";
 import { 
-    FrontendGamePlayedCardsJSON, 
-    BackendStartGameResponseJSON,
+    FrontendGamePlayedCardsJSON,
     BackendGamePlayedCardsResponseJSON,
-    FrontendStartGameJSON
 } from "../api/socketAPI.js";
 import { Card, CardType } from "../models/Card.js";
 import { CardArray } from "../models/CardArray.js";
 import { handleError } from "../constants/constants.js";
 
 export const setupGameHandlers = (socket: Socket) => {
-
-    socket.on("start-game", async (msg: FrontendStartGameJSON) => {
-
-        handleError(msg.error, msg.errorMsg)
-
-        if (msg.lobbyId === undefined || msg.lobbyId === "") {
-            const response: BackendStartGameResponseJSON = 
-            {
-                error:true,
-                errorMsg: "Could not start the game!"
-            };
-
-            socket.emit("start-game", response);
-
-            return;
-        }
-
-        if (! await GameManager.startGame(msg.lobbyId, socket.id)) {
-            const response: BackendStartGameResponseJSON = 
-            {
-                error:true,
-                errorMsg: "Could not start the game!"
-            };
-
-            socket.emit("start-game", response)
-            return;
-        }
-
-        // Send good response
-        const response: BackendStartGameResponseJSON =
-        {
-            error:false,
-            errorMsg: ""
-        };
-
-        socket.emit("start-game", response);
-        return;
-
-    });
-
 
     socket.on("game-played-cards", async (playedCardsJSON: FrontendGamePlayedCardsJSON) => {
         

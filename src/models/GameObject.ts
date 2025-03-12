@@ -22,7 +22,6 @@ export class GameObject {
     numberOfTurnsLeft: number;
     hasWinner: boolean;
     callSystem: CommunicationHandler;
-    gameStarted: boolean;
     leaderId : number;
 
     constructor(
@@ -46,11 +45,15 @@ export class GameObject {
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
         this.hasWinner = false;
-        this.gameStarted = false;
         this.numberOfTurnsLeft = 1;
         this.turnTimeout = null;
         this.leaderId = leaderId;
 
+        this.callSystem.notifyStartGame();
+        this.communicateNewState();
+
+        // Start the timeout for the player turn
+        this.startTurnTimer(); 
     }
 
     // --------------------------------------------------------------------------------------
@@ -81,10 +84,6 @@ export class GameObject {
 
     static fromJSON(){
         throw new Error("Method not implemented.");
-    }
-
-    isStarted(): boolean {
-        return this.gameStarted;
     }
 
     isLeader(player_id: number): boolean {
@@ -123,8 +122,6 @@ export class GameObject {
             msg = "Invalid player id!";
         } else if (play.idPlayer != this.turn) {
             msg = "Not your turn!";
-        } else if (!this.gameStarted) {
-            msg = "Game not started!";
         } else if (!this.players[play.idPlayer].active) {
             msg = "You have already lost!";
         } else if (!this.players[play.idPlayer].hand.containsAll(play.playedCards)) {
@@ -144,35 +141,7 @@ export class GameObject {
 
 
     // --------------------------------------------------------------------------------------
-    // Starting and disconnect related stuff
-
-    startGame(playerId: number): boolean {
-        const player:Player = this.players[playerId];
-
-        if(player.id !== this.leaderId)
-        {
-            console.log("Cannot start game. You are not the leader of the lobby!");
-            return false;
-        }
-        
-        if(this.gameStarted)
-        {
-            console.log("Cannot start game. Game already started!");
-            return false;
-        }
-
-        this.gameStarted = true;
-
-        console.log("Game started!");
-
-        // Comunicate the new state of the game
-        this.communicateNewState();
-
-        // Start the timeout for the player turn
-        this.startTurnTimer(); 
-
-        return true;
-    }
+    // Starting and disconnect related methods
 
     disconnectPlayer(playerId:number): void {
         // FIXME
@@ -218,7 +187,6 @@ export class GameObject {
 
         this.callSystem.notifyWinner(activePlayers[0].id, this.numberOfPlayers*100);
 
-        this.gameStarted = false;
         this.hasWinner = true;
 
         return activePlayers[0];

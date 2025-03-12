@@ -11,7 +11,8 @@ import {
     BackendGameSelectCardTypeJSON,
     BackendGameSelectPlayerJSON,
     BackendGameSelectCardJSON,
-    BackendNotifyActionJSON
+    BackendNotifyActionJSON,
+    BackendStartGameResponseJSON
 } from "../../api/socketAPI.js";
 import { SocketManager } from "../socketManager.js";
 import { TIMEOUT_RESPONSE } from "../../constants/constants.js";
@@ -34,6 +35,17 @@ export class SocketCommunicationHandler implements CommunicationHandler {
 
     registerPlayer(playerId: number, socket: Socket): void {
         this.sockets.set(playerId, socket);
+    }
+
+    notifyStartGame(): void {
+        const response: BackendStartGameResponseJSON = 
+        {
+            error: false,
+            errorMsg: ""
+        };
+        this.sockets.forEach((socket) => {
+            socket.emit("start-game", response);
+        });
     }
 
     sendGameJSON(gameJSON: BackendStateUpdateJSON, playerID: number): void {
