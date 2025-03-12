@@ -15,25 +15,31 @@ export class SocketManager {
         return this.sockets.get(socket_id);
     }
 
-    static waitForPlayerResponse(socketId: string, responseEvent: any, requestEvent: any, requestData: any, timeOut: number): Promise<any> {
-        const socket:Socket|undefined = this.getSocket(socketId);
+    static waitForPlayerResponse<TRequest, TResponse >(
+        socketId: string, 
+        socketEvent: string, 
+        requestData: TRequest,
+        timeOut: number
+    ): Promise<TResponse | undefined> {
+        const socket: Socket | undefined = this.getSocket(socketId);
         if (socket === undefined) {
             console.log("Socket not found");
-            return Promise.reject({error:true,errorMsg:"Socket not found"});
+            return Promise.reject(undefined);
         }
-
-        console.log("Waiting for player response");
-        return new Promise((resolve, reject) => {
-            socket.emit(requestEvent, requestData);
     
-            socket.once(responseEvent, (response: any) => {
-                resolve(response); // Resolve the promise when response is received
+        console.log("Waiting for frontend response");
+        return new Promise((resolve, reject) => {
+            socket.emit(socketEvent, requestData);
+    
+            socket.once(socketEvent, (response: TResponse) => {
+                resolve(response); // Resolve the promise with the expected response type
             });
     
             setTimeout(() => {
-                reject({error:true, errorMsg:"No response from player"}); // Timeout in case the player does not respond
-            }, timeOut); // Wait for the player to respond
+                reject(undefined); // Reject with undefined if timeout occurs
+            }, timeOut);
         });
     }
+    
 
 }

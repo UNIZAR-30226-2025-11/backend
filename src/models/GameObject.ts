@@ -3,11 +3,6 @@ import { CommunicationHandler } from "../services/communication/communicationHan
 import { TURN_TIME_LIMIT } from "../constants/constants.js";
 import { Deck } from "./Deck.js";
 import { Play } from "./Play.js";
-import { 
-    BackendStateUpdateJSON, 
-    BackendWinnerJSON, 
-    BackendGamePlayedCardsResponseJSON 
-} from "../api/socketAPI.js";
 import { Card, CardType } from "./Card.js";
 import { CardArray } from "./CardArray.js";
 
@@ -61,149 +56,18 @@ export class GameObject {
     // --------------------------------------------------------------------------------------
     // JSON Responses
 
-    createStateUpdateResponse(idPlayer: number) : BackendStateUpdateJSON {
-        const response: BackendStateUpdateJSON = {
-            error: false,
-            errorMsg: "",
-            playerCards: this.players[idPlayer].hand.toJSON(),
-            players: this.players.map(p => p.toJSONHidden()),
-            turn: this.turn,
-            timeOut: TURN_TIME_LIMIT,
-            playerId: idPlayer
-        };
-        
-        return response;
-    }
-
-    createErrorPlayedCardsResponse(msg: string): BackendGamePlayedCardsResponseJSON {
-        const response: BackendGamePlayedCardsResponseJSON = {
-            error: true,
-            errorMsg: msg,
-            cardsSeeFuture: "",
-            hasShuffled: false,
-            skipTurn: false,
-            hasWonAttack: false,
-            hasStolenRandomCard: false,
-            hasStolenCardByType: false
-        };
-        return response;
-    }
-    
-    createErrorResponse(msg: string): BackendGamePlayedCardsResponseJSON {
-        const response: BackendGamePlayedCardsResponseJSON = {
-            error: true,
-            errorMsg: msg,
-            cardsSeeFuture: "",
-            hasShuffled: false,
-            skipTurn: false,
-            hasWonAttack: false,
-            hasStolenRandomCard: false,
-            hasStolenCardByType: false
-        };
-        return response;
-    }
-
-    createSeeFutureResponse(cards: CardArray): BackendGamePlayedCardsResponseJSON {
-        const response: BackendGamePlayedCardsResponseJSON = {
-            error: false,
-            errorMsg: "",
-            cardsSeeFuture: cards.toJSON(),
-            hasShuffled: false,
-            skipTurn: false,
-            hasWonAttack: false,
-            hasStolenRandomCard: false,
-            hasStolenCardByType: false
-        };
-        return response;
-
-    }
-
-    createStealRandomCardResponse(playerId: number): BackendGamePlayedCardsResponseJSON {
-        const response: BackendGamePlayedCardsResponseJSON = {
-            error: false,
-            errorMsg: "",
-            cardsSeeFuture: "",
-            hasShuffled: false,
-            skipTurn: false,
-            hasWonAttack: false,
-            hasStolenRandomCard: true,
-            hasStolenCardByType: false
-        };
-        return response;
-    }
-
-    createStealCardByTypeResponse(playerId: number): BackendGamePlayedCardsResponseJSON {
-        const response: BackendGamePlayedCardsResponseJSON = {
-            error: false,
-            errorMsg: "",
-            cardsSeeFuture: "",
-            hasShuffled: false,
-            skipTurn: false,
-            hasWonAttack: false,
-            hasStolenRandomCard: false,
-            hasStolenCardByType: true
-        };
-        return response;
-    }
-
-    createNextTurnResponse(): BackendGamePlayedCardsResponseJSON {
-        const response: BackendGamePlayedCardsResponseJSON = {
-            error: false,
-            errorMsg: "",
-            cardsSeeFuture: "",
-            hasShuffled: false,
-            skipTurn: true,
-            hasWonAttack: false,
-            hasStolenRandomCard: false,
-            hasStolenCardByType: false
-        };
-        return response;
-    }
-
-    createWinnerResponse(winnerId: number): BackendWinnerJSON{
-        const response: BackendWinnerJSON = {
-            error: false,
-            errorMsg: "",
-            userId: winnerId,
-            coinsEarned: 100* this.numberOfPlayers
-        };
-        return response
-    }
-
-    createShuffleResponse(): BackendGamePlayedCardsResponseJSON {
-        const response: BackendGamePlayedCardsResponseJSON = {
-            error: false,
-            errorMsg: "",
-            cardsSeeFuture: "",
-            hasShuffled: true,
-            skipTurn: false,
-            hasWonAttack: false,
-            hasStolenRandomCard: false,
-            hasStolenCardByType: false
-        };
-        return response;
-    }
-
-    createAttackWonResponse(): BackendGamePlayedCardsResponseJSON {
-        const response: BackendGamePlayedCardsResponseJSON = {
-            error: false,
-            errorMsg: "",
-            cardsSeeFuture: "",
-            hasShuffled: false,
-            skipTurn: false,
-            hasWonAttack: true,
-            hasStolenRandomCard: false,
-            hasStolenCardByType: false
-        };
-        return response;
-    }
-
     communicateNewState(): void {
         console.log("Communicating new state of the game");
         this.players.forEach((player, index) => {
             if(!player.disconnected)
             {
-                this.callSystem.sendGameJSON(this.createStateUpdateResponse(index), index);
+                this.callSystem.notifyGameState(
+                    player.hand, 
+                    this.players, 
+                    this.turn, 
+                    TURN_TIME_LIMIT, 
+                    index
+                )
             }
         });
     }
@@ -270,7 +134,7 @@ export class GameObject {
         }
 
         if (msg != "") {
-            this.callSystem.sendGamePlayedCardsResponseJSON(this.createErrorResponse(msg), play.idPlayer);
+            this.callSystem.notifyErrorPlayedCards(msg, play.idPlayer);
             return false;
         } else {
             return true;
@@ -352,7 +216,7 @@ export class GameObject {
             return undefined;
         }
 
-        this.callSystem.notifyWinner(this.createWinnerResponse(activePlayers[0].id));
+        this.callSystem.notifyWinner(activePlayers[0].id, this.numberOfPlayers*100);
 
         this.gameStarted = false;
         this.hasWinner = true;
@@ -370,6 +234,8 @@ export class GameObject {
      */
     resolveNopeChain(currentPlayer:Player, attackedPlayer:Player, cardType:CardType, typeAttack:AttackType): boolean {
 
+        console.log("Nope chain not implemented yet");
+        console.log(currentPlayer, attackedPlayer, cardType, typeAttack);
         // TODO: Everything
         
         // // Notify the attack
@@ -421,7 +287,6 @@ export class GameObject {
         // // Return if the attack is successful
         // return player_to_nope === 1;
         return true;
-    
     }
 
     /**
@@ -431,7 +296,6 @@ export class GameObject {
      */
     handleNewCard(newCard: Card, playerId: number){
 
-        // TODO: Notify in some way that the player has gotten a bomb, or a new card
         const player: Player = this.players[playerId];
 
         if (newCard.type === CardType.Bomb) {
@@ -449,20 +313,29 @@ export class GameObject {
                 
                 // Add the bomb back to the deck
                 this.deck.add_with_shuffle(newCard);
-                
+
+                this.callSystem.notifyBombDefusedAction(playerId)
 
             } else {
                 
                 console.log("You have lost!");
                 // Remove the player from the active players
                 this.players[player.id].active = false;
+
+                // Notify all players that the player has lost
+                this.callSystem.notifyPlayerLostAction(player.id);
             }
         } else{
             // If the card is not a bomb
 
             // Add the card to the player's hand
             player.hand.push(newCard);
+
+            // Notify the player that he has gotten a new card
+            this.callSystem.notifyDrawCardAction(player.id)
         }
+
+        this.callSystem.notifyDrewCard(newCard, playerId);
     }
 
     async playCards(play: Play): Promise<void>
@@ -475,7 +348,7 @@ export class GameObject {
             this.seeFuture(player);
         }
         else if (card.type == CardType.Shuffle){
-            this.shuffle();
+            this.shuffle(player);
         }
         else if (card.type == CardType.Skip){
             this.skipTurn(player);
@@ -491,14 +364,12 @@ export class GameObject {
         }
         else{
             console.log("Card type not recognized. Not supposed to get here.");
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`Card type not recognized`),
-                player.id
-            );
+            this.callSystem.notifyErrorPlayedCards(`Card type not recognized`, player.id);
             return;
         }
 
         this.players[play.idPlayer].hand.removeCards(play.playedCards);
+        this.callSystem.notifyOkPlayedCards(play.idPlayer);
     }   
 
     // --------------------------------
@@ -507,26 +378,20 @@ export class GameObject {
     /**
      * Shuffle the deck.
      */
-    shuffle(): void{
+    shuffle(currentPlayer: Player): void{
 
         // Randomly shuffle the deck
         this.deck.shuffle();
+        
+        this.callSystem.notifyShuffleDeckAction(currentPlayer.id);
 
-        // Notify the player that the deck has been shuffled
-        this.callSystem.sendGamePlayedCardsResponseJSON(
-            this.createShuffleResponse(),
-            this.turn
-        );
-
-        // TODO: Notify the players that the deck has been shuffled. Important: We need to create another msg
-        // because it is not good to notify via the played cards cuz the other players have not played any card.
     }
 
     /**
      * Tries to skip the turn if the following player doesn't nope him.
      * @param currentPlayer - The player who is playing the card
      */
-    skipTurn(currentPlayer:Player): void {
+    skipTurn(currentPlayer: Player): void {
         
         const following_player = this.players[this.nextActivePlayer()];
         if(!this.resolveNopeChain(currentPlayer, following_player, CardType.Skip, AttackType.Skip))
@@ -539,13 +404,7 @@ export class GameObject {
 
 
         // Notify the player he had skipped the turn
-        this.callSystem.sendGamePlayedCardsResponseJSON(
-            this.createNextTurnResponse(),
-            currentPlayer.id
-        );
-
-        // TODO: Notify the players that the turn has been skipped. Important: We need to create another msg
-        // because it is not good to notify via the played cards cuz the other players have not played any card.
+        this.callSystem.notifySkipTurnAction(currentPlayer.id);
     }
 
     /**
@@ -557,14 +416,10 @@ export class GameObject {
         // Get the next 3 cards
         const nextCards: CardArray = this.deck.peek_n(3);
 
-        // Notify the player of the next 3 cards
-        this.callSystem.sendGamePlayedCardsResponseJSON(
-            this.createSeeFutureResponse(nextCards), 
-            current_player.id
-        );
+        // Notify the player the next 3 cards
+        this.callSystem.notifyFutureCards(nextCards, current_player.id);
 
-        // TODO: Notify the player of the next 3 cards. Important: We need to create another msg
-        // because it is not good to notify via the played cards cuz the other players have not played any card.
+        this.callSystem.notifyFutureAction(current_player.id);
     }
 
     /**
@@ -577,13 +432,7 @@ export class GameObject {
         const attacked_player:Player = this.players[this.nextActivePlayer()];
 
         if(!this.resolveNopeChain(current_player, attacked_player, CardType.Attack, AttackType.Attack)){
-            // If the player is noped, notify the player that the attack is canceled
-
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`Player ${attacked_player.id} has won the nope chain, attack canceled`),
-                current_player.id
-            );
-
+            console.log("Attack noped");
             return;
         }
 
@@ -592,13 +441,7 @@ export class GameObject {
         this.numberOfTurnsLeft = 2;
 
         // Notify the player that the attack is successful
-        this.callSystem.sendGamePlayedCardsResponseJSON(
-            this.createAttackWonResponse(),
-            current_player.id
-        );
-        
-        // TODO: Notify the attack is successful to the attacked player. Important: We need to create another msg
-        // because it is not good to notify via the played cards cuz the other players have not played any card.
+        this.callSystem.notifyAttackAction(current_player.id, attacked_player.id);
     }
 
     /**
@@ -613,11 +456,7 @@ export class GameObject {
         if(playerID === undefined){
             // If the player does not select a player
 
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`You have not selected any player to steal`),
-                currentPlayer.id
-            );
-
+            console.log("Player has not selected a player to steal");
             return;
         }
 
@@ -626,32 +465,21 @@ export class GameObject {
         if(playerToSteal.hand.length() === 0){
             // If the player has no cards to steal
 
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`Player ${playerID} has no cards to steal`),
-                currentPlayer.id
-            );
-
+            console.log("Player has no cards to steal");
             return;
         }
 
         if(playerToSteal === currentPlayer){
             // If the player tries to steal from itself
 
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`Player cannot steal from itself`),
-                currentPlayer.id
-            );
-
+            console.log("Player cannot steal from itself");
             return;
         }
 
         if(!this.resolveNopeChain(currentPlayer, playerToSteal, CardType.Favor, AttackType.Favor)){
             // If the player is noped dont do anything
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`Player ${playerID} has won the nope chain, favor canceled`),
-                currentPlayer.id
-            );
-
+            
+            console.log("Player has won the nope chain, favor canceled");
             return;
         }
 
@@ -659,10 +487,8 @@ export class GameObject {
 
         if(cardToGive === undefined){
             // If the player does not select a card
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`You have not selected any card to give`),
-                currentPlayer.id
-            );
+            
+            console.log("Player has not selected a card to give");
             return;
         }
 
@@ -670,10 +496,7 @@ export class GameObject {
 
         if(cardIndex === -1){
             // If the player does not have the card
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`You dont have the card you want to give`),
-                currentPlayer.id
-            );
+            console.log("Player does not have the card you want to steal");
             return;
         }
 
@@ -682,6 +505,9 @@ export class GameObject {
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToGive);
+
+        // Notify the attack
+        this.callSystem.notifyAttackAction(currentPlayer.id, playerToSteal.id);
 
     }
 
@@ -697,10 +523,6 @@ export class GameObject {
         if(playerToStealId === undefined){
             // If the player does not select a player
             console.log("Player has not selected a player to steal");
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`You have not selected any player to steal`),
-                currentPlayer.id
-            );
             return;
         }
 
@@ -712,31 +534,18 @@ export class GameObject {
         if(numberOfCardsPlayerToSteal === 0){
             // If the player has no cards to steal
             console.log("Player has no cards to steal");
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`Player ${playerToStealId} has no cards to steal`),
-                currentPlayer.id
-            );
             return;
         }
 
         if(playerToSteal === currentPlayer){
             // If the player tries to steal from itself
             console.log("Player cannot steal from itself");
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`Player cannot steal from itself`),
-                currentPlayer.id
-            );
             return;
         }
 
         if(!this.resolveNopeChain(currentPlayer, playerToSteal, CardType.Favor, AttackType.Favor)){
             // If the player is noped notify attack failed
             console.log("Player has won the nope chain, favor canceled");
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`Player ${playerToStealId} has won the nope chain, favor canceled`),
-                currentPlayer.id
-            );
-
             return;
         }
 
@@ -745,37 +554,20 @@ export class GameObject {
         if (numberOfPlayedCards == 1){
 
             console.log('Not supposed to get here')
-            // If the player plays more than one wild card
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`You cannot play just one wild card`),
-                currentPlayer.id
-            );
             return;
         } else if (numberOfPlayedCards === 2 ){
             // If the player plays two wild cards, steal a random card from the player
             console.log('Stealing random card')
             this.stealRandomCard(playerToSteal, currentPlayer);
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createStealRandomCardResponse(playerToStealId),
-                currentPlayer.id
-            );
             return;
         } else if (numberOfPlayedCards === 3 ){
             // If the player plays three wild cards, steal one card by type
             console.log('Stealing card by type')
             await this.stealCardByType(playerToSteal, currentPlayer);
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createStealCardByTypeResponse(playerToStealId),
-                currentPlayer.id
-            );
             return;
         } else {
             // If the player plays more than three wild cards
             console.log('Not supposed to get here')
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`You cannot play more than three wild cards`),
-                currentPlayer.id
-            );
             return;
         }
     }
@@ -791,6 +583,8 @@ export class GameObject {
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
+
+        this.callSystem.notifyAttackAction(currentPlayer.id, playerToSteal.id);
     }
 
     async stealCardByType(playerToSteal: Player, currentPlayer: Player): Promise<void> {
@@ -801,11 +595,7 @@ export class GameObject {
         if(cardType === undefined){
             // If the player does not select a card type
 
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`You have not selected any card type to steal`),
-                currentPlayer.id
-            );
-
+            console.log("Player has not selected a card type to steal");
             return;
         }
 
@@ -814,12 +604,7 @@ export class GameObject {
 
         if(cardId === -1){
             // If the player does not have the card
-
-            this.callSystem.sendGamePlayedCardsResponseJSON(
-                this.createErrorPlayedCardsResponse(`Player ${playerToSteal.id} does not have the card you want to steal`),
-                currentPlayer.id
-            );
-
+            console.log("Player does not have the card you want to steal");
             return;
         }
 
@@ -828,6 +613,8 @@ export class GameObject {
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
+
+        this.callSystem.notifyAttackAction(currentPlayer.id, playerToSteal.id);
     }
 
     // --------------------------------

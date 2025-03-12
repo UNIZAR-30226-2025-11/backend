@@ -6,6 +6,8 @@
 // Socket event: "game-state"
 // -----------------------------------------------------------
 
+import { ActionType } from "../models/ActionType.js";
+
 export type BackendStateUpdateJSON = {
     error: boolean;
     errorMsg: string;
@@ -42,11 +44,7 @@ export type BackendGamePlayedCardsResponseJSON = {
     error: boolean;
     errorMsg: string;
     cardsSeeFuture: string;
-    hasShuffled: boolean;
-    skipTurn: boolean;
-    hasWonAttack: boolean;
-    hasStolenRandomCard: boolean;
-    hasStolenCardByType: boolean;
+    cardReceived: string;
 }
 
 // -----------------------------------------------------------
@@ -220,3 +218,18 @@ export type BackendStartGameResponseJSON = {
     errorMsg: string;
 }
 
+
+// -----------------------------------------------------------
+// Message to represent an action
+// Started by: The backend
+// Listened by: The frontend
+// Ack: None
+// Socket-event: "notify-action"
+
+export type BackendNotifyActionJSON = {
+    error: boolean;
+    errorMsg: string;
+    creatorId: number;
+    actionedPlayerId: number;
+    action: ActionType;
+}
