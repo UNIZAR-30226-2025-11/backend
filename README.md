@@ -20,8 +20,8 @@ npm install         # If you intend to run it locally
 
 There are some steps required to start up the backend:
 
-- You'll need to start a database, if you intend to use a local one. You can follow the steps in the README of https://github.com/UNIZAR-30226-2025-11/database
 - You need to create an `.env` file with the config. Check `.env.example` for the necessary fields.
+- If you are going to connect to a local database, do the same with `.env.database`. Check `.env.database.example` for details.
 
 ```bash
 cp .env.example .env
