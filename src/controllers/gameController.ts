@@ -62,11 +62,7 @@ export const setupGameHandlers = (socket: Socket) => {
                 error: true,
                 errorMsg: "Not lobby id provided!",
                 cardsSeeFuture: "",
-                hasShuffled: false,
-                skipTurn: false,
-                hasWonAttack: false,
-                hasStolenRandomCard: false,
-                hasStolenCardByType: false
+                cardReceived: "",
             };
 
             socket.emit("game-played-cards", response)
@@ -87,11 +83,7 @@ export const setupGameHandlers = (socket: Socket) => {
                 error: true,
                 errorMsg: "Could not send the message!",
                 cardsSeeFuture: "",
-                hasShuffled: false,
-                skipTurn: false,
-                hasWonAttack: false,
-                hasStolenRandomCard: false,
-                hasStolenCardByType: false
+                cardReceived: "",
             };
 
             socket.emit("game-played-cards", response)

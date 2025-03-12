@@ -110,7 +110,8 @@ export class LobbyManager {
                 error: false,
                 errorMsg: "",
                 playerId: i,
-                lobbyId: lobbyId
+                lobbyId: lobbyId,
+                isLeader: i === leaderIdInLobby
             };
 
             socket.emit("lobby-started", msg);

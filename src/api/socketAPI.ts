@@ -195,6 +195,7 @@ export type BackendLobbyStartedJSON = {
     error: boolean;
     errorMsg: string;
     playerId: number;
+    isLeader: boolean;
     lobbyId: string;
 }
 

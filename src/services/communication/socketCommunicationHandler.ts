@@ -45,6 +45,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
 
     async getACardType(playerId: number, lobbyId: string): Promise<CardType|undefined> {
         
+        console.log("Waiting for player response for card type");
         const petition: BackendGameSelectCardTypeJSON = {
             error: false,
             errorMsg: "",
@@ -82,6 +83,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
 
     async getAPlayerId(playerId: number, lobbyId: string): Promise<number|undefined> {
         
+        console.log("Waiting for player response for player id");
         const petition: BackendGameSelectPlayerJSON = {
             error: false,
             errorMsg: "",
@@ -117,6 +119,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
 
     async getACard(playerId: number, lobbyId: string): Promise<Card|undefined> {
         
+        console.log("Waiting for player response for card");
         const petition: BackendGameSelectCardJSON = {
             error: false,
             errorMsg: "",
