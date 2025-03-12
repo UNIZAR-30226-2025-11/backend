@@ -4,8 +4,6 @@ import { LobbyRepository } from "../repositories/lobbyRepository.js";
 import { SocketManager } from "./socketManager.js";
 import { Socket } from "socket.io";
 
-import { BackendLobbyStartedJSON } from "../api/socketAPI.js";
-
 export class LobbyManager {
 
     static lobbiesGames: Map<string, GameObject> = new Map();
@@ -105,15 +103,6 @@ export class LobbyManager {
                 console.log("Socket not found!");
                 return undefined;
             }
-
-            const msg: BackendLobbyStartedJSON = {
-                error: false,
-                errorMsg: "",
-                playerId: i,
-                lobbyId: lobbyId
-            };
-
-            socket.emit("lobby-started", msg);
 
             comm.registerPlayer(i, socket);
             LobbyRepository.setPlayerIdInGame(lobbySocketsId[i], i);

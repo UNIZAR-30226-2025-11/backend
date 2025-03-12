@@ -37,7 +37,7 @@ export class Card {
         return card.type != CardType.Bomb && card.type != CardType.Deactivate && card.type != CardType.Nope
     }
     toString(): string {
-        return `Card Type (${this.type})`;
+        return CardType[this.type];
     }
 }
 

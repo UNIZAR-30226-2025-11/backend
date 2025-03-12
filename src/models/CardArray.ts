@@ -46,13 +46,13 @@ export class CardArray {
      * @returns The card in this position
      */
     pop_nth(n: number): Card {
-        try {
-            const card:Card = this.values[n];
-            this.values.splice(n, 1); 
-            return card;
-        } catch (error) {
-            throw new Error('Impossible to get the card ${n}');
+        if(n<0 || n>=this.values.length){
+            throw new Error('No card at position ' + n);
         }
+        const card:Card = this.values[n];
+        this.values.splice(n, 1); 
+        return card;
+
     }
 
 

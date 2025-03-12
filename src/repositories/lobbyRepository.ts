@@ -20,6 +20,7 @@ export class LobbyRepository {
             );
 
             if (res.rows.length > 0) {
+                console.log("Lobby removed.")
             } else {
                 console.log("Error removing lobby.")
             }
