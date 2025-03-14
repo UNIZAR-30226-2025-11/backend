@@ -28,7 +28,7 @@ RUN npm ci --omit=dev
 COPY --chown=node:node . .
 COPY --from=base /home/node/app/dist/ ./dist/
 
-EXPOSE 8000
+EXPOSE ${PORT}
 
 CMD ["node", "dist/index.js"]
 

@@ -9,9 +9,11 @@ services:
       target: app
     env_file: ../.env
     restart: unless-stopped
+    environment:
+      - PGHOST=database
     # --------------------------------------------------------------------------
     ports:
-      - "8000:8000"
+      - "${PORT}:${PORT}"
 
   # https://medium.com/@vishal.sharma./run-postgresql-and-pgadmin-using-docker-compose-34120618bcf9
   # === Database service ===
@@ -19,11 +21,11 @@ services:
     # --------------------------------------------------------------------------
     container_name: katboom_pg_db
     image: postgres
-    env_file: ../.env.database
+    env_file: ../.env
     restart: unless-stopped
     # --------------------------------------------------------------------------
     healthcheck:
-      test: [ "CMD-SHELL", "sh -c 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB'" ]
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U $$PGUSER -d $$PGDATABASE'" ]
       interval: 10s
       timeout: 3s
       retries: 3
