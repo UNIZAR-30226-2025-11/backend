@@ -181,8 +181,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
             errorMsg: "",
             creatorId: creatorId,
             actionedPlayerId: -1,
-
-            action: ActionType.BombDefused
+            action: ActionType[ActionType.BombDefused]
         }
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);
@@ -195,7 +194,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
             errorMsg: "",
             creatorId: playerId,
             actionedPlayerId: -1,
-            action: ActionType.BombExploded
+            action: ActionType[ActionType.BombExploded]
         }
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);
@@ -218,7 +217,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
             errorMsg: "",
             creatorId: -1,
             actionedPlayerId: playerId,
-            action: ActionType.DrawCard
+            action: ActionType[ActionType.DrawCard]
         }
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);
@@ -242,7 +241,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
             errorMsg: "",
             creatorId: creatorId,
             actionedPlayerId: -1,
-            action: ActionType.ShuffleDeck
+            action: ActionType[ActionType.ShuffleDeck]
         }
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);
@@ -255,7 +254,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
             errorMsg: "",
             creatorId: creatorId,
             actionedPlayerId: -1,
-            action: ActionType.SkipTurn
+            action: ActionType[ActionType.SkipTurn]
         }
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);
@@ -268,7 +267,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
             errorMsg: "",
             creatorId: creatorId,
             actionedPlayerId: -1,
-            action: ActionType.FutureSeen
+            action: ActionType[ActionType.FutureSeen]
         }
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);
@@ -291,7 +290,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
             errorMsg: "",
             creatorId: creatorId,
             actionedPlayerId: targetId,
-            action: ActionType.Attack
+            action: ActionType[ActionType.Attack]
         }
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);
@@ -304,7 +303,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
             errorMsg: "",
             creatorId: creatorId,
             actionedPlayerId: targetId,
-            action: ActionType.AttackFailed
+            action: ActionType[ActionType.AttackFailed]
         }
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);
@@ -340,7 +339,7 @@ export class SocketCommunicationHandler implements CommunicationHandler {
             errorMsg: "",
             creatorId: creatorId,
             actionedPlayerId: targetId,
-            action: ActionType.FavorAttack
+            action: ActionType[ActionType.FavorAttack]
         }
         this.sockets.forEach((socket) => {
             socket.emit("notify-action", msg);

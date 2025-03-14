@@ -6,8 +6,6 @@
 // Socket event: "game-state"
 // -----------------------------------------------------------
 
-import { ActionType } from "../models/ActionType.js";
-
 export type BackendStateUpdateJSON = {
     error: boolean;
     errorMsg: string;
@@ -226,5 +224,5 @@ export type BackendNotifyActionJSON = {
     errorMsg: string;
     creatorId: number;
     actionedPlayerId: number;
-    action: ActionType;
+    action: string;
 }
