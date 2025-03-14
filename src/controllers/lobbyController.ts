@@ -72,6 +72,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
             const response: BackendJoinLobbyResponseJSON = {
                 error: true,
                 errorMsg: "No lobby id provided!",
+                lobbyId: data.lobbyId
             };
             socket.emit("join-lobby", response);
             return;
@@ -83,6 +84,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
             const response: BackendJoinLobbyResponseJSON = {
                 error: true,
                 errorMsg: `You cannot join the lobby`,
+                lobbyId: data.lobbyId
             };
             socket.emit("join-lobby", response);
             return;
@@ -91,6 +93,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
         const response: BackendJoinLobbyResponseJSON = {
             error: false,
             errorMsg: "",
+            lobbyId: data.lobbyId
         };
         socket.emit("join-lobby", response);
 
