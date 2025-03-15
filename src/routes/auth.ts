@@ -6,13 +6,15 @@ import { JWT_SECRET } from "../config.js";
 
 import {
   getPublicUser,
-  createNewUser,
-  UserRepository,
-} from "../users/model.js";
+  createNewUser
+} from "../models/User.js";
+
+import { UserRepository } from "../repositories/userRepository.js";
+import { LOGIN_API, LOGOUT_API, REGISTER_API } from "../api/restAPI.js";
 
 const authRouter = Router();
 
-authRouter.route("/register").post(async (req, res) => {
+authRouter.route(REGISTER_API).post(async (req, res) => {
   const { username, password } = req.body;
 
   try {
@@ -31,7 +33,7 @@ authRouter.route("/register").post(async (req, res) => {
   }
 });
 
-authRouter.route("/login").post(async (req, res) => {
+authRouter.route(LOGIN_API).post(async (req, res) => {
   const { username, password } = req.body;
 
   try {
@@ -59,7 +61,7 @@ authRouter.route("/login").post(async (req, res) => {
   }
 });
 
-authRouter.route("/logout").post((_, res) => {
+authRouter.route(LOGOUT_API).post((_, res) => {
   res.clearCookie("access_token").send({ message: "Logged out" });
 });
 

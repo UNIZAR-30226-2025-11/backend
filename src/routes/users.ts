@@ -3,16 +3,18 @@ import crypto from "node:crypto";
 
 import {
   protectRoute,
-  protectUsersFromModification,
-} from "../auth/middleware.js";
-import { UserEntity, UserRepository, getPublicUser } from "./model.js";
-import { filterNonModifiableUserData } from "./middleware.js";
+  protectUsersFromModification
+} from "../middleware/auth.js";
+import { UserRepository } from "../repositories/userRepository.js";
+import { getPublicUser, UserEntity } from "../models/User.js";
+import { filterNonModifiableUserData } from "../middleware/users.js";
+import { USERS_API, ID_API } from "../api/restAPI.js";
 
 const usersRouter = Router();
 usersRouter.use(protectRoute);
 
 usersRouter
-  .route("/users")
+  .route(USERS_API)
   .get(async (_req, res) => {
     res
       .status(200)
@@ -25,7 +27,7 @@ usersRouter
   });
 
 usersRouter
-  .route("/users/:username")
+  .route( USERS_API + "/:username")
   .get(async (req, res) => {
     let { username } = req.params;
     let user = await UserRepository.findByUsername(username);
@@ -81,7 +83,7 @@ usersRouter
   });
 
 usersRouter
-  .route("/users/id/:uuid")
+  .route(USERS_API + ID_API + "/:uuid")
   .get(async (req, res) => {
     let { uuid } = req.params;
     let user = await UserRepository.findById(uuid as crypto.UUID);

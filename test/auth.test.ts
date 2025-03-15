@@ -3,8 +3,8 @@ import request from "supertest";
 import crypto from "node:crypto";
 
 import { app as server } from "../src/app.js";
-import { createNewUser, UserRepository } from "../src/users/model.js";
-
+import { createNewUser } from "../src/models/User.js";
+import { UserRepository } from "../src/repositories/userRepository.js";
 describe("Auth routes", () => {
   let testAccessToken: string | undefined = undefined;
 

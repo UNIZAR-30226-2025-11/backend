@@ -3,11 +3,11 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
-import { authRouter } from "./auth/routes.js";
-import { usersRouter } from "./users/routes.js";
+import { authRouter } from "./routes/auth.js";
+import { usersRouter } from "./routes/users.js";
 import { setupSocket } from "./socketSetup.js";
 import { FRONTEND_URL, SOCKET_AUT } from "./config.js";
-import { protectSocket } from "./auth/middleware.js";
+import { protectSocket } from "./middleware/auth.js";
 
 export const app = express();
 export const server = createServer(app);
@@ -38,12 +38,11 @@ app.use(
 app.use(express.json()); // Parse JSON
 app.use(cookieParser()); // Parse cookies, store them in req.cookies
 
+// Set up the routes
 app.use(authRouter);
 app.use(usersRouter);
 
 //app.use(handleErrors); // This runs if an exception is not handled earlier
-console.log("SOCKET_AUT", SOCKET_AUT);
-
 if(SOCKET_AUT)
   io.use(protectSocket);
 

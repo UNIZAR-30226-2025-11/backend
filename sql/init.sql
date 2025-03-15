@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Create the lobbies table
-CREATE TABLE lobbies (
+CREATE TABLE IF NOT EXISTS lobbies (
     id TEXT PRIMARY KEY NOT NULL,
     game JSONB,
     leader_socket TEXT NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE lobbies (
     active BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE TABLE lobbies_sockets (
+CREATE TABLE IF NOT EXISTS lobbies_sockets (
     lobby_id TEXT NOT NULL REFERENCES lobbies(id) ON DELETE CASCADE,
     socket_id TEXT NOT NULL,
     player_id INT,
