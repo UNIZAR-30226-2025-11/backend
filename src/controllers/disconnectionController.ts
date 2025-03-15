@@ -8,10 +8,13 @@ export const setupDisconnectionHandlers = (socket: Socket) => {
     socket.on("disconnect", async () => {
         
         console.log("User disconnected!");
-        // Remove the player from the lobby
-        await LobbyManager.removePlayer(socket.id);
 
-        SocketManager.removeSocket(socket.id);
+        const username: string = socket.data.user.username;
+
+        // Remove the player from the lobby
+        await LobbyManager.removePlayer(username);
+
+        SocketManager.removeSocket(username);
 
         console.log("User disconnected!");
     });

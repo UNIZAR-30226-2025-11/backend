@@ -6,12 +6,12 @@ import { setupDisconnectionHandlers } from "./controllers/disconnectionControlle
 
 export const setupSocket = (io: Server) => {
     io.on("connection", (socket: Socket) => {
-        console.log("New connection! ", socket.id);
-    
-        console.log("User", socket.data.user);
-
+        
+        const username: string = socket.data.user.username;
+        
+        console.log("New connection! ", username);
         // Add socket to the manager
-        SocketManager.addSocket(socket.id, socket);
+        SocketManager.addSocket(username, socket);
 
         // Set up lobby-related message handlers
         setupLobbyHandlers(socket);

@@ -12,7 +12,8 @@ export const setupGameHandlers = (socket: Socket) => {
 
     socket.on("game-played-cards", async (playedCardsJSON: FrontendGamePlayedCardsJSON) => {
         
-        const lobbyId = playedCardsJSON.lobbyId;
+        const lobbyId: string = playedCardsJSON.lobbyId;
+        const username: string = socket.data.user.username;
 
         if (lobbyId === undefined || lobbyId === "") {
             const response: BackendGamePlayedCardsResponseJSON = 
@@ -34,7 +35,7 @@ export const setupGameHandlers = (socket: Socket) => {
         const cardsPlayed: Card[] = cardsPlayedString.map((cardString) => new Card(CardType[cardString as keyof typeof CardType]));
         const cardArray: CardArray = new CardArray(cardsPlayed);
 
-        if(!await GameManager.handlePlay(cardArray, lobbyId, socket.id))
+        if(!await GameManager.handlePlay(cardArray, lobbyId, username))
         {
             const response: BackendGamePlayedCardsResponseJSON = 
             {

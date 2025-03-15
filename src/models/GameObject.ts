@@ -40,7 +40,7 @@ export class GameObject {
         {
             this.players.push(Player.createStandarPlayer(i, this.deck));
         }
-        this.deck.add_bombs(numberOfPlayers-1);
+        this.deck.addBombs(numberOfPlayers-1);
 
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
@@ -86,8 +86,8 @@ export class GameObject {
         throw new Error("Method not implemented.");
     }
 
-    isLeader(player_id: number): boolean {
-        return this.leaderId === player_id;
+    isLeader(playerId: number): boolean {
+        return this.leaderId === playerId;
     }
 
     getMaxPlayers(): number {
@@ -287,10 +287,10 @@ export class GameObject {
                 
                 console.log("You have exploted but you have a deactivate card");
                 // Remove the deactivate card from the player
-                player.hand.pop_nth(indexDeactivate); 
+                player.hand.popNth(indexDeactivate); 
                 
                 // Add the bomb back to the deck
-                this.deck.add_with_shuffle(newCard);
+                this.deck.addWithShuffle(newCard);
 
                 this.callSystem.notifyBombDefusedAction(playerId)
 
@@ -371,8 +371,8 @@ export class GameObject {
      */
     skipTurn(currentPlayer: Player): void {
         
-        const following_player = this.players[this.nextActivePlayer()];
-        if(!this.resolveNopeChain(currentPlayer, following_player, CardType.Skip, AttackType.Skip))
+        const followingPlayer = this.players[this.nextActivePlayer()];
+        if(!this.resolveNopeChain(currentPlayer, followingPlayer, CardType.Skip, AttackType.Skip))
         {
             return;
         }
@@ -387,29 +387,29 @@ export class GameObject {
 
     /**
      * Shows the next 3 cards of the deck to the current player.
-     * @param current_player - The player who is playing the card
+     * @param currentPlayer - The player who is playing the card
      */
-    seeFuture(current_player: Player): void {
+    seeFuture(currentPlayer: Player): void {
         
         // Get the next 3 cards
-        const nextCards: CardArray = this.deck.peek_n(3);
+        const nextCards: CardArray = this.deck.peekN(3);
 
         // Notify the player the next 3 cards
-        this.callSystem.notifyFutureCards(nextCards, current_player.id);
+        this.callSystem.notifyFutureCards(nextCards, currentPlayer.id);
 
-        this.callSystem.notifyFutureAction(current_player.id);
+        this.callSystem.notifyFutureAction(currentPlayer.id);
     }
 
     /**
      * Performs an attack to the next player.
-     * @param current_player - The player who is playing the card
+     * @param currentPlayer - The player who is playing the card
      */
-    attack(current_player: Player): void {
+    attack(currentPlayer: Player): void {
         
         // Get the attacked player
-        const attacked_player:Player = this.players[this.nextActivePlayer()];
+        const attackedPlayer:Player = this.players[this.nextActivePlayer()];
 
-        if(!this.resolveNopeChain(current_player, attacked_player, CardType.Attack, AttackType.Attack)){
+        if(!this.resolveNopeChain(currentPlayer, attackedPlayer, CardType.Attack, AttackType.Attack)){
             console.log("Attack noped");
             return;
         }
@@ -419,7 +419,7 @@ export class GameObject {
         this.numberOfTurnsLeft = 2;
 
         // Notify the player that the attack is successful
-        this.callSystem.notifyAttackAction(current_player.id, attacked_player.id);
+        this.callSystem.notifyAttackAction(currentPlayer.id, attackedPlayer.id);
     }
 
     /**
@@ -470,7 +470,7 @@ export class GameObject {
             return;
         }
 
-        const cardIndex: number = playerToSteal.hand.has_card(cardToGive.type);
+        const cardIndex: number = playerToSteal.hand.hasCard(cardToGive.type);
 
         if(cardIndex === -1){
             // If the player does not have the card
@@ -479,7 +479,7 @@ export class GameObject {
         }
 
         // Steal the card
-        playerToSteal.hand.pop_nth(cardIndex);
+        playerToSteal.hand.popNth(cardIndex);
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToGive);
@@ -489,12 +489,6 @@ export class GameObject {
 
     }
 
-    /**
-     * Play a wild card.
-     * @param card_type - Wild card type to be played
-     * @param currentPlayer - The player who is playing the card
-     * @returns 
-     */
     async playWildCard(numberOfPlayedCards:number, currentPlayer: Player): Promise<void>{
 
         const playerToStealId: number|undefined = await this.callSystem.getAPlayerId(currentPlayer.id, this.gameId);
@@ -557,7 +551,7 @@ export class GameObject {
         const cardId: number = Math.floor(Math.random() * playerToSteal.hand.length());
 
         // Steal the card
-        const cardToSteal: Card = playerToSteal.hand.pop_nth(cardId);
+        const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
@@ -578,7 +572,7 @@ export class GameObject {
         }
 
         // Get the card id to steal
-        const cardId: number = playerToSteal.hand.has_card(cardType);
+        const cardId: number = playerToSteal.hand.hasCard(cardType);
 
         if(cardId === -1){
             // If the player does not have the card
@@ -587,7 +581,7 @@ export class GameObject {
         }
 
         // Steal the card
-        const cardToSteal: Card = playerToSteal.hand.pop_nth(cardId);
+        const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
@@ -603,7 +597,7 @@ export class GameObject {
 
         if(play.playedCards.length() === 0){
 
-            const newCard: Card = this.deck.draw_last();
+            const newCard: Card = this.deck.drawLast();
 
             this.handleNewCard(newCard, play.idPlayer);
             this.setNextTurn();

@@ -6,16 +6,16 @@ import { CardArray } from "../models/CardArray.js";
 
 export class GameManager {
 
-    static async handlePlay(cards: CardArray, lobbyId: string, socketId: string): Promise<boolean>{
+    static async handlePlay(cards: CardArray, lobbyId: string, username: string): Promise<boolean>{
         
-        const current_game: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
+        const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
 
-        if (current_game === undefined){
+        if (currentGame === undefined){
             console.log("Game not found!");
             return false;
         }
 
-        const playerIdInGame: number | undefined = await GameRepository.getPlayerIdInGame(socketId);
+        const playerIdInGame: number | undefined = await GameRepository.getPlayerIdInGame(username);
 
         if (playerIdInGame === undefined){
             console.log("You are not in the game!");
@@ -23,7 +23,7 @@ export class GameManager {
         }
         
         const play: Play = new Play(playerIdInGame, cards);
-        if (!await current_game.handlePlay(play))
+        if (!await currentGame.handlePlay(play))
         {
             console.log("Could not send the message!");
             return false;
@@ -32,22 +32,22 @@ export class GameManager {
         return true;
     }
 
-    static async disconnectPlayer(socketId: string, lobbyId: string): Promise<void>{
-        const current_game: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
+    static async disconnectPlayer(username: string, lobbyId: string): Promise<void>{
+        const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
 
-        if (current_game === undefined){
+        if (currentGame === undefined){
             console.log("Game not found!");
             return;
         }
 
-        const playerInGame: number | undefined = await GameRepository.getPlayerIdInGame(socketId);
+        const playerInGame: number | undefined = await GameRepository.getPlayerIdInGame(username);
 
         if (playerInGame === undefined){
             console.log("You are not in the game!");
             return;
         }
 
-        current_game.disconnectPlayer(playerInGame);
+        currentGame.disconnectPlayer(playerInGame);
     }
 
 }

@@ -19,10 +19,10 @@ export class Deck {
     /**
      * Creates a standard deck of cards without bombs and without
      * the number of players deactivates.
-     * @param n_players - Number of players who play
+     * @param nPlayers - Number of players who play
      * @returns A new deck instance with a standard set of cards.
      */
-    static createStandardDeck(n_players: number): Deck {
+    static createStandardDeck(nPlayers: number): Deck {
         const cards: CardArray = new CardArray([]);
 
         // Add a specific number of each type of card to the deck
@@ -34,7 +34,7 @@ export class Deck {
             [CardType.Attack]: 3,
             [CardType.Nope]: 5,
             [CardType.Favor]: 5,
-            [CardType.Deactivate]: 6-n_players,
+            [CardType.Deactivate]: 6-nPlayers,
             [CardType.RainbowCat]: 5,
             [CardType.TacoCat]: 5,
             [CardType.HairyPotatoCat]: 5,
@@ -63,10 +63,10 @@ export class Deck {
 
     /**
      * Add the cards of Boom
-     * @param n_players - Number of players who play
+     * @param numPlayers - Number of players who play
      */
-    add_bombs(n_players: number){
-        for (let i = 0; i < n_players+100; i++) {
+    addBombs(numPlayers: number){
+        for (let i = 0; i < numPlayers+100; i++) {
             this.cards.push(new Card(CardType.Bomb));
         }
         this.shuffle();
@@ -79,14 +79,14 @@ export class Deck {
      * @throws Error if the deck is empty.
      */
     draw(n:number): CardArray {
-        return this.cards.pop_n(n);
+        return this.cards.popN(n);
     }
 
     /**
      * Draws the last card from the deck.
      * @returns The drawn card.
      */
-    draw_last(): Card {
+    drawLast(): Card {
         return this.cards.pop();
     }
 
@@ -95,7 +95,7 @@ export class Deck {
      * @returns The drawn card.
      * @throws Error if the deck is empty.
      */
-    peek_n(n: number): CardArray {
+    peekN(n: number): CardArray {
         if (this.cards.length() < n) {
             throw new Error('Not enough cards in the deck to peek at ' + n + ' cards');
         }
@@ -108,7 +108,7 @@ export class Deck {
      * Adds a new card to the deck and shuffles it afterward.
      * @param card - The card to be added.
      */
-    add_with_shuffle(card: Card): void {
+    addWithShuffle(card: Card): void {
         this.cards.push(card);
         this.shuffle();
     }

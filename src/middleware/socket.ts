@@ -2,6 +2,7 @@ import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken';
 import { Socket } from 'socket.io';
 import { JWT_SECRET } from '../config.js';
+import { SocketManager } from '../services/socketManager.js';
 
 
 export const protectSocket = (socket: Socket, next: (err?: Error) => void) => {
@@ -36,6 +37,14 @@ export const protectSocket = (socket: Socket, next: (err?: Error) => void) => {
 
         // Attach the decoded user information to the socket object for later use
         socket.data.user = decoded;
+
+        // If the user is already connected, disconnect this socket
+        const prevSocket: Socket | undefined = SocketManager.getSocket(decoded.username);
+        if (prevSocket !== undefined) {
+            socket.disconnect(true);
+            return next(new Error("User already connected!"));
+        }
+
 
         // Proceed to the next middleware or handler
         next();

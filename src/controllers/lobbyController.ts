@@ -7,9 +7,68 @@ import {
     FrontendJoinLobbyJSON,
     BackendJoinLobbyResponseJSON,
     FrontendStartLobbyJSON,
-    BackendStartLobbyResponseJSON
+    BackendStartLobbyResponseJSON,
+    BackendLobbyStateUpdateJSON
 } from "../api/socketAPI.js";
 import { handleError } from "../constants/constants.js";
+import { LobbyRepository } from "../repositories/lobbyRepository.js";
+import { SocketManager } from "../services/socketManager.js";
+
+
+export async function notifyNewPlayers(lobbyId: string): Promise<void> {
+    const playersInLobby: {username:string, isLeader:boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
+
+    if(playersInLobby === undefined) {
+        console.log("Error getting the players in the lobby!");
+        return;
+    }
+
+    const msg: BackendLobbyStateUpdateJSON = {
+        error: false,
+        errorMsg: "",
+        players: playersInLobby.map(player => { return { name: player.username, isLeader: player.isLeader } }),
+        disband: false
+    }
+
+    playersInLobby.forEach(player => {
+        console.log("Notifying player: ", player.username);
+        const socket: Socket | undefined = SocketManager.getSocket(player.username);
+
+        if(socket === undefined) {
+            console.log("Socket not found!");
+            return;
+        }
+
+        socket.emit("lobby-state", msg);
+    });
+}
+
+export async function notifyLobbyDisband(lobbyId: string): Promise<void> {
+    const playersInLobby: {username:string, isLeader:boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
+
+    if(playersInLobby === undefined) {
+        console.log("Error getting the players in the lobby!");
+        return;
+    }
+
+    const msg: BackendLobbyStateUpdateJSON = {
+        error: false,
+        errorMsg: "",
+        players: [],
+        disband: true,
+    }
+
+    playersInLobby.forEach(player => {
+        const socket: Socket | undefined = SocketManager.getSocket(player.username);
+
+        if(socket === undefined) {
+            console.log("Socket not found!");
+            return;
+        }
+
+        socket.emit("lobby-state", msg);
+    });
+}
 
 
 export const setupLobbyHandlers = (socket: Socket) => {
@@ -17,7 +76,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
     socket.on("create-lobby", async (data: FrontendCreateLobbyJSON) => {
         
         handleError(data.error, data.errorMsg);
-        console.log("Create lobby message received!", data);
+        
         if (data.maxPlayers === undefined) {
             const response: BackendCreateLobbyResponseJSON = {
                 error: true,
@@ -39,11 +98,11 @@ export const setupLobbyHandlers = (socket: Socket) => {
             return;
         }   
 
-        
+        const username: string = socket.data.user.username;
         // Create a new lobby
-        const lobby_id: string | undefined = await LobbyManager.createLobby(data.maxPlayers, socket.id);
+        const lobbyId: string | undefined = await LobbyManager.createLobby(data.maxPlayers, username);
 
-        if (lobby_id === undefined) {
+        if (lobbyId === undefined) {
             
             const response: BackendCreateLobbyResponseJSON = {
                 error: true,
@@ -57,14 +116,15 @@ export const setupLobbyHandlers = (socket: Socket) => {
         const response: BackendCreateLobbyResponseJSON = {
             error: false,
             errorMsg: "",
-            lobbyId: lobby_id
+            lobbyId: lobbyId
         };
         socket.emit("create-lobby", response);
-        console.log(`Lobby created with ID: ${lobby_id}`);
+        console.log(`Lobby created with ID: ${lobbyId}`);
     });
 
     socket.on("join-lobby", async (data: FrontendJoinLobbyJSON)  => {
 
+        const username: string = socket.data.user.username;
         handleError(data.error, data.errorMsg);
 
         if (data.lobbyId === undefined || data.lobbyId === "") {
@@ -78,7 +138,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
         }
 
         // Check if can join the lobby
-        const ok: boolean = await LobbyManager.joinLobby(socket.id, data.lobbyId)
+        const ok: boolean = await LobbyManager.joinLobby(username, data.lobbyId)
         if (!ok) {
             const response: BackendJoinLobbyResponseJSON = {
                 error: true,
@@ -101,6 +161,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
 
     socket.on("start-lobby", async (data: FrontendStartLobbyJSON) => {
 
+        const username: string = socket.data.user.username;
         handleError(data.error, data.errorMsg);
 
         if (data.lobbyId === undefined || data.lobbyId === "") {
@@ -113,7 +174,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
             return;
         }
 
-        const numberOfPlayersInLobby : number|undefined = await LobbyManager.startLobby(socket.id, data.lobbyId);
+        const numberOfPlayersInLobby : number|undefined = await LobbyManager.startLobby(username, data.lobbyId);
         
         if(numberOfPlayersInLobby === undefined) {
             const response: BackendStartLobbyResponseJSON = {

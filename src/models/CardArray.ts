@@ -45,7 +45,7 @@ export class CardArray {
      * @param n - position of the card
      * @returns The card in this position
      */
-    pop_nth(n: number): Card {
+    popNth(n: number): Card {
         if(n<0 || n>=this.values.length){
             throw new Error('No card at position ' + n);
         }
@@ -62,7 +62,7 @@ export class CardArray {
      * @returns The last n cards from the deck.
      * @throws Error if the deck is empty.
      */
-    pop_n(n: number): CardArray {
+    popN(n: number): CardArray {
         if (this.values.length < n) {
             throw new Error('No enough cards in the array to pop ' + n + ' cards');
         }
@@ -106,7 +106,7 @@ export class CardArray {
      * @param type - Type of the card
      * @returns True if there is a card of this type, else False.
      */
-    has_card(type:CardType): number {
+    hasCard(type:CardType): number {
         return this.values.findIndex(card => card.type == type);
     }
 

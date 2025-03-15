@@ -3,10 +3,10 @@ import { GameObject } from "../models/GameObject.js";
 
 export class LobbyRepository {
     
-    static async createLobby(lobbyId: string, leaderSocketId: string, numMaxPlayers: number): Promise<void> {
+    static async createLobby(lobbyId: string, leaderusername: string, numMaxPlayers: number): Promise<void> {
         await db.query(
-            "INSERT INTO lobbies (id, game, leader_socket, num_max_players) VALUES ($1, $2, $3, $4)",
-            [lobbyId, null, leaderSocketId, numMaxPlayers]
+            "INSERT INTO lobbies (id, game, leader, num_max_players) VALUES ($1, $2, $3, $4)",
+            [lobbyId, null, leaderusername, numMaxPlayers]
         );
     }
 
@@ -68,17 +68,17 @@ export class LobbyRepository {
         }
     }
     
-    static async isLeader(socketId: string, lobbyId: string): Promise<boolean>{
+    static async isLeader(username: string, lobbyId: string): Promise<boolean>{
         try {
             const res = await db.query(
                 `
-                SELECT leader_socket 
+                SELECT leader 
                 FROM lobbies
                 WHERE id = $1
                 `
                 , [lobbyId]);
 
-            if (res.rows.length > 0 && res.rows[0].leader_socket === socketId){
+            if (res.rows.length > 0 && res.rows[0].leader === username){
                 return true;
             }else{
                 return false;
@@ -113,7 +113,7 @@ export class LobbyRepository {
         try{
             const res = await db.query(
                 `SELECT COUNT(*) as num
-                FROM lobbies_sockets
+                FROM users_in_lobby
                 WHERE lobby_id = $1`
                 , [lobbyId]);
             
@@ -128,20 +128,20 @@ export class LobbyRepository {
         }
     }
 
-    static async getPlayersInLobby(lobbyId: string): Promise<{ socketId: string, isLeader: boolean}[] | undefined>{
+    static async getPlayersInLobby(lobbyId: string): Promise<{ username: string, isLeader: boolean}[] | undefined>{
         try {
             const res = await db.query(
                 `
                 SELECT 
-                    lobbies_sockets.socket_id AS socket_id, 
-                    (lobbies.leader_socket = lobbies_sockets.socket_id) AS is_leader
-                FROM lobbies_sockets
-                INNER JOIN lobbies ON lobbies_sockets.lobby_id = lobbies.id
-                WHERE lobbies_sockets.lobby_id = $1
-                AND lobbies_sockets.player_id IS NULL;
+                    users_in_lobby.username AS username, 
+                    (lobbies.leader = users_in_lobby.username) AS is_leader
+                FROM users_in_lobby
+                INNER JOIN lobbies ON users_in_lobby.lobby_id = lobbies.id
+                WHERE users_in_lobby.lobby_id = $1
+                AND users_in_lobby.id_in_game IS NULL;
                 `, [lobbyId]);
     
-            return res.rows.map((row: { socket_id: string, is_leader: boolean}) => ({ socketId: row.socket_id, isLeader: row.is_leader}));
+            return res.rows.map((row: { username: string, is_leader: boolean}) => ({ username: row.username, isLeader: row.is_leader}));
         }
         catch (error) {
             console.error("Error in database.", error);
@@ -149,14 +149,14 @@ export class LobbyRepository {
         }
     }
 
-    static async getLobbyWithPlayer(socketId: string): Promise<string | undefined>{
+    static async getLobbyWithPlayer(username: string): Promise<string | undefined>{
         try {
             const res = await db.query(
                 `
                 SELECT lobby_id 
-                FROM lobbies_sockets 
-                WHERE socket_id = $1
-                `, [socketId]);
+                FROM users_in_lobby 
+                WHERE username = $1
+                `, [username]);
     
             if(res.rows.length > 0){
                 return res.rows[0].lobby_id;
@@ -169,15 +169,15 @@ export class LobbyRepository {
         }
     }
     
-    static async removePlayerFromLobby(socketId: string, lobbyId: string): Promise<void | undefined>{
+    static async removePlayerFromLobby(username: string, lobbyId: string): Promise<void | undefined>{
         try {
             await db.query(
                 `
-                DELETE FROM lobbies_sockets 
-                WHERE socket_id = $1 AND lobby_id = $2
+                DELETE FROM users_in_lobby 
+                WHERE username = $1 AND lobby_id = $2
                 RETURNING lobby_id;
                 `
-                , [socketId, lobbyId]
+                , [username, lobbyId]
             );
 
             return;
@@ -188,16 +188,14 @@ export class LobbyRepository {
         }
     }
 
-    static async addPlayer(socketId: string, lobbyId: string): Promise<void> {
+    static async addPlayer(username: string, lobbyId: string): Promise<void> {
         try {
             const res = await db.query(
                 `
-                INSERT INTO lobbies_sockets (lobby_id, socket_id, player_id)
+                INSERT INTO users_in_lobby (lobby_id, username, id_in_game)
                 VALUES ($1, $2, $3)
-                ON CONFLICT (socket_id) 
-                DO UPDATE SET lobby_id = EXCLUDED.lobby_id;
                 `,
-                [lobbyId, socketId, null]
+                [lobbyId, username, null]
             );
             
             if (res.rowCount && res.rowCount > 0) {
@@ -211,15 +209,15 @@ export class LobbyRepository {
         }
     }
 
-    static async setPlayerIdInGame(socketId: string, playerId: number): Promise<void> {
+    static async setPlayerIdInGame(username: string, playerId: number): Promise<void> {
         try {
             const res = await db.query(
                 `
-                UPDATE lobbies_sockets 
-                SET player_id = $2
-                WHERE socket_id = $1
+                UPDATE users_in_lobby 
+                SET id_in_game = $2
+                WHERE username = $1
                 `,
-                [socketId, playerId]
+                [username, playerId]
             );
 
             if(res.rowCount && res.rowCount > 0){

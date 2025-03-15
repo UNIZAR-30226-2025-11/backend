@@ -3,25 +3,29 @@ import { Socket } from "socket.io";
 export class SocketManager {
     private static sockets: Map<string, Socket> = new Map();
 
-    static addSocket(socket_id: string, socket: Socket) {
-        this.sockets.set(socket_id, socket);
+    static addSocket(username: string, socket: Socket) {
+        this.sockets.set(username, socket);
     }
 
-    static removeSocket(socket_id: string) {
-        this.sockets.delete(socket_id);
+    static removeSocket(username: string) {
+        this.sockets.delete(username);
     }
 
-    static getSocket(socket_id: string): Socket | undefined {
-        return this.sockets.get(socket_id);
+    static getSocket(username: string): Socket | undefined {
+        return this.sockets.get(username);
+    }
+
+    static hasSocket(username: string): boolean {
+        return this.sockets.has(username);
     }
 
     static waitForPlayerResponse<TRequest, TResponse >(
-        socketId: string, 
+        username: string, 
         socketEvent: string, 
         requestData: TRequest,
         timeOut: number
     ): Promise<TResponse | undefined> {
-        const socket: Socket | undefined = this.getSocket(socketId);
+        const socket: Socket | undefined = this.getSocket(username);
         if (socket === undefined) {
             console.log("Socket not found");
             return Promise.reject(undefined);
