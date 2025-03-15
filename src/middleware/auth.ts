@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { Socket } from "socket.io";
-import cookie from "cookie";
 
 import { JWT_SECRET } from "../config.js";
 
@@ -21,26 +19,6 @@ export function protectRoute(req: Request, res: Response, next: NextFunction) {
   } catch (_) {
     res.status(401).send({ message: "Invalid token" });
     return;
-  }
-
-  next();
-}
-
-export function protectSocket(socket: Socket, next: (err?: Error) => void) {
-  const token = cookie.parse(
-    socket.handshake.headers.cookie || "",
-  ).access_token;
-
-  if (!token) {
-    socket.disconnect(true);
-    return next(new Error("No access token"));
-  }
-
-  try {
-    jwt.verify(token, JWT_SECRET);
-  } catch (_) {
-    socket.disconnect(true);
-    return next(new Error("Invalid token"));
   }
 
   next();

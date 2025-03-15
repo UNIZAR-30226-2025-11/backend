@@ -7,7 +7,7 @@ import { authRouter } from "./routes/auth.js";
 import { usersRouter } from "./routes/users.js";
 import { setupSocket } from "./socketSetup.js";
 import { FRONTEND_URL, SOCKET_AUT } from "./config.js";
-import { protectSocket } from "./middleware/auth.js";
+import { protectSocket } from "./middleware/socket.js";
 
 export const app = express();
 export const server = createServer(app);

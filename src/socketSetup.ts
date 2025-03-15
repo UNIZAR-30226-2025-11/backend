@@ -6,8 +6,9 @@ import { setupDisconnectionHandlers } from "./controllers/disconnectionControlle
 
 export const setupSocket = (io: Server) => {
     io.on("connection", (socket: Socket) => {
-    
         console.log("New connection! ", socket.id);
+    
+        console.log("User", socket.data.user);
 
         // Add socket to the manager
         SocketManager.addSocket(socket.id, socket);
