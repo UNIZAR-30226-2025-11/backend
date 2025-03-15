@@ -53,9 +53,9 @@ jobs:
     - name: Make database envfile
       uses: SpicyPizza/create-envfile@v2.0
       with:
-        envkey_POSTGRES_USER: admin
-        envkey_POSTGRES_PASSWORD: ${{ secrets.PGPASSWORD }}
-        envkey_POSTGRES_DB: "katboom"
+        envkey_PGUSER: admin
+        envkey_PGPASSWORD: ${{ secrets.PGPASSWORD }}
+        envkey_PGDATABASE: "katboom"
         file_name: .env.database
 
     - name: 'Install packages'
