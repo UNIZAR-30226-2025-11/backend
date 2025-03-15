@@ -3,28 +3,108 @@ import { SocketCommunicationHandler } from "./communication/socketCommunicationH
 import { LobbyRepository } from "../repositories/lobbyRepository.js";
 import { SocketManager } from "./socketManager.js";
 import { Socket } from "socket.io";
+import { GameManager } from "./gameManager.js";
+import { BackendLobbyStateUpdateJSON } from "../api/socketAPI.js";
 
 export class LobbyManager {
 
     static lobbiesGames: Map<string, GameObject> = new Map();
 
+    static async removePlayer(playerSocketId: string): Promise<void> {
+
+        const lobbyId: string | undefined = await LobbyRepository.getLobbyWithPlayer(playerSocketId);
+
+        if(lobbyId === undefined) {
+            console.log("Player not in any lobby!");
+            return;
+        }
+
+        await LobbyManager.removePlayerFromLobby(playerSocketId, lobbyId);
+        
+    }
+
+    static async notifyNewPlayers(lobbyId: string): Promise<void> {
+        const playersInLobby: {socketId:string, isLeader:boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
+
+        if(playersInLobby === undefined) {
+            console.log("Error getting the players in the lobby!");
+            return;
+        }
+
+        const msg: BackendLobbyStateUpdateJSON = {
+            error: false,
+            errorMsg: "",
+            players: playersInLobby.map(player => { return { name: player.socketId, isLeader: player.isLeader } }),
+            disband: false
+        }
+
+        playersInLobby.forEach(player => {
+            console.log("Notifying player: ", player.socketId);
+            const socket: Socket | undefined = SocketManager.getSocket(player.socketId);
+
+            if(socket === undefined) {
+                console.log("Socket not found!");
+                return;
+            }
+
+            socket.emit("lobby-state", msg);
+        });
+    }
+
+    static async notifyLobbyDisband(lobbyId: string): Promise<void> {
+        const playersInLobby: {socketId:string, isLeader:boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
+
+        if(playersInLobby === undefined) {
+            console.log("Error getting the players in the lobby!");
+            return;
+        }
+
+        const msg: BackendLobbyStateUpdateJSON = {
+            error: false,
+            errorMsg: "",
+            players: [],
+            disband: true,
+        }
+
+        playersInLobby.forEach(player => {
+            const socket: Socket | undefined = SocketManager.getSocket(player.socketId);
+
+            if(socket === undefined) {
+                console.log("Socket not found!");
+                return;
+            }
+
+            socket.emit("lobby-state", msg);
+        });
+    }
+
     /**
      * Create a new lobby with the given number of players and the leader socket.
      * 
-     * @param num_players Number of players in the lobby
-     * @param leader_socket_id Socket id of the leader of the lobby
+     * @param numPlayers Number of players in the lobby
+     * @param leaderSocketId Socket id of the leader of the lobby
      * @returns The id of the lobby created if it was created successfully, undefined otherwise
      */
-    static async createLobby(num_players: number, leader_socket_id: string): Promise<string |undefined> {
+    static async createLobby(numPlayers: number, leaderSocketId: string): Promise<string |undefined> {
+
+        // Remove the player from the lobbies where he is leader
+        const lobbyId: string | undefined = await LobbyRepository.getLobbyWithPlayer(leaderSocketId);
+
+        if(lobbyId !== undefined) {
+            console.log("Removing the player from the lobby: ", lobbyId);
+            await LobbyManager.removePlayerFromLobby(leaderSocketId, lobbyId);
+        }
 
         // Generate a new random lobby id
         const lobby_id = this.generateLobbyId();
-        
+
         // Create new lobby empty
-        await LobbyRepository.createLobby(lobby_id, leader_socket_id, num_players);
+        await LobbyRepository.createLobby(lobby_id, leaderSocketId, numPlayers);
 
         // Add the leader to the players in this lobby
-        await LobbyRepository.addPlayer(leader_socket_id, lobby_id)
+        await LobbyRepository.addPlayer(leaderSocketId, lobby_id)
+
+        LobbyManager.notifyNewPlayers(lobby_id);
 
         return lobby_id;
     }
@@ -32,19 +112,28 @@ export class LobbyManager {
 
     /**
      * Adds the player with the given socket to the lobby with the given id
-     * @param player_socket_id Socket of the player to be added
-     * @param lobby_id The id of the lobby to be added
+     * @param playerSocketId Socket of the player to be added
+     * @param lobbyId The id of the lobby to be added
      * @returns 
      */
-    static async joinLobby(player_socket_id: string, lobby_id: string): Promise<boolean> {
+    static async joinLobby(playerSocketId: string, lobbyId: string): Promise<boolean> {
+
+        // Remove the player if he is in a lobby
+        const lobbyIdPlayer: string | undefined = await LobbyRepository.getLobbyWithPlayer(playerSocketId);
+
+        if(lobbyIdPlayer !== undefined) {
+            console.log("Removing the player from the lobby: ", lobbyIdPlayer);
+            await LobbyManager.removePlayerFromLobby(playerSocketId, lobbyIdPlayer);
+        }
 
         // Check if the lobby is started
-        if(await LobbyRepository.isStarted(lobby_id)) {
+        if(await LobbyRepository.isActive(lobbyId)) {
             console.log("Lobby is started.")
             return false
         }
-        const max = await LobbyRepository.getMaxPlayers(lobby_id);
-        const current = await LobbyRepository.getCurrentPlayers(lobby_id);
+
+        const max = await LobbyRepository.getMaxPlayers(lobbyId);
+        const current = await LobbyRepository.getCurrentPlayers(lobbyId);
 
         if(max === undefined || current === undefined) {
             console.log("Error getting the number of players in the lobby!");
@@ -57,7 +146,9 @@ export class LobbyManager {
             return false;
         }
     
-        LobbyRepository.addPlayer(player_socket_id, lobby_id);
+        await LobbyRepository.addPlayer(playerSocketId, lobbyId);
+        LobbyManager.notifyNewPlayers(lobbyId);
+
         return true;
     }
 
@@ -70,8 +161,6 @@ export class LobbyManager {
      */
     static async startLobby(playerSocketId: string, lobbyId: string): Promise<number| undefined> {
 
-        const lobbySocketsId: string[] = await LobbyRepository.getPlayersInLobby(lobbyId);
-        
         // Check if the user is the leader of the lobby
         if (!await LobbyRepository.isLeader(playerSocketId, lobbyId)) {
             console.log("You are not the leader of the lobby!");
@@ -79,11 +168,20 @@ export class LobbyManager {
         }
 
         // Check if the lobby has already started
-        if(await LobbyRepository.isStarted(lobbyId)) {
+        if(await LobbyRepository.isActive(lobbyId)) {
             console.log("Lobby already started!");
             return undefined;
         }
 
+        const lobbyPlayers: { socketId: string, isLeader: boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
+
+        if(lobbyPlayers === undefined) {
+            console.log("Error getting the players in the lobby!");
+            return undefined;
+        }
+
+        const lobbySocketsId: string[] = lobbyPlayers.map(player => player.socketId);
+        
         if(lobbySocketsId.length < 2) {
             console.log("Not enough players to start the game!", lobbySocketsId.length);
             return undefined;
@@ -127,13 +225,27 @@ export class LobbyManager {
         return lobbySocketsId.length;
     }
 
-    /**
-     * Remove the player with the given socket from the lobby
-     * @param player_socket_id Socket of the player to remove from the lobby
-     * @returns 
-     */
-    static async removePlayerFromLobby(player_socket_id: string): Promise<void> {
-        LobbyRepository.removePlayer(player_socket_id);
+
+    static async removePlayerFromLobby(playerSocketId: string, lobbyId: string): Promise<void> {
+
+        // Disconnect the player from the started lobbies
+        const isActive: boolean = await LobbyRepository.isActive(lobbyId);
+        const isLeader: boolean = await LobbyRepository.isLeader(playerSocketId, lobbyId);
+
+        if(isActive) {
+            await GameManager.disconnectPlayer(playerSocketId, lobbyId);
+            return;
+        } 
+
+        if(isLeader) {
+            await LobbyManager.notifyLobbyDisband(lobbyId);
+            await LobbyRepository.removeLobby(lobbyId);
+            return;
+        } else {
+            await LobbyRepository.removePlayerFromLobby(playerSocketId, lobbyId);
+            await LobbyManager.notifyNewPlayers(lobbyId);
+        }
+
         return;
     }
 

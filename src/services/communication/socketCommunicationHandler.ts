@@ -12,7 +12,8 @@ import {
     BackendGameSelectPlayerJSON,
     BackendGameSelectCardJSON,
     BackendNotifyActionJSON,
-    BackendStartGameResponseJSON
+    BackendStartGameResponseJSON,
+    BackendPlayerDisconnectedJSON
 } from "../../api/socketAPI.js";
 import { SocketManager } from "../socketManager.js";
 import { TIMEOUT_RESPONSE } from "../../constants/constants.js";
@@ -363,5 +364,16 @@ export class SocketCommunicationHandler implements CommunicationHandler {
         }
 
         this.sockets.get(playerId)!.emit("game-state", response);
+    }
+
+    notifyPlayerDisconnected(playerId: number): void {
+        this.sockets.forEach((socket) => {
+            const msg: BackendPlayerDisconnectedJSON = {
+                error: false,
+                errorMsg: "",
+                playerId: playerId
+            }
+            socket.emit("player-disconnected", msg);
+        });
     }
 }

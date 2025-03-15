@@ -15,14 +15,14 @@ export class GameManager {
             return false;
         }
 
-        const player_id_in_game: number | undefined = await GameRepository.getPlayerIdInGame(socketId);
+        const playerIdInGame: number | undefined = await GameRepository.getPlayerIdInGame(socketId);
 
-        if (player_id_in_game === undefined){
+        if (playerIdInGame === undefined){
             console.log("You are not in the game!");
             return false;
         }
         
-        const play: Play = new Play(player_id_in_game, cards);
+        const play: Play = new Play(playerIdInGame, cards);
         if (!await current_game.handlePlay(play))
         {
             console.log("Could not send the message!");
@@ -30,6 +30,24 @@ export class GameManager {
         }
 
         return true;
+    }
+
+    static async disconnectPlayer(socketId: string, lobbyId: string): Promise<void>{
+        const current_game: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
+
+        if (current_game === undefined){
+            console.log("Game not found!");
+            return;
+        }
+
+        const playerInGame: number | undefined = await GameRepository.getPlayerIdInGame(socketId);
+
+        if (playerInGame === undefined){
+            console.log("You are not in the game!");
+            return;
+        }
+
+        current_game.disconnectPlayer(playerInGame);
     }
 
 }

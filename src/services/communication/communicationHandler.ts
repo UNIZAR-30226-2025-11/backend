@@ -24,4 +24,5 @@ export interface CommunicationHandler {
     notifyOkPlayedCards(playerId: number): void;
     notifyFavorAction(creatorId: number, targetId: number): void;
     notifyStartGame(): void;
+    notifyPlayerDisconnected(playerId: number): void;
 }
