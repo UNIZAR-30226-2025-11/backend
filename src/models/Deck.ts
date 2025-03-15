@@ -66,7 +66,7 @@ export class Deck {
      * @param numPlayers - Number of players who play
      */
     addBombs(numPlayers: number){
-        for (let i = 0; i < numPlayers+100; i++) {
+        for (let i = 0; i < numPlayers; i++) {
             this.cards.push(new Card(CardType.Bomb));
         }
         this.shuffle();
