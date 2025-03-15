@@ -1,6 +1,5 @@
 import { Socket } from "socket.io";
 import { LobbyManager } from "../services/lobbyManager.js";
-import { SocketManager } from "../services/socketManager.js";
 
 import { 
     BackendCreateLobbyResponseJSON, 
@@ -136,13 +135,4 @@ export const setupLobbyHandlers = (socket: Socket) => {
         console.log(`Game started in lobby with ID: ${data.lobbyId}`);
     });
 
-    socket.on("disconnect", async () => {
-        
-        // Remove the player from the lobby
-        await LobbyManager.removePlayerFromLobby(socket.id);
-
-        SocketManager.removeSocket(socket.id);
-
-        console.log("User disconnected!");
-    });
 };

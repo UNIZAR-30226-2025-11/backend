@@ -144,11 +144,22 @@ export class GameObject {
     // Starting and disconnect related methods
 
     disconnectPlayer(playerId:number): void {
-        // FIXME
+        
         const player: Player|undefined = this.players[playerId];
 
-        console.log("Player", player.id, "disconnected!");
+        if(player === undefined){
+            console.log("Player not found!");
+            return;
+        }
+
         player.disconnected = true;
+
+        this.callSystem.notifyPlayerDisconnected(playerId);
+
+        if(this.turn === playerId){
+            this.setNextTurn();
+            this.communicateNewState();
+        }
     }
     
     // --------------------------------------------------------------------------------------
