@@ -50,4 +50,34 @@ export class GameManager {
         currentGame.disconnectPlayer(playerInGame);
     }
 
+    static async handleWinner(username: string, coinsEarned: number, lobbyId: string): Promise<void>{
+
+        const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
+
+        if (currentGame === undefined){
+            console.log("Game not found!");
+            return;
+        }
+
+        const winnerId: number | undefined = currentGame.getWinnerId();
+
+        if(winnerId === undefined){
+            console.log("Game not finished!");
+            return;
+        }
+
+        if (await GameRepository.getPlayerIdInGame(username) !== winnerId){
+            console.log("You are not the winner!");
+            return;
+        }
+
+        GameRepository.addCoinsToPlayer(username, coinsEarned);
+        GameRepository.addWinToPlayer(username);
+        GameRepository.addGamePlayedToLobby(lobbyId);
+
+        LobbyManager.lobbiesGames.delete(lobbyId);
+
+
+    }
+
 }

@@ -49,7 +49,7 @@ export type BackendGamePlayedCardsResponseJSON = {
 // Message to send the winner of the game
 // Started by: The backend
 // Listened by: Every player in the frontend
-// Ack: None
+// Ack: Yes. Only the winner will send the ack
 // Socket-event: "winner"
 // -----------------------------------------------------------
 
@@ -58,6 +58,15 @@ export type BackendWinnerJSON = {
     errorMsg: string;
     userId: number;
     coinsEarned: number;
+    lobbyId: string;
+}
+
+export type FrontendWinnerResponseJSON = {
+    error: boolean;
+    errorMsg: string;
+    userId: number;
+    coinsEarned: number;
+    lobbyId: string;
 }
 
 // -----------------------------------------------------------

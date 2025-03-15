@@ -20,7 +20,7 @@ export class GameObject {
     turn: number;
     turnTimeout: NodeJS.Timeout | null;
     numberOfTurnsLeft: number;
-    hasWinner: boolean;
+    winner: number | undefined;
     callSystem: CommunicationHandler;
     leaderId : number;
 
@@ -44,7 +44,7 @@ export class GameObject {
 
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
-        this.hasWinner = false;
+        this.winner = undefined;
         this.numberOfTurnsLeft = 1;
         this.turnTimeout = null;
         this.leaderId = leaderId;
@@ -78,6 +78,11 @@ export class GameObject {
     // --------------------------------------------------------------------------------------
     // Class Methods 
 
+    getWinnerId(): number | undefined {
+        return this.winner;
+    }
+
+
     toJSON() {
         return null;
     }
@@ -107,9 +112,12 @@ export class GameObject {
     
         const cb = () => {
             this.players[this.turn].active = false;
-            this.checkWinner();
-            this.nextActivePlayer();
-            this.startTurnTimer(); // Restart timer for next player
+            if(this.checkWinner() === undefined){
+                // If there is no winner, start the next turn
+                this.setNextTurn();
+                this.startTurnTimer();
+            }
+            
         }
         
         this.turnTimeout = setTimeout(cb, TURN_TIME_LIMIT);
@@ -197,7 +205,7 @@ export class GameObject {
         }
         this.callSystem.notifyWinner(activePlayers[0].id, this.numberOfPlayers*100);
 
-        this.hasWinner = true;
+        this.winner = activePlayers[0].id;
 
         return activePlayers[0];
     }
@@ -600,10 +608,10 @@ export class GameObject {
             const newCard: Card = this.deck.drawLast();
 
             this.handleNewCard(newCard, play.idPlayer);
-            this.setNextTurn();
-            this.checkWinner();
-            this.startTurnTimer();
-            
+            if(this.checkWinner() === undefined){
+                this.startTurnTimer();
+                this.setNextTurn();
+            }
         } else 
         {
             if(!this.isValidPlay(play)){

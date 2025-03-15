@@ -3,6 +3,7 @@ import { GameManager } from "../services/gameManager.js";
 import { 
     FrontendGamePlayedCardsJSON,
     BackendGamePlayedCardsResponseJSON,
+    FrontendWinnerResponseJSON
 } from "../api/socketAPI.js";
 import { Card, CardType } from "../models/Card.js";
 import { CardArray } from "../models/CardArray.js";
@@ -49,6 +50,16 @@ export const setupGameHandlers = (socket: Socket) => {
             return;
         }
     
+    });
+
+
+    socket.on("winner", (response: FrontendWinnerResponseJSON) => {
+        handleError(response.error, response.errorMsg);
+
+        const username: string = socket.data.user.username;
+
+        GameManager.handleWinner(username, response.coinsEarned, response.lobbyId);
+
     });
 
 };
