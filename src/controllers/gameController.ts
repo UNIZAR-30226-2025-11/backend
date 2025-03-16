@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { GameManager } from "../services/gameManager.js";
+import { GameManager } from "../managers/gameManager.js";
 import { 
     FrontendGamePlayedCardsJSON,
     BackendGamePlayedCardsResponseJSON,

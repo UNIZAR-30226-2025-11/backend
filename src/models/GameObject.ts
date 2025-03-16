@@ -1,5 +1,5 @@
 import { Player } from "./Player.js";
-import { CommunicationHandler } from "../services/communication/communicationHandler.js";
+import { CommunicationGateway } from "../communication/interface/communicationGateway.js";
 import { TURN_TIME_LIMIT } from "../constants/constants.js";
 import { Deck } from "./Deck.js";
 import { Play } from "./Play.js";
@@ -21,14 +21,14 @@ export class GameObject {
     turnTimeout: NodeJS.Timeout | null;
     numberOfTurnsLeft: number;
     winner: number | undefined;
-    callSystem: CommunicationHandler;
+    callSystem: CommunicationGateway;
     leaderId : number;
 
     constructor(
         id:string,
         numberOfPlayers: number, 
         leaderId: number, 
-        comm: CommunicationHandler
+        comm: CommunicationGateway
     ) {
         this.gameId = id;
         this.callSystem = comm;
@@ -203,7 +203,7 @@ export class GameObject {
         if (activePlayers.length !== 1) {
             return undefined;
         }
-        this.callSystem.notifyWinner(activePlayers[0].id, this.numberOfPlayers*100);
+        this.callSystem.notifyWinner(activePlayers[0].id, this.numberOfPlayers*100, this.gameId);
 
         this.winner = activePlayers[0].id;
 

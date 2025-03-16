@@ -1,6 +1,6 @@
 // src/services/socketCommunicationHandler.ts
 import { Socket } from "socket.io";
-import { CommunicationHandler } from "./communicationHandler.js";
+import { CommunicationGateway } from "../interface/communicationGateway.js";
 import { 
     BackendStateUpdateJSON, 
     BackendWinnerJSON, 
@@ -15,7 +15,7 @@ import {
     BackendStartGameResponseJSON,
     BackendPlayerDisconnectedJSON
 } from "../../api/socketAPI.js";
-import { SocketManager } from "../socketManager.js";
+import { SocketManager } from "../../managers/socketManager.js";
 import { TIMEOUT_RESPONSE } from "../../constants/constants.js";
 import { CardType, Card } from "../../models/Card.js";
 import { handleError } from "../../constants/constants.js";
@@ -23,7 +23,7 @@ import { ActionType } from "../../models/ActionType.js";
 import { CardArray } from "../../models/CardArray.js";
 import { Player } from "../../models/Player.js";
 
-export class SocketCommunicationHandler implements CommunicationHandler {
+export class socketCommunicationGateway implements CommunicationGateway {
     private sockets: Map<number, Socket>; // Map player IDs to their sockets
 
     constructor() {
@@ -311,14 +311,15 @@ export class SocketCommunicationHandler implements CommunicationHandler {
         });
     }
 
-    notifyWinner(winnerId: number, coinsEarned: number): void {
+    notifyWinner(winnerId: number, coinsEarned: number, lobbyId: string): void {
         
         this.sockets.forEach((socket, index) => {
             const msg: BackendWinnerJSON = {
                 error: false,
                 errorMsg: "",
                 userId: winnerId,
-                coinsEarned:index==winnerId?coinsEarned:0
+                coinsEarned:index==winnerId?coinsEarned:0,
+                lobbyId: lobbyId
             }
             socket.emit("winner", msg);
         });

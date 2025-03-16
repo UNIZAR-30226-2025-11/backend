@@ -1,7 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { setupLobbyHandlers } from "./controllers/lobbyController.js";
 import { setupGameHandlers } from "./controllers/gameController.js";
-import { SocketManager } from "./services/socketManager.js"
+import { SocketManager } from "./managers/socketManager.js"
 import { setupDisconnectionHandlers } from "./controllers/disconnectionController.js";
 
 export const setupSocket = (io: Server) => {

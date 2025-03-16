@@ -3,7 +3,7 @@ import { Player } from "../../models/Player.js";
 import { CardArray } from "../../models/CardArray.js";
 
 // src/services/communicationHandler.ts
-export interface CommunicationHandler {
+export interface CommunicationGateway {
     toJSON(): {comm: number};
     notifyGameState(playedCards: CardArray, players: Player[], turn: number, timeOut: number, playerId: number): void;
     getACardType(playerId: number, lobbyId: string): Promise<CardType|undefined>;
@@ -20,7 +20,7 @@ export interface CommunicationHandler {
     notifyFutureCards(cards: CardArray, playerId:number): void;
     notifyAttackAction(creatorId: number, targetId: number): void;
     notifyStealFailedAction(creatorId: number, targetId: number): void;
-    notifyWinner(winnerId: number, coinsEarned: number): void;
+    notifyWinner(winnerId: number, coinsEarned: number, lobbyId: string): void;
     notifyOkPlayedCards(playerId: number): void;
     notifyFavorAction(creatorId: number, targetId: number): void;
     notifyStartGame(): void;

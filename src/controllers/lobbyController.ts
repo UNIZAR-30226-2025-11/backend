@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { LobbyManager } from "../services/lobbyManager.js";
+import { LobbyManager } from "../managers/lobbyManager.js";
 
 import { 
     BackendCreateLobbyResponseJSON, 
@@ -12,7 +12,7 @@ import {
 } from "../api/socketAPI.js";
 import { handleError } from "../constants/constants.js";
 import { LobbyRepository } from "../repositories/lobbyRepository.js";
-import { SocketManager } from "../services/socketManager.js";
+import { SocketManager } from "../managers/socketManager.js";
 
 
 export async function notifyNewPlayers(lobbyId: string): Promise<void> {

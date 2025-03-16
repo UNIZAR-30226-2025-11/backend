@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
-import { LobbyManager } from "../services/lobbyManager.js";
-import { SocketManager } from "../services/socketManager.js";
+import { LobbyManager } from "../managers/lobbyManager.js";
+import { SocketManager } from "../managers/socketManager.js";
 
 
 export const setupDisconnectionHandlers = (socket: Socket) => {

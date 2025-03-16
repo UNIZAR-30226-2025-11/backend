@@ -2,7 +2,7 @@ import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken';
 import { Socket } from 'socket.io';
 import { JWT_SECRET } from '../config.js';
-import { SocketManager } from '../services/socketManager.js';
+import { SocketManager } from '../managers/socketManager.js';
 
 
 export const protectSocket = (socket: Socket, next: (err?: Error) => void) => {

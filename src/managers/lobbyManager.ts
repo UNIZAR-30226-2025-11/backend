@@ -1,5 +1,5 @@
 import { GameObject } from "../models/GameObject.js";
-import { SocketCommunicationHandler } from "./communication/socketCommunicationHandler.js"
+import { socketCommunicationGateway } from "../communication/implementations/socketCommunicationGateway.js"
 import { LobbyRepository } from "../repositories/lobbyRepository.js";
 import { SocketManager } from "./socketManager.js";
 import { Socket } from "socket.io";
@@ -136,7 +136,7 @@ export class LobbyManager {
 
         let leaderIdInLobby = -1;
 
-        let comm:SocketCommunicationHandler = new SocketCommunicationHandler();
+        let comm:socketCommunicationGateway = new socketCommunicationGateway();
 
         for(let i = 0; i < lobbySocketsId.length; i++) {
             if(lobbySocketsId[i] === username) {
