@@ -22,6 +22,10 @@ services:
     container_name: katboom_pg_db
     image: postgres
     env_file: ../.env
+    environment:
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
     restart: unless-stopped
     # --------------------------------------------------------------------------
     healthcheck:
