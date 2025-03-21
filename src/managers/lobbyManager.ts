@@ -1,8 +1,6 @@
 import { GameObject } from "../models/GameObject.js";
 import { socketCommunicationGateway } from "../communication/implementations/socketCommunicationGateway.js"
 import { LobbyRepository } from "../repositories/lobbyRepository.js";
-import { SocketManager } from "./socketManager.js";
-import { Socket } from "socket.io";
 import { GameManager } from "./gameManager.js";
 import { notifyNewPlayers, notifyLobbyDisband } from "../controllers/lobbyController.js";
 import logger from "../config/logger.js";
@@ -61,6 +59,14 @@ export class LobbyManager {
         return newLobbyId;
     }
 
+    static async lobbyExists(lobbyId: string): Promise<boolean> {
+        return await LobbyRepository.lobbyExists(lobbyId);
+    }
+
+    static async playerIsInLobby(username: string, lobbyId: string): Promise<boolean> {
+        const playersInLobby: {username:string, isLeader:boolean}[]  = await LobbyRepository.getPlayersInLobby(lobbyId);
+        return playersInLobby.some(player => player.username === username);
+    }
 
     /**
      * Adds the player with the given socket to the lobby with the given id
@@ -76,16 +82,28 @@ export class LobbyManager {
         await this.removePlayer(username);
 
         // Check if the lobby is started
-        if(await LobbyRepository.isActive(lobbyId)) {
+        const isActive: boolean | undefined = await LobbyRepository.isActive(lobbyId);
+
+        if(isActive === undefined) {
+            logger.error(`Error getting the lobby state!`);
+            return false;
+        }
+
+        // Check if the lobby is already started
+        if(!isActive) {
             logger.warn(`Lobby ${lobbyId} is already started!`);
             return false
         }
 
         const max = await LobbyRepository.getMaxPlayers(lobbyId);
-        const current = await LobbyRepository.getCurrentNumberOfPlayersInLobby(lobbyId);
+        if(max === undefined) {
+            logger.error(`Error getting the maximum number of player in the lobby!`);
+            return false;
+        }
 
-        if(max === undefined || current === undefined) {
-            logger.error(`Error getting the number of players in the lobby!`);
+        const current = await LobbyRepository.getCurrentNumberOfPlayersInLobby(lobbyId);
+        if(current === undefined) {
+            logger.error(`Error getting the current number of player in the lobby!`);
             return false;
         }
 
@@ -103,18 +121,18 @@ export class LobbyManager {
 
     /**
      * Start the lobby with the given id
-     * @param username The socket of the player that wants to start the lobby
+     * @param leaderUsername The socket of the player that wants to start the lobby
      * @param lobbyId The id of the lobby to start
      * 
      * @returns The number of players in the lobby if the lobby was started successfully, undefined otherwise 
      */
-    static async startLobby(username: string, lobbyId: string): Promise<number| undefined> {
+    static async startLobby(leaderUsername: string, lobbyId: string): Promise<number| undefined> {
 
-        logger.info(`Player ${username} is trying to start lobby ${lobbyId}.`);
+        logger.info(`Player ${leaderUsername} is trying to start lobby ${lobbyId}.`);
 
         // Check if the user is the leader of the lobby
-        if (!await LobbyRepository.isLeader(username, lobbyId)) {
-            logger.warn(`Player ${username} is not the leader of the lobby!`);
+        if (!await LobbyRepository.isLeader(leaderUsername, lobbyId)) {
+            logger.warn(`Player ${leaderUsername} is not the leader of the lobby!`);
             return undefined;
         }
 
@@ -124,48 +142,28 @@ export class LobbyManager {
             return undefined;
         }
 
-        const lobbyPlayers: { username: string, isLeader: boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
+        const lobbyPlayers: { username: string, isLeader: boolean}[] = await LobbyRepository.getPlayersInLobby(lobbyId);
 
-        if(lobbyPlayers === undefined) {
-            logger.error(`Error getting the players in the lobby ${lobbyId}!`);
-            return undefined;
-        }
+        const lobbyPlayersUsernames: string[] = lobbyPlayers.map(player => player.username);
+        const numPlayers: number = lobbyPlayers.length;
 
-        const lobbySocketsId: string[] = lobbyPlayers.map(player => player.username);
-        
-        if(lobbySocketsId.length < 2) {
+        if(numPlayers < 2) {
             logger.warn(`Lobby ${lobbyId} has less than 2 players!`);
             return undefined;
         }
 
-        let leaderIdInLobby = -1;
+        const comm:socketCommunicationGateway = new socketCommunicationGateway(lobbyId);
 
-        const comm:socketCommunicationGateway = new socketCommunicationGateway();
-
-        for(let i = 0; i < lobbySocketsId.length; i++) {
-            if(lobbySocketsId[i] === username) {
-                leaderIdInLobby = i;
-            }
-            const socket: Socket | undefined = SocketManager.getSocket(lobbySocketsId[i]);
-
-            if(socket === undefined) {
-                logger.error(`Socket ${lobbySocketsId[i]} not found!`);
-                return undefined;
-            }
-
-            comm.registerPlayer(i, socket);
-            await LobbyRepository.setPlayerIdInGame(lobbySocketsId[i], i);
-        }
-
-        if(leaderIdInLobby === -1) {
-            logger.error(`Leader ${username} not found in the lobby ${lobbyId}!`);
-            return undefined;
-        }
+        lobbyPlayersUsernames.forEach(async (username, i) => {
+            comm.registerPlayer(username);
+            await LobbyRepository.setPlayerIdInGame(username, i);
+        });
 
         const game:GameObject = new GameObject(
             lobbyId,
-            lobbySocketsId.length, 
-            leaderIdInLobby, 
+            numPlayers, 
+            lobbyPlayersUsernames,
+            leaderUsername, 
             comm,
         );
 
@@ -173,7 +171,7 @@ export class LobbyManager {
 
         await LobbyRepository.startLobby(lobbyId);
 
-        return lobbySocketsId.length;
+        return numPlayers;
     }
 
     /**

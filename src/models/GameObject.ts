@@ -14,27 +14,28 @@ enum AttackType {
 }
 
 export class GameObject {
-    gameId: string;
+    lobbyId: string;
     numberOfPlayers: number;
     players: Player[];
     deck: Deck;
     turn: number;
     turnTimeout: NodeJS.Timeout | null;
     numberOfTurnsLeft: number;
-    winner: number | undefined;
+    winnerUsername: string | undefined;
     callSystem: CommunicationGateway;
-    leaderId : number;
+    leaderUsername : string;
 
     constructor(
-        id:string,
-        numberOfPlayers: number, 
-        leaderId: number, 
+        lobbyId:string,
+        numberOfPlayers: number,
+        playersUsernames: string[],
+        leaderUsername: string, 
         comm: CommunicationGateway
     ) {
 
         logger.info(`[GAME] Creating game with ${numberOfPlayers} players`);
         
-        this.gameId = id;
+        this.lobbyId = lobbyId;
         this.callSystem = comm;
 
         this.deck = Deck.createStandardDeck(numberOfPlayers);
@@ -42,16 +43,16 @@ export class GameObject {
         this.players = [];
         for(let i = 0; i < numberOfPlayers; i++)
         {
-            this.players.push(Player.createStandarPlayer(i, this.deck));
+            this.players.push(Player.createStandarPlayer(i, playersUsernames[i], this.deck));
         }
         this.deck.addBombs(numberOfPlayers-1);
 
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
-        this.winner = undefined;
+        this.winnerUsername = undefined;
         this.numberOfTurnsLeft = 1;
         this.turnTimeout = null;
-        this.leaderId = leaderId;
+        this.leaderUsername = leaderUsername;
 
         this.callSystem.broadcastStartGame();
         this.communicateNewState();
@@ -69,11 +70,10 @@ export class GameObject {
             if(!player.disconnected)
             {
                 this.callSystem.notifyGameState(
-                    player.hand, 
                     this.players, 
+                    index,
                     this.turn, 
                     TURN_TIME_LIMIT, 
-                    index
                 )
             }
         });
@@ -82,16 +82,25 @@ export class GameObject {
     // --------------------------------------------------------------------------------------
     // Class Methods 
 
-    getWinnerId(): number | undefined {
-        return this.winner;
-    }
-
-    isLeader(playerId: number): boolean {
-        return this.leaderId === playerId;
+    getWinnerId(): string | undefined {
+        return this.winnerUsername;
     }
 
     getMaxPlayers(): number {
         return this.numberOfPlayers;
+    }
+
+    getIdByUsername(username: string): number | undefined {
+        return this.players.findIndex(p => p.username === username);
+    }
+
+    isInGame(username: string): boolean {
+        return this.getIdByUsername(username) !== undefined
+    }
+    
+    getPlayerByUsername(username: string): Player | undefined {
+        const id = this.getIdByUsername(username);
+        return id ? this.players[id] : undefined;
     }
 
     /**
@@ -121,25 +130,34 @@ export class GameObject {
 
     isValidPlay(play:Play): boolean{
         
-        let msg = "";
-        if (0 > play.idPlayer || play.idPlayer >= this.numberOfPlayers) {
-            msg = "Invalid player id!";
-        } else if (play.idPlayer != this.turn) {
-            msg = "Not your turn!";
-        } else if (!this.players[play.idPlayer].active) {
-            msg = "You have already lost!";
-        } else if (!this.players[play.idPlayer].hand.containsAll(play.playedCards)) {
-            msg = "You don't have the cards you are trying to play!";
-        } else if (!play.isPlayable()){
-            msg = "The cards are not playable";
+        const player: Player|undefined = this.getPlayerByUsername(play.username);
+
+        if (player === undefined) {
+            logger.warn(`Invalid player username!`);
+            return false;
+        } 
+        
+        if (player.id != this.turn) {
+            logger.warn(`Not your turn!`);
+            return false;
+        }
+        
+        if (!player.active) {
+            logger.warn(`You have already lost!`);
+            return false;
+        } 
+        
+        if (!player.hand.containsAll(play.playedCards)) {
+            logger.warn(`You don't have the cards you are trying to play!`);
+            return false;
+        } 
+        
+        if (!play.isPlayable()){
+            logger.warn(`The cards are not playable`);
+            return false;
         }
 
-        if (msg != "") {
-            this.callSystem.notifyErrorPlayedCards(msg, play.idPlayer);
-            return false;
-        } else {
-            return true;
-        }
+        return true;
 
     }
 
@@ -208,11 +226,13 @@ export class GameObject {
             return undefined;
         }
 
-        logger.info(`[GAME] Player ${activePlayers[0].id} has won!`);
+        logger.info(`[GAME] Player ${activePlayers[0].username} has won!`);
 
-        this.callSystem.broadcastWinnerNotification(activePlayers[0].id, this.numberOfPlayers*100, this.gameId);
+        this.callSystem.broadcastWinnerNotification(
+            activePlayers[0].username, 
+            this.numberOfPlayers*100);
 
-        this.winner = activePlayers[0].id;
+        this.winnerUsername = activePlayers[0].username;
 
         return activePlayers[0];
     }
@@ -286,11 +306,9 @@ export class GameObject {
      * @param newCard - The new card to handle
      * @param player - The player who receives the card
      */
-    handleNewCard(newCard: Card, playerId: number){
+    handleNewCard(newCard: Card, player: Player): void{
 
-        logger.info(`[GAME] Handling new card for player ${playerId}`);
-
-        const player: Player = this.players[playerId];
+        logger.info(`[GAME] Handling new card for player ${player.username}`);
 
         if (newCard.type === CardType.Bomb) {
             // If the card is a bomb
@@ -300,7 +318,7 @@ export class GameObject {
 
             if (indexDeactivate !== -1) {
                 // If the player has a deactivate card
-                logger.info(`[GAME] Player ${playerId} has defused the bomb using a deactivate card`);
+                logger.info(`[GAME] Player ${player.username} has defused the bomb using a deactivate card`);
 
                 // Remove the deactivate card from the player
                 player.hand.popNth(indexDeactivate); 
@@ -308,43 +326,42 @@ export class GameObject {
                 // Add the bomb back to the deck
                 this.deck.addWithShuffle(newCard);
 
-                this.callSystem.broadcastBombDefusedAction(playerId)
+                this.callSystem.broadcastBombDefusedAction(player.username)
 
             } else {
                 // If the player does not have a deactivate card
-                logger.info(`[GAME] Player ${playerId} has exploded because he did not have a deactivate card`);
+                logger.info(`[GAME] Player ${player.username} has exploded because he did not have a deactivate card`);
 
                 // Remove the player from the active players
-                this.players[player.id].active = false;
+                player.active = false;
 
                 // Notify all players that the player has lost
-                this.callSystem.broadcastPlayerLostAction(player.id);
+                this.callSystem.broadcastPlayerLostAction(player.username);
             }
         } else{
             // If the card is not a bomb
-            logger.info(`[GAME] Player ${playerId} has drawn a card`);
+            logger.info(`[GAME] Player ${player.username} has drawn a card`);
 
             // Add the card to the player's hand
             player.hand.push(newCard);
 
             // Notify the player that he has gotten a new card
-            this.callSystem.broadcastDrawCardAction(player.id)
+            this.callSystem.broadcastDrawCardAction(player.username)
         }
 
-        this.callSystem.notifyDrewCard(newCard, playerId);
+        this.callSystem.notifyDrewCard(newCard, player.username);
     }
 
-    async playCards(play: Play): Promise<void>
+    async playCards(playedCards: CardArray, player:Player): Promise<boolean>
     {  
+        const card: Card = playedCards.values[0];;
+        logger.info(`[GAME] Player ${player.username} is playing cards`);
+        logger.debug(`[GAME] Cards played: ${playedCards}`);
 
-        logger.info(`[GAME] Player ${play.idPlayer} is playing cards`);
-        logger.debug(`[GAME] Cards played: ${play.playedCards.values}`);
-
-        const card: Card = play.playedCards.values[0];
-        const player: Player = this.players[play.idPlayer];
-
+        let actuallyPlayed: boolean = true;
+        let cardsFuture: CardArray | undefined = undefined;
         if (card.type == CardType.SeeFuture){
-            this.seeFuture(player);
+            cardsFuture = this.seeFuture(player);
         }
         else if (card.type == CardType.Shuffle){
             this.shuffle(player);
@@ -356,19 +373,29 @@ export class GameObject {
             this.attack(player);
         } 
         else if (card.type == CardType.Favor){
-            await this.favor(player);
+            actuallyPlayed = await this.favor(player);
         }
         else if (Card.isWild(card)){
-            await this.playWildCard(play.playedCards.length(), player);
+            actuallyPlayed = await this.playWildCard(playedCards.length(), player);
         }
         else{
             logger.error(`[GAME] Card type not recognized`);
-            this.callSystem.notifyErrorPlayedCards(`Card type not recognized`, player.id);
-            return;
+            return false;
         }
 
-        this.players[play.idPlayer].hand.removeCards(play.playedCards);
-        this.callSystem.notifyOkPlayedCards(play.idPlayer);
+        // Remove the cards from the player's hand if they were actually played
+        if(actuallyPlayed){
+            player.hand.removeCards(playedCards);
+        }
+
+        if(cardsFuture !== undefined){
+            this.callSystem.notifyFutureCards(cardsFuture, player.username);
+        } else {
+            this.callSystem.notifyOkPlayedCards(player.username);
+        }
+
+        return actuallyPlayed;
+
     }   
 
     // --------------------------------
@@ -379,11 +406,11 @@ export class GameObject {
      */
     shuffle(currentPlayer: Player): void{
 
-        logger.info(`[GAME] Player ${currentPlayer.id} is shuffling the deck`);
+        logger.info(`[GAME] Player ${currentPlayer.username} is shuffling the deck`);
 
         // Randomly shuffle the deck
         this.deck.shuffle();
-        this.callSystem.broadcastShuffleDeckAction(currentPlayer.id);
+        this.callSystem.broadcastShuffleDeckAction(currentPlayer.username);
     }
 
     /**
@@ -392,7 +419,7 @@ export class GameObject {
      */
     skipTurn(currentPlayer: Player): void {
         
-        logger.info(`[GAME] Player ${currentPlayer.id} is skipping the turn`);
+        logger.info(`[GAME] Player ${currentPlayer.username} is skipping the turn`);
 
         const followingPlayer = this.players[this.nextActivePlayer()];
         if(!this.resolveNopeChain(currentPlayer, followingPlayer, CardType.Skip, AttackType.Skip))
@@ -400,29 +427,28 @@ export class GameObject {
             return;
         }
 
-        logger.info(`[GAME] Player ${currentPlayer.id} has skipped the turn`);
+        logger.info(`[GAME] Player ${currentPlayer.username} has skipped the turn`);
         
         // If the skip is not noped, change the turn
         this.setNextTurn();
         // Notify the player he had skipped the turn
-        this.callSystem.broadcastSkipTurnAction(currentPlayer.id);
+        this.callSystem.broadcastSkipTurnAction(currentPlayer.username);
     }
 
     /**
      * Shows the next 3 cards of the deck to the current player.
      * @param currentPlayer - The player who is playing the card
      */
-    seeFuture(currentPlayer: Player): void {
+    seeFuture(currentPlayer: Player): CardArray {
 
-        logger.info(`[GAME] Player ${currentPlayer.id} is seeing the future`);
+        logger.info(`[GAME] Player ${currentPlayer.username} is seeing the future`);
         
         // Get the next 3 cards
         const nextCards: CardArray = this.deck.peekN(3);
 
-        // Notify the player the next 3 cards
-        this.callSystem.notifyFutureCards(nextCards, currentPlayer.id);
+        this.callSystem.broadcastFutureAction(currentPlayer.username);
 
-        this.callSystem.broadcastFutureAction(currentPlayer.id);
+        return nextCards;
     }
 
     /**
@@ -431,7 +457,7 @@ export class GameObject {
      */
     attack(currentPlayer: Player): void {
 
-        logger.info(`[GAME] Player ${currentPlayer.id} is attacking`);
+        logger.info(`[GAME] Player ${currentPlayer.username} is attacking`);
         
         // Get the attacked player
         const attackedPlayer:Player = this.players[this.nextActivePlayer()];
@@ -440,31 +466,31 @@ export class GameObject {
             return;
         }
 
-        logger.info(`[GAME] Player ${currentPlayer.id} has attacked player ${attackedPlayer.id}`);
+        logger.info(`[GAME] Player ${currentPlayer.username} has attacked player ${attackedPlayer.id}`);
 
         // If the attack is a success, give two turn to the next one
         this.turn = this.nextActivePlayer();
         this.numberOfTurnsLeft = 2;
 
         // Notify the player that the attack is successful
-        this.callSystem.broadcastAttackAction(currentPlayer.id, attackedPlayer.id);
+        this.callSystem.broadcastAttackAction(currentPlayer.username, attackedPlayer.username);
     }
 
     /**
      * Asks a player to give a card to another player.
      * @param currentPlayer - The player who is playing the card
      */
-    async favor(currentPlayer: Player): Promise<void> {
+    async favor(currentPlayer: Player): Promise<boolean> {
 
-        logger.info(`[GAME] Player ${currentPlayer.id} is asking for a favor`);
+        logger.info(`[GAME] Player ${currentPlayer.username} is asking for a favor`);
 
         // Get the player to steal from
-        const playerID: number|undefined = await this.callSystem.getAPlayerId(currentPlayer.id, this.gameId);
+        const playerID: number|undefined = await this.callSystem.getAPlayerId(currentPlayer.username, this.lobbyId);
 
         if(playerID === undefined){
             // If the player does not select a player
             logger.warn(`[GAME] Player has not selected a player to steal`);
-            return;
+            return false;
         }
 
         const playerToSteal: Player = this.players[playerID];
@@ -472,27 +498,27 @@ export class GameObject {
         if(playerToSteal.hand.length() === 0){
             // If the player has no cards to steal
             logger.warn(`[GAME] Player has no cards to steal`);
-            return;
+            return false;
         }
 
         if(playerToSteal === currentPlayer){
             // If the player tries to steal from itself
             logger.warn(`[GAME] Player cannot steal from itself`);
-            return;
+            return false;
         }
 
         if(!this.resolveNopeChain(currentPlayer, playerToSteal, CardType.Favor, AttackType.Favor)){
             // If the player is noped dont do anything
             logger.info(`[GAME] Player has won the nope chain, favor canceled`);
-            return;
+            return true;
         }
 
-        const cardToGive: Card|undefined = await this.callSystem.getACard(currentPlayer.id, this.gameId);
+        const cardToGive: Card|undefined = await this.callSystem.getACard(currentPlayer.username, this.lobbyId);
 
         if(cardToGive === undefined){
             // If the player does not select a card
             logger.warn(`[GAME] Player has not selected a card to give`);
-            return;
+            return false;
         }
 
         const cardIndex: number = playerToSteal.hand.hasCard(cardToGive.type);
@@ -500,10 +526,10 @@ export class GameObject {
         if(cardIndex === -1){
             // If the player does not have the card
             logger.info(`[GAME] Player does not have the card you want to steal`);
-            return;
+            return false;
         }
 
-        logger.info(`[GAME] Player ${currentPlayer.id} has stolen a card from player ${playerToSteal.id}`);
+        logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card from player ${playerToSteal.id}`);
         // Steal the card
         playerToSteal.hand.popNth(cardIndex);
 
@@ -511,17 +537,20 @@ export class GameObject {
         currentPlayer.hand.push(cardToGive);
 
         // Notify the attack
-        this.callSystem.broadcastAttackAction(currentPlayer.id, playerToSteal.id);
+        this.callSystem.broadcastAttackAction(currentPlayer.username, playerToSteal.username);
 
+        return true;
     }
 
-    async playWildCard(numberOfPlayedCards:number, currentPlayer: Player): Promise<void>{
+    async playWildCard(numberOfPlayedCards:number, currentPlayer: Player): Promise<boolean>{
 
-        const playerToStealId: number|undefined = await this.callSystem.getAPlayerId(currentPlayer.id, this.gameId);
+        logger.info(`[GAME] Plaer ${currentPlayer.username} is playing a wild card.`);
+
+        const playerToStealId: number|undefined = await this.callSystem.getAPlayerId(currentPlayer.username, this.lobbyId);
         if(playerToStealId === undefined){
             // If the player does not select a player
             logger.warn(`[GAME] Player has not selected a player to steal`);
-            return;
+            return false;
         }
 
         const playerToSteal: Player = this.players[playerToStealId];
@@ -532,45 +561,44 @@ export class GameObject {
         if(numberOfCardsPlayerToSteal === 0){
             // If the player has no cards to steal
             logger.warn(`[GAME] Player has no cards to steal`);
-            return;
+            return false;
         }
 
         if(playerToSteal === currentPlayer){
             // If the player tries to steal from itself
             logger.warn(`[GAME] Player cannot steal from itself`);
-            return;
+            return false;
         }
 
         if(!this.resolveNopeChain(currentPlayer, playerToSteal, CardType.Favor, AttackType.Favor)){
             // If the player is noped notify attack failed
             logger.info(`[GAME] Player has won the nope chain, favor canceled`);
-            return;
+            return true;
         }
 
-        logger.info(`[GAME] Player ${currentPlayer.id} is playing a wild card`);
+        logger.info(`[GAME] Player ${currentPlayer.username} is playing a wild card`);
 
         if (numberOfPlayedCards == 1){
             // If the player plays a single wild card
             logger.error(`[GAME] Cannot play a single wild card`);
-            return;
+            return false;
         } else if (numberOfPlayedCards === 2 ){
             // If the player plays two wild cards, steal a random card from the player
             this.stealRandomCard(playerToSteal, currentPlayer);
-            return;
+            return true;
         } else if (numberOfPlayedCards === 3 ){
-            await this.stealCardByType(playerToSteal, currentPlayer);
-            return;
+            return await this.stealCardByType(playerToSteal, currentPlayer);
         } else {
             // If the player plays more than three wild cards
             logger.error(`[GAME] Cannot play more than three wild cards`);
-            return;
+            return false;
         }
     }
 
 
     stealRandomCard(playerToSteal: Player, currentPlayer: Player): void {
 
-        logger.info(`[GAME] Player ${currentPlayer.id} is stealing a random card from player ${playerToSteal.id}`);
+        logger.info(`[GAME] Player ${currentPlayer.username} is stealing a random card from player ${playerToSteal.id}`);
         
         // Get the card id to steal
         const cardId: number = Math.floor(Math.random() * playerToSteal.hand.length());
@@ -578,23 +606,23 @@ export class GameObject {
         // Steal the card
         const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
 
-        logger.info(`[GAME] Player ${currentPlayer.id} has stolen a card from player ${playerToSteal.id}`);
+        logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card from player ${playerToSteal.id}`);
         
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
-        this.callSystem.broadcastAttackAction(currentPlayer.id, playerToSteal.id);
+        this.callSystem.broadcastAttackAction(currentPlayer.username, playerToSteal.username);
     }
 
-    async stealCardByType(playerToSteal: Player, currentPlayer: Player): Promise<void> {
+    async stealCardByType(playerToSteal: Player, currentPlayer: Player): Promise<boolean> {
 
-        logger.info(`[GAME] Player ${currentPlayer.id} is stealing a card by type from player ${playerToSteal.id}`);
+        logger.info(`[GAME] Player ${currentPlayer.username} is stealing a card by type from player ${playerToSteal.id}`);
 
         // Get the card type to steal
-        const cardType: CardType|undefined  = await this.callSystem.getACardType(currentPlayer.id, this.gameId);
+        const cardType: CardType|undefined  = await this.callSystem.getACardType(currentPlayer.username, this.lobbyId);
 
         if(cardType === undefined){
             logger.warn(`[GAME] Player has not selected a card to steal`);
-            return;
+            return false;
         }
 
         // Get the card id to steal
@@ -602,10 +630,10 @@ export class GameObject {
 
         if(cardId === -1){
             logger.info(`[GAME] Player does not have the card you want to steal`);
-            return;
+            return true;
         }
 
-        logger.info(`[GAME] Player ${currentPlayer.id} has stolen a card from player ${playerToSteal.id}`);
+        logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card from player ${playerToSteal.id}`);
 
         // Steal the card
         const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
@@ -613,7 +641,9 @@ export class GameObject {
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
 
-        this.callSystem.broadcastAttackAction(currentPlayer.id, playerToSteal.id);
+        this.callSystem.broadcastAttackAction(currentPlayer.username, playerToSteal.username);
+
+        return true;
     }
 
     // --------------------------------
@@ -621,35 +651,42 @@ export class GameObject {
 
     async handlePlay(play: Play): Promise<boolean>
     {
-        logger.info(`[GAME] Handling play`);
+        logger.info(`[GAME] Handling play %j`, play);
+
+        const player: Player|undefined = this.getPlayerByUsername(play.username);
+
+        if(player === undefined){
+            logger.warn(`[GAME] Player ${play.username} not in game ${this.lobbyId}`);
+            return false;
+        }
 
         if(play.playedCards.length() === 0){
             // If the player is drawing a card
-            logger.info(`[GAME] Player ${play.idPlayer} is drawing a card`);
-
             const newCard: Card = this.deck.drawLast();
 
-            this.handleNewCard(newCard, play.idPlayer);
+            this.handleNewCard(newCard, player);
             if(this.getWinner() === undefined){
                 this.startTurnTimer();
                 this.setNextTurn();
             }
-        } else 
-        {
-            // If the player is playing a card
 
-            logger.info(`[GAME] Player ${play.idPlayer} is playing a card`);
-            logger.debug(`[GAME] Cards played: ${play.playedCards.values}`);
-
-            if(!this.isValidPlay(play)){
-                logger.warn(`[GAME] Invalid play`);
-                return false;
-            }
-            await this.playCards(play);
+            this.communicateNewState();
+            return true;
         }
+
+        // If the player is playing a card
+        const isValidPlay: boolean = this.isValidPlay(play);
+        if(!isValidPlay){
+            return false;
+        }
+
+        const canPlayCards:boolean = await this.playCards(play.playedCards, player);
+        if(!canPlayCards){
+            return false;
+        }
+        
         this.communicateNewState();
         return true;
     }
-
     
 }

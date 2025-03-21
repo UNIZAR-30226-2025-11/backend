@@ -17,7 +17,7 @@ export type BackendStateUpdateJSON = {
 }
 
 export type PlayerJSON = {
-    id: number;
+    username: string;
     numCards: number;
     active: boolean;
 }
@@ -56,7 +56,7 @@ export type BackendGamePlayedCardsResponseJSON = {
 export type BackendWinnerJSON = {
     error: boolean;
     errorMsg: string;
-    userId: number;
+    winnerUsername: string;
     coinsEarned: number;
     lobbyId: string;
 }
@@ -64,7 +64,7 @@ export type BackendWinnerJSON = {
 export type FrontendWinnerResponseJSON = {
     error: boolean;
     errorMsg: string;
-    userId: number;
+    winnerUsername: string;
     coinsEarned: number;
     lobbyId: string;
 }
@@ -232,8 +232,8 @@ export type BackendStartGameResponseJSON = {
 export type BackendNotifyActionJSON = {
     error: boolean;
     errorMsg: string;
-    creatorId: number;
-    actionedPlayerId: number;
+    triggerUser: string;
+    targetUser: string;
     action: string;
 }
 

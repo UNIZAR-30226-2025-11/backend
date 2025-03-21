@@ -17,12 +17,7 @@ import logger from "../config/logger.js";
 
 
 export async function notifyNewPlayers(lobbyId: string): Promise<void> {
-    const playersInLobby: {username:string, isLeader:boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
-
-    if(playersInLobby === undefined) {
-        logger.error("Error getting the players in the lobby!");
-        return;
-    }
+    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobby(lobbyId);
 
     const msg: BackendLobbyStateUpdateJSON = {
         error: false,
@@ -46,12 +41,7 @@ export async function notifyNewPlayers(lobbyId: string): Promise<void> {
 }
 
 export async function notifyLobbyDisband(lobbyId: string): Promise<void> {
-    const playersInLobby: {username:string, isLeader:boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
-
-    if(playersInLobby === undefined) {
-        logger.error("Error getting the players in the lobby!");
-        return;
-    }
+    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobby(lobbyId);
 
     const msg: BackendLobbyStateUpdateJSON = {
         error: false,
@@ -174,6 +164,38 @@ export const setupLobbyHandlers = (socket: Socket) => {
             return;
         }
 
+        // Check if the lobby exists
+        if (!await LobbyManager.lobbyExists(data.lobbyId)) {
+            
+            logger.warn(`Lobby ${data.lobbyId} does not exist!`);
+            const response: BackendJoinLobbyResponseJSON = {
+                error: true,
+                errorMsg: `Lobby ${data.lobbyId} does not exist`,
+                lobbyId: data.lobbyId
+            };
+
+            logger.debug(`Sending response "join-lobby":\t%j`, response);
+
+            socket.emit("join-lobby", response);
+            return;
+        }
+
+        if(! await LobbyManager.playerIsInLobby(username, data.lobbyId)) {
+            
+            logger.warn(`Player ${username} is already in a lobby!`);
+            const response: BackendJoinLobbyResponseJSON = {
+                error: true,
+                errorMsg: `You are already in a lobby`,
+                lobbyId: data.lobbyId
+            };
+            
+            logger.debug(`Sending response "join-lobby":\t%j`, response);
+
+            socket.emit("join-lobby", response);
+            return;
+        }
+
+        
         // Check if can join the lobby
         if (!await LobbyManager.joinLobby(username, data.lobbyId)) {
 
@@ -216,6 +238,22 @@ export const setupLobbyHandlers = (socket: Socket) => {
             const response: BackendStartLobbyResponseJSON = {
                 error: true,
                 errorMsg: "No lobby id provided!",
+                numPlayers: -1
+            };
+
+            logger.debug(`Sending response "start-lobby":\t%j`, response);
+
+            socket.emit("start-lobby", response);
+            return;
+        }
+
+        // Check if the lobby exists
+        if (!await LobbyManager.lobbyExists(data.lobbyId)) {
+            
+            logger.warn(`Lobby ${data.lobbyId} does not exist!`);
+            const response: BackendStartLobbyResponseJSON = {
+                error: true,
+                errorMsg: `Lobby ${data.lobbyId} does not exist`,
                 numPlayers: -1
             };
 

@@ -32,10 +32,9 @@ export class GameRepository {
             logger.debug(`[DB] AWAIT: Adding ${coins} coins to ${username}`);
             await db.query(
                 `
-                UPDATE users, coins
+                UPDATE users
                 SET coins = coins + $1
                 WHERE username = $2
-                RETURNING *
                 `, [coins, username]);
             logger.debug(`[DB] DONE: Added ${coins} coins to ${username}`);
 

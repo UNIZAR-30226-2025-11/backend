@@ -26,14 +26,7 @@ export class GameManager {
             return false;
         }
 
-        const playerIdInGame: number | undefined = await GameRepository.getPlayerIdInGame(username);
-
-        if (playerIdInGame === undefined){
-            logger.error(`Player ${username} is not in the game!`);
-            return false;
-        }
-        
-        const play: Play = new Play(playerIdInGame, cards);
+        const play: Play = new Play(username, cards);
 
         return await currentGame.handlePlay(play);
     }
@@ -83,14 +76,14 @@ export class GameManager {
             return;
         }
 
-        const winnerId: number | undefined = currentGame.getWinnerId();
+        const winnerUsername: string | undefined = currentGame.getWinnerId();
 
-        if(winnerId === undefined){
+        if(winnerUsername === undefined){
             logger.warn(`No winner found for lobby ${lobbyId}`);
             return;
         }
 
-        if (await GameRepository.getPlayerIdInGame(username) !== winnerId){
+        if (username !== winnerUsername){
             logger.warn(`Player ${username} is not the winner of the game!`);
             return;
         }

@@ -5,28 +5,27 @@ import { CardArray } from "../../models/CardArray.js";
 export interface CommunicationGateway {
 
     // Broadcast methods to notify all players
-    broadcastBombDefusedAction(creatorId: number): void;
-    broadcastPlayerLostAction(playerId: number): void;
-    broadcastDrawCardAction(playerId: number): void;
-    broadcastShuffleDeckAction(creatorId: number): void;
-    broadcastSkipTurnAction(creatorId: number): void;
-    broadcastFutureAction(creatorId: number): void;
-    broadcastAttackAction(creatorId: number, targetId: number): void;
-    broadcastStealFailedAction(creatorId: number, targetId: number): void;
-    broadcastWinnerNotification(winnerId: number, coinsEarned: number, lobbyId: string): void;
-    broadcastFavorAction(creatorId: number, targetId: number): void;
     broadcastStartGame(): void;
-    broadcastPlayerDisconnect(playerId: number): void;
+    broadcastBombDefusedAction(triggerUser: string): void;
+    broadcastPlayerLostAction(triggerUser: string): void;
+    broadcastDrawCardAction(triggerUser: string): void;
+    broadcastShuffleDeckAction(triggerUser: string): void;
+    broadcastSkipTurnAction(triggerUser: string): void;
+    broadcastFutureAction(triggerUser: string): void;
+    broadcastAttackAction(triggerUser: string, targetUser: string): void;
+    broadcastStealFailedAction(triggerUser: string, targetUser: string): void;
+    broadcastFavorAction(triggerUser: string, targetUser: string): void;
+    broadcastWinnerNotification(winnerUsername: string, coinsEarned: number): void;
+    broadcastPlayerDisconnect(triggerUser: number): void;
 
     // Individual methods to notify a player
-    notifyGameState(playedCards: CardArray, players: Player[], turn: number, timeOut: number, playerId: number): void;
-    notifyDrewCard(card: Card, playerId: number): void;
-    notifyErrorPlayedCards(msg:string, playerId: number): void;
-    notifyFutureCards(cards: CardArray, playerId:number): void;
-    notifyOkPlayedCards(playerId: number): void; 
+    notifyGameState(players: Player[], index:number, turn: number, timeOut: number): void;
+    notifyDrewCard(card: Card, username: string): void;
+    notifyFutureCards(cards: CardArray, username: string): void;
+    notifyOkPlayedCards(username: string): void;
     
     // Get methods to request information from the frontend
-    getACardType(playerId: number, lobbyId: string): Promise<CardType|undefined>;
-    getAPlayerId(playerId: number, lobbyId: string): Promise<number|undefined>;
-    getACard(playerId: number, lobbyId: string): Promise<Card|undefined>;
+    getACardType(username: string, lobbyId: string): Promise<CardType|undefined>;
+    getAPlayerId(username: string, lobbyId: string): Promise<number|undefined>;
+    getACard(username: string, lobbyId: string): Promise<Card|undefined>;
 }

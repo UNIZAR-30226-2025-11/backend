@@ -3,7 +3,16 @@ import fs from "fs";
 import { ENABLE_LOGGING, LOG_LEVEL } from "../config.js";
 
 // Logs files
-const logFiles = ["logs/_logs.log"];
+const logDir = "logs";
+
+// Create log directory if it does not exist
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+}
+
+const logFiles = [
+    `${logDir}/_logs.log`, // All logs
+];
 
 // Reset logs before starting (truncate)
 logFiles.forEach((file) => {

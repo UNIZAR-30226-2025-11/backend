@@ -25,31 +25,34 @@ import { Player } from "../../models/Player.js";
 import logger from "../../config/logger.js";
 
 export class socketCommunicationGateway implements CommunicationGateway {
-    private sockets: Map<number, Socket>; // Map player IDs to their sockets
 
-    constructor() {
-        this.sockets = new Map();
+    lobbyId: string;
+    playersUsernamesInLobby: string[];
+
+    constructor(lobbyId: string){
+        this.lobbyId = lobbyId;
+        this.playersUsernamesInLobby = [];
     }
 
-    registerPlayer(playerId: number, socket: Socket): void {
-        logger.debug(`Registering player ${playerId} with player ${socket.data.user.username}`);
-        this.sockets.set(playerId, socket);
+    registerPlayer(username: string): void {
+        logger.debug(`Registering player ${username} in Gateway for lobby ${this.lobbyId}`);
+        this.playersUsernamesInLobby.push(username);
     }
 
-    broadcastStartGame(): void {
-        logger.info("Notifying all players to start the game");
-        const response: BackendStartGameResponseJSON = 
-        {
-            error: false,
-            errorMsg: ""
-        };
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "start-game" message to ${socket.data.user.username}: %j`, response);
-            socket.emit("start-game", response);
+    private broadcastMsg<TMsg>(msg: TMsg, socketChannel: string): void {
+        this.playersUsernamesInLobby.forEach((username) => {
+            const socket: Socket|undefined = SocketManager.getSocket(username);
+            if(socket == undefined)
+            {
+                logger.error(`Socket for user ${username} not found.`)
+            } else {
+                logger.debug(`Sending "${socketChannel}" message to ${username}: %j`, msg);
+                socket.emit(socketChannel, msg);
+            }
         });
     }
 
-    async getACardType(playerId: number, lobbyId: string): Promise<CardType|undefined> {
+    async getACardType(username: string, lobbyId: string): Promise<CardType|undefined> {
         
         logger.info("Waiting for player response for card type");
 
@@ -65,7 +68,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 FrontendGameSelectCardTypeResponseJSON
             >
         (
-            this.sockets.get(playerId)!.id,
+            username,
             "game-select-card-type", 
             petition,
             TIMEOUT_RESPONSE
@@ -86,7 +89,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
         return CardType[response.cardType as keyof typeof CardType];
     }
 
-    async getAPlayerId(playerId: number, lobbyId: string): Promise<number|undefined> {
+    async getAPlayerId(username: string, lobbyId: string): Promise<number|undefined> {
         
         logger.info("Waiting for player response for player ID");
 
@@ -102,7 +105,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 FrontendGameSelectPlayerResponseJSON
             >
         (
-            this.sockets.get(playerId)!.id,
+            username,
             "game-select-player", 
             petition,
             TIMEOUT_RESPONSE
@@ -123,7 +126,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
         return response.userId;
     }
 
-    async getACard(playerId: number, lobbyId: string): Promise<Card|undefined> {
+    async getACard(username: string, lobbyId: string): Promise<Card|undefined> {
         
         logger.info("Waiting for player response for card");
         const petition: BackendGameSelectCardJSON = {
@@ -138,7 +141,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 FrontendGameSelectCardResponseJSON
             >
         (
-            this.sockets.get(playerId)!.id,
+            username,
             "game-select-card", 
             petition,
             TIMEOUT_RESPONSE
@@ -159,147 +162,202 @@ export class socketCommunicationGateway implements CommunicationGateway {
         return new Card(CardType[response.card as keyof typeof CardType]);
     }
 
-    broadcastBombDefusedAction(creatorId: number): void {
+    broadcastStartGame(): void {
+        logger.info("Notifying all players to start the game");
+        const response: BackendStartGameResponseJSON = 
+        {
+            error: false,
+            errorMsg: ""
+        };
+        this.broadcastMsg<BackendStartGameResponseJSON>(response, "start-game");
+    }
 
-        logger.info(`Notifying all players that the bomb was defused by ${creatorId}`);
+    broadcastBombDefusedAction(triggerUser: string): void {
+
+        logger.info(`Notifying all players that the bomb was defused by ${triggerUser}`);
         const msg: BackendNotifyActionJSON = {
             error: false,
             errorMsg: "",
-            creatorId: creatorId,
-            actionedPlayerId: -1,
+            triggerUser: triggerUser,
+            targetUser: "",
             action: ActionType[ActionType.BombDefused]
         }
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "notify-action" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("notify-action", msg);
-        });
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
     }
 
-    broadcastPlayerLostAction(playerId: number): void {
+    broadcastDrawCardAction(triggerUser: string): void {
 
-        logger.info(`Notifying all players that player ${playerId} lost`);
+        logger.info(`Notifying all players that player ${triggerUser} drew a card`);
         const msg: BackendNotifyActionJSON = {
             error: false,
             errorMsg: "",
-            creatorId: playerId,
-            actionedPlayerId: -1,
+            triggerUser: triggerUser,
+            targetUser: "",
+            action: ActionType[ActionType.DrawCard]
+        }
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+    broadcastPlayerLostAction(triggerUser: string): void {
+
+        logger.info(`Notifying all players that player ${triggerUser} lost`);
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: "",
             action: ActionType[ActionType.BombExploded]
         }
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "notify-action" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("notify-action", msg);
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+    broadcastShuffleDeckAction(triggerUser: string): void {
+
+        logger.info(`Notifying all players that the deck was shuffled by ${triggerUser}`);
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: "",
+            action: ActionType[ActionType.ShuffleDeck]
+        }
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+    broadcastSkipTurnAction(triggerUser: string): void {
+
+        logger.info(`Notifying all players that player ${triggerUser} skipped their turn`);
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: "",
+            action: ActionType[ActionType.SkipTurn]
+        }
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+    broadcastFutureAction(triggerUser: string): void {
+
+        logger.info(`Notifying all players that player ${triggerUser} saw the future`);
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: "",
+            action: ActionType[ActionType.FutureSeen]
+        }
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+
+    broadcastAttackAction(triggerUser: string, targetUser: string): void {
+        
+        logger.info(`Notifying all players that player ${triggerUser} attacked player ${targetUser}`);
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: targetUser,
+            action: ActionType[ActionType.Attack]
+        }
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+    broadcastStealFailedAction(triggerUser: string, targetUser: string): void {
+
+        logger.info(`Notifying all players that player ${triggerUser} failed to steal from player ${targetUser}`);
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: targetUser,
+            action: ActionType[ActionType.AttackFailed]
+        }
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+    broadcastFavorAction(triggerUser: string, targetUser: string): void {
+        logger.info(`Notifying all players that player ${triggerUser} favored player ${targetUser}`);
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: targetUser,
+            action: ActionType[ActionType.FavorAttack]
+        }
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+    broadcastWinnerNotification(winnerUsername: string, coinsEarned: number): void {
+        
+        logger.info(`Notifying all players that player ${winnerUsername} won`);
+        this.playersUsernamesInLobby.forEach((username) => {
+            const msg: BackendWinnerJSON = {
+                error: false,
+                errorMsg: "",
+                winnerUsername: winnerUsername,
+                coinsEarned:username==winnerUsername?coinsEarned:0,
+                lobbyId: this.lobbyId
+            }
+
+            const socket: Socket|undefined = SocketManager.getSocket(username);
+
+            if(socket === undefined) {
+                logger.error("Socket not found!");
+                return;
+            }
+
+            logger.debug(`Sending "winner" message to ${username}: %j`, msg);
+            socket.emit("winner", msg);
         });
     }
 
-    notifyDrewCard(card: Card, playerId: number): void {
+    broadcastPlayerDisconnect(playerId: number): void {
 
-        logger.info(`Notifying player ${playerId} that they drew a card`);
+        logger.info(`Notifying all players that player ${playerId} disconnected`);
+        this.playersUsernamesInLobby.forEach((username) => {
+            const msg: BackendPlayerDisconnectedJSON = {
+                error: false,
+                errorMsg: "",
+                playerId: playerId
+            }
+
+            const socket: Socket|undefined = SocketManager.getSocket(username);
+
+            if(socket === undefined) {
+                logger.error("Socket not found!");
+                return;
+            }
+
+            logger.debug(`Sending "player-disconnected" message to ${socket.data.user.username}: %j`, msg);
+            socket.emit("player-disconnected", msg);
+        });
+    }
+
+    notifyDrewCard(card: Card, username: string): void {
+
+        logger.info(`Notifying player ${username} that they drew a card`);
         const msg: BackendGamePlayedCardsResponseJSON = {
             error: false,
             errorMsg: "",
             cardsSeeFuture: "",
             cardReceived: card.toString()
         }
-        const socket: Socket|undefined = this.sockets.get(playerId);
+        const socket: Socket|undefined = SocketManager.getSocket(username);
 
         if(socket === undefined) {
             logger.error("Socket not found!");
             return;
         }
 
-        logger.debug(`Sending "game-played-cards" message to ${socket.data.user.username}: %j`, msg);
+        logger.debug(`Sending "game-played-cards" message to ${username}: %j`, msg);
         socket.emit("game-played-cards", msg);
     }
 
-    broadcastDrawCardAction(playerId: number): void {
+    notifyFutureCards(cards: CardArray, username: string): void {
 
-        logger.info(`Notifying all players that player ${playerId} drew a card`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            creatorId: -1,
-            actionedPlayerId: playerId,
-            action: ActionType[ActionType.DrawCard]
-        }
-
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "notify-action" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("notify-action", msg);
-        });
-    }
-
-    notifyErrorPlayedCards(msg: string, playerId: number): void {
-        logger.error(`Notifying player ${playerId} that an error occurred: ${msg}`);
-        const response: BackendGamePlayedCardsResponseJSON = {
-            error: true,
-            errorMsg: msg,
-            cardsSeeFuture: "",
-            cardReceived: ""
-        }
-
-        const socket: Socket|undefined = this.sockets.get(playerId);
-
-        if(socket === undefined) {
-            logger.error("Socket not found!");
-            return;
-        }
-
-        logger.debug(`Sending "game-played-cards" message to ${socket.data.user.username}: %j`, response);
-        socket.emit("game-played-cards", response);
-    }
-
-
-    broadcastShuffleDeckAction(creatorId: number): void {
-
-        logger.info(`Notifying all players that the deck was shuffled by ${creatorId}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            creatorId: creatorId,
-            actionedPlayerId: -1,
-            action: ActionType[ActionType.ShuffleDeck]
-        }
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "notify-action" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("notify-action", msg);
-        });
-    }
-
-    broadcastSkipTurnAction(creatorId: number): void {
-
-        logger.info(`Notifying all players that player ${creatorId} skipped their turn`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            creatorId: creatorId,
-            actionedPlayerId: -1,
-            action: ActionType[ActionType.SkipTurn]
-        }
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "notify-action" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("notify-action", msg);
-        });
-    }
-
-    broadcastFutureAction(creatorId: number): void {
-
-        logger.info(`Notifying all players that player ${creatorId} saw the future`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            creatorId: creatorId,
-            actionedPlayerId: -1,
-            action: ActionType[ActionType.FutureSeen]
-        }
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "notify-action" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("notify-action", msg);
-        });
-    }
-
-    notifyFutureCards(cards: CardArray, playerId: number): void {
-
-        logger.info(`Notifying player ${playerId} of the future cards`);
+        logger.info(`Notifying player ${username} of the future cards`);
         const msg: BackendGamePlayedCardsResponseJSON = {
             error: false,
             errorMsg: "",
@@ -307,68 +365,19 @@ export class socketCommunicationGateway implements CommunicationGateway {
             cardReceived: ""
         }
 
-        const socket: Socket|undefined = this.sockets.get(playerId);
+        const socket: Socket|undefined = SocketManager.getSocket(username);
 
         if(socket === undefined) {
             logger.error("Socket not found!");
             return;
         }
 
-        logger.debug(`Sending "game-played-cards" message to ${socket.data.user.username}: %j`, msg);
+        logger.debug(`Sending "game-played-cards" message to ${username}: %j`, msg);
         socket.emit("game-played-cards", msg);
-        
     }
 
-    broadcastAttackAction(creatorId: number, targetId: number): void {
-        
-        logger.info(`Notifying all players that player ${creatorId} attacked player ${targetId}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            creatorId: creatorId,
-            actionedPlayerId: targetId,
-            action: ActionType[ActionType.Attack]
-        }
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "notify-action" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("notify-action", msg);
-        });
-    }
-
-    broadcastStealFailedAction(creatorId: number, targetId: number): void {
-
-        logger.info(`Notifying all players that player ${creatorId} failed to steal from player ${targetId}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            creatorId: creatorId,
-            actionedPlayerId: targetId,
-            action: ActionType[ActionType.AttackFailed]
-        }
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "notify-action" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("notify-action", msg);
-        });
-    }
-
-    broadcastWinnerNotification(winnerId: number, coinsEarned: number, lobbyId: string): void {
-        
-        logger.info(`Notifying all players that player ${winnerId} won`);
-        this.sockets.forEach((socket, index) => {
-            const msg: BackendWinnerJSON = {
-                error: false,
-                errorMsg: "",
-                userId: winnerId,
-                coinsEarned:index==winnerId?coinsEarned:0,
-                lobbyId: lobbyId
-            }
-            logger.debug(`Sending "winner" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("winner", msg);
-        });
-    }
-
-    notifyOkPlayedCards(playerId: number): void {
-        logger.info(`Notifying player ${playerId} that the cards were played correctly`);
+    notifyOkPlayedCards(username: string): void {
+        logger.info(`Notifying player ${username} that the cards were played correctly`);
         const msg: BackendGamePlayedCardsResponseJSON = {
             error: false,
             errorMsg: "",
@@ -376,72 +385,47 @@ export class socketCommunicationGateway implements CommunicationGateway {
             cardReceived: ""
         }
 
-        const socket: Socket|undefined = this.sockets.get(playerId);
+        const socket: Socket|undefined = SocketManager.getSocket(username);
 
         if(socket === undefined) {
             logger.error("Socket not found!");
             return;
         }
 
-        logger.debug(`Sending "game-played-cards" message to ${socket.data.user.username}: %j`, msg);
+        logger.debug(`Sending "game-played-cards" message to ${username}: %j`, msg);
         socket.emit("game-played-cards", msg);
     }
 
-    broadcastFavorAction(creatorId: number, targetId: number): void {
-        logger.info(`Notifying all players that player ${creatorId} favored player ${targetId}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            creatorId: creatorId,
-            actionedPlayerId: targetId,
-            action: ActionType[ActionType.FavorAttack]
-        }
-        this.sockets.forEach((socket) => {
-            logger.debug(`Sending "notify-action" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("notify-action", msg);
-        });
-    }
-
     notifyGameState(
-        playedCards: CardArray, 
         players: Player[], 
-        turn: number, timeOut: number, 
-        playerId: number
+        index: number,
+        turn: number, 
+        timeOut: number, 
     ): void {
 
-        logger.info(`Notifying player ${playerId} of the game`);
+        const username: string = players[index].username;
+        const playerCards: CardArray = players[index].hand;
+
+        logger.info(`Notifying player ${username} of the game`);
         const response: BackendStateUpdateJSON = {
             error: false,
             errorMsg: "",
-            playerCards: playedCards.toJSON(),
+            playerCards: playerCards.toJSON(),
             players: players.map(p => p.toJSONHidden()),
             turn: turn,
             timeOut: timeOut,
-            playerId: playerId
+            playerId: 0
         }
 
-        const socket: Socket|undefined = this.sockets.get(playerId);
+        const socket: Socket|undefined = SocketManager.getSocket(username);
 
         if(socket === undefined) {
             logger.error("Socket not found!");
             return;
         }
 
-        logger.debug(`Sending "game-state" message to ${socket.data.user.username}: %j`, response);
+        logger.debug(`Sending "game-state" message to ${username}: %j`, response);
         socket.emit("game-state", response);
     }
 
-    broadcastPlayerDisconnect(playerId: number): void {
-
-        logger.info(`Notifying all players that player ${playerId} disconnected`);
-        this.sockets.forEach((socket) => {
-            const msg: BackendPlayerDisconnectedJSON = {
-                error: false,
-                errorMsg: "",
-                playerId: playerId
-            }
-            logger.debug(`Sending "player-disconnected" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("player-disconnected", msg);
-        });
-    }
 }

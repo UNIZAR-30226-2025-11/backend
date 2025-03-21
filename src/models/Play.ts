@@ -2,10 +2,10 @@ import { CardArray } from "./CardArray.js";
 
 export class Play{
     public playedCards: CardArray;
-    public idPlayer: number;
+    public username: string;
 
-    constructor(idPlayer:number, cards:CardArray){
-        this.idPlayer = idPlayer;
+    constructor(username:string, cards:CardArray){
+        this.username = username;
         this.playedCards = cards;
     }
 

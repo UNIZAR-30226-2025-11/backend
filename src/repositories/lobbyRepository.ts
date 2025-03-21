@@ -3,6 +3,25 @@ import { db } from "../db.js";
 
 export class LobbyRepository {
     
+    static async lobbyExists(lobbyId: string): Promise<boolean> {
+        try {
+            logger.debug(`[DB] AWAIT: Checking if lobby ${lobbyId} exists`);
+            const res = await db.query(
+                `
+                SELECT id 
+                FROM lobbies 
+                WHERE id = $1
+                `, [lobbyId]
+            );
+            logger.debug(`[DB] DONE: Checked if lobby ${lobbyId} exists`);
+            return res.rows.length > 0;
+        }
+        catch (error) {
+            logger.error("[DB] Error in database:", error);
+            throw new Error("Error in database");
+        }
+    }
+
     static async createLobby(lobbyId: string, leaderusername: string, numMaxPlayers: number): Promise<void> {
         try{
             logger.debug(`[DB] AWAIT: Creating lobby ${lobbyId} with leader ${leaderusername} and max players ${numMaxPlayers}`);
@@ -91,9 +110,9 @@ export class LobbyRepository {
                 `
                 , [lobbyId]);
 
-            if (res.rows.length > 0 && res.rows[0].leader === username){
+            if (res.rows.length > 0 ){
                 logger.debug(`[DB] DONE: Got leader status "${res.rows[0].leader}" for lobby ${lobbyId}`);
-                return true;
+                return res.rows[0].leader === username;
             }else{
                 logger.warn(`[DB] DONE: Could not fetch the leader status for lobby ${lobbyId}`);
                 return undefined;
@@ -151,7 +170,7 @@ export class LobbyRepository {
         }
     }
 
-    static async getPlayersInLobby(lobbyId: string): Promise<{ username: string, isLeader: boolean}[]|undefined>{
+    static async getPlayersInLobby(lobbyId: string): Promise<{ username: string, isLeader: boolean}[]>{
         try {
             logger.debug(`[DB] AWAIT: Getting players in lobby ${lobbyId}`);
             const res = await db.query(
@@ -197,7 +216,7 @@ export class LobbyRepository {
         }
     }
     
-    static async removePlayerFromLobby(username: string, lobbyId: string): Promise<void | undefined>{
+    static async removePlayerFromLobby(username: string, lobbyId: string): Promise<void>{
         try {
             logger.debug(`[DB] AWAIT: Removing player ${username} from lobby ${lobbyId}`);
             const res = await db.query(
@@ -215,7 +234,7 @@ export class LobbyRepository {
             }
             else{
                 logger.warn(`[DB] DONE: Could not remove player ${username} from lobby ${lobbyId}`);
-                return undefined;
+                return;
             }
     
         } catch (error) {

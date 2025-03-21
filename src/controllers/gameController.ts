@@ -48,7 +48,7 @@ export const setupGameHandlers = (socket: Socket) => {
             const response: BackendGamePlayedCardsResponseJSON = 
             {
                 error: true,
-                errorMsg: "Could not send the message!",
+                errorMsg: "Could not play the cards",
                 cardsSeeFuture: "",
                 cardReceived: "",
             };

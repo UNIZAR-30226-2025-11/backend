@@ -6,12 +6,14 @@ import { PlayerJSON } from "../api/socketAPI.js";
 
 export class Player {
     id: number;
+    username: string;
     disconnected: boolean = false;
     active: boolean = true;
     hand: CardArray;
 
-    constructor(id:number, hand:CardArray) {
+    constructor(id:number, username:string, hand:CardArray) {
         this.id = id;
+        this.username = username;
         this.hand = hand;
     }
 
@@ -21,18 +23,18 @@ export class Player {
     * @param deck - Deck initial
     * @returns A player
     */
-    static createStandarPlayer(id:number, deck: Deck): Player {
+    static createStandarPlayer(id:number, username:string, deck: Deck): Player {
         // Create a hand with 7 cards
         const hand = deck.draw(INITIAL_HAND_SIZE);
     
         // Add the deactive card 
         hand.push(new Card(CardType.Deactivate));
-        return new Player(id, hand);
+        return new Player(id, username, hand);
     }
     
     toJSONHidden(): PlayerJSON{
         const response : PlayerJSON = {
-            id : this.id,
+            username : this.username,
             numCards: this.hand.length(),
             active: this.active
         };
