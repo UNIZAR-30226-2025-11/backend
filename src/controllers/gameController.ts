@@ -8,15 +8,24 @@ import {
 import { Card, CardType } from "../models/Card.js";
 import { CardArray } from "../models/CardArray.js";
 import { handleError } from "../constants/constants.js";
+import logger from "../config/logger.js";
 
 export const setupGameHandlers = (socket: Socket) => {
 
     socket.on("game-played-cards", async (playedCardsJSON: FrontendGamePlayedCardsJSON) => {
         
+        logger.info(`User "${socket.data.user.username}" sent "game-played-cards" message`);
+        logger.debug(`Received "game-played-cards":\t%j`, playedCardsJSON);
+
+        handleError(playedCardsJSON.error, playedCardsJSON.errorMsg);
+
         const lobbyId: string = playedCardsJSON.lobbyId;
         const username: string = socket.data.user.username;
 
         if (lobbyId === undefined || lobbyId === "") {
+
+            logger.warn(`Not lobby id provided!`);
+
             const response: BackendGamePlayedCardsResponseJSON = 
             {
                 error: true,
@@ -25,12 +34,10 @@ export const setupGameHandlers = (socket: Socket) => {
                 cardReceived: "",
             };
 
-            socket.emit("game-played-cards", response)
+            logger.debug(`Sending response "game-played-cards":\t%j`, response);
+            socket.emit("game-played-cards", response);
             return;
         }
-
-        handleError(playedCardsJSON.error, playedCardsJSON.errorMsg)
-        
 
         const cardsPlayedString: string[] = JSON.parse(playedCardsJSON.playedCards);
         const cardsPlayed: Card[] = cardsPlayedString.map((cardString) => new Card(CardType[cardString as keyof typeof CardType]));
@@ -45,7 +52,8 @@ export const setupGameHandlers = (socket: Socket) => {
                 cardsSeeFuture: "",
                 cardReceived: "",
             };
-
+            
+            logger.debug(`Sending response "game-played-cards":\t%j`, response);
             socket.emit("game-played-cards", response)
             return;
         }
@@ -54,9 +62,13 @@ export const setupGameHandlers = (socket: Socket) => {
 
 
     socket.on("winner", (response: FrontendWinnerResponseJSON) => {
-        handleError(response.error, response.errorMsg);
-
+       
         const username: string = socket.data.user.username;
+        
+        logger.info(`User "${username}" sent "winner" message`);
+        logger.debug(`Received "winner":\t%j`, response);
+
+        handleError(response.error, response.errorMsg);
 
         GameManager.handleWinner(username, response.coinsEarned, response.lobbyId);
 
