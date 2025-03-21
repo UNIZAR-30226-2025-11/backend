@@ -7,9 +7,9 @@ if (!process.env.PORT) console.log(`Using default PORT: 8000`);
 if (!process.env.PGHOST) console.log(`Using default PGHOST: localhost`);
 if (!process.env.PGPORT) console.log("Using default PGPORT: 5432 ");
 if (!process.env.FRONTEND_URL){
-	console.log(
-		"Using wildcard CORS origin. REQUESTS WITH COOKIES WILL BE THROWN OUT",
-	);
+    console.log(
+        "Using wildcard CORS origin. REQUESTS WITH COOKIES WILL BE THROWN OUT",
+    );
 }
 
 assert(process.env.JWT_SECRET, "No JWT_SECRET provided");

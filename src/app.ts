@@ -12,28 +12,28 @@ import { protectSocket } from "./middleware/socket.js";
 export const app = express();
 export const server = createServer(app);
 export const io = new Server(server, {
-  cors: { origin: FRONTEND_URL, credentials: true },
+    cors: { origin: FRONTEND_URL, credentials: true },
 });
 
 /** Handle uncaught errors gracefully and return an ISE */
 //function handleErrors(
-//  error: Error,
-//  _req: Request,
-//  res: Response,
-//  _next: NextFunction,
+//    error: Error,
+//    _req: Request,
+//    res: Response,
+//    _next: NextFunction,
 //) {
-//  console.error(error);
-//  res
-//    .status(500)
-//    .send({ message: "Oops, something went wrong from our side..." });
+//    console.error(error);
+//    res
+//        .status(500)
+//        .send({ message: "Oops, something went wrong from our side..." });
 //}
 
 // Allow Cross-Origin requests by parsing OPTION requests
 app.use(
-  cors({
-    origin: FRONTEND_URL,
-    credentials: true,
-  }),
+    cors({
+        origin: FRONTEND_URL,
+        credentials: true,
+     }),
 );
 app.use(express.json()); // Parse JSON
 app.use(cookieParser()); // Parse cookies, store them in req.cookies

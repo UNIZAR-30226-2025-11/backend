@@ -1,9 +1,11 @@
 import { db } from "../db.js";
 import crypto from "node:crypto";
 import { UserEntity } from "../models/User.js";
+import logger from "../config/logger.js";
 
-/** Data access methods for user profiles */
+
 export class UserRepository {
+    
     /**
      * Create new user.
      *
@@ -13,15 +15,35 @@ export class UserRepository {
      * @throws User already exists
      */
     static async create(user: UserEntity): Promise<boolean> {
-      const QUERY = `INSERT INTO users(id, username, password) VALUES ($1, $2, $3)`;
-      const idExists = await this.findById(user.id);
-      const userExists = await this.findByUsername(user.username);
-  
-      if (idExists || userExists) throw new Error("User exists");
-  
-      const res = await db.query(QUERY, [user.id, user.username, user.password]);
-  
-      return res.rowCount !== 0;
+
+        const idExists = await this.findById(user.id);
+        const userExists = await this.findByUsername(user.username);
+    
+        if (idExists || userExists){
+            logger.warn(`[DB] Could not create user ${user.username}`);
+            return false;
+        }
+
+        try {
+            logger.debug(`[DB] AWAIT: Creating user ${user.username}`);
+            const res = await db.query(
+                `
+                INSERT INTO users(id, username, password)
+                VALUES ($1, $2, $3)
+                `, [user.id, user.username, user.password]
+            );
+            if (res.rowCount !== 0) {
+                logger.debug(`[DB] DONE: Created user ${user.username}`);
+                return true;
+            } else {
+                logger.warn(`[DB] DONE: Could not create user ${user.username}`);
+                return false;
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+
     }
   
     /**
@@ -31,73 +53,156 @@ export class UserRepository {
      * @throws User does not exists
      */
     static async delete(id: crypto.UUID): Promise<boolean> {
-      const QUERY = `DELETE FROM users WHERE id=$1`;
-      const idExists = await this.findById(id);
-  
-      if (!idExists) throw new Error("User does not exist");
-  
-      const res = await db.query(QUERY, [id]);
-  
-      return res.rowCount !== 0;
+
+        const idExists = await this.findById(id);
+        if (!idExists)
+        {
+            logger.warn(`[DB] Could not delete user ${id} because it does not exist`);
+            return false;
+        }
+        
+        try {
+            logger.debug(`[DB] AWAIT: Deleting user ${id}`);
+            const res = await db.query(
+                `
+                DELETE FROM users
+                WHERE id = $1
+                `, [id]);
+            if (res.rowCount !== 0) {
+                logger.debug(`[DB] DONE: Deleted user ${id}`);
+                return true;
+            } else {
+                logger.warn(`[DB] DONE: Could not delete user ${id}`);
+                return false;
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+
     }
   
     /**
-      Update user. This will update all fields.
-  
-      @returns User has been updates
-    */
+     * Update user.
+     * @param id The id of the user to update
+     * @param user The new user data
+     * @returns True if the user was updated, false otherwise
+     */
     static async update(
-      id: crypto.UUID,
-      user: Partial<UserEntity>,
+        id: crypto.UUID,
+        user: Partial<UserEntity>,
     ): Promise<boolean> {
-      const columns = Object.keys(user) as Array<keyof UserEntity>;
-  
-      const setStatement = columns
-        .map((key, index) => `${key}=$${index + 2}`)
-        .join(", ");
-      const values = [id, ...columns.map((key) => user[key])];
-  
-      const QUERY = `UPDATE users SET ${setStatement} WHERE id=$1`;
-      const res = await db.query(QUERY, values);
-  
-      return res.rowCount !== 0;
+        const columns = Object.keys(user) as Array<keyof UserEntity>;
+    
+        const setStatement = columns
+            .map((key, index) => `${key}=$${index + 2}`)
+            .join(", ");
+        const values = [id, ...columns.map((key) => user[key])];
+    
+        try{
+            logger.debug(`[DB] AWAIT: Updating user ${id}`);
+            const res = await db.query(
+                `
+                UPDATE users
+                SET ${setStatement}
+                WHERE id = $1
+                `, values);
+            if (res.rowCount !== 0) {
+                logger.debug(`[DB] DONE: Updated user ${id}`);
+                return true;
+            } else {
+                logger.warn(`[DB] DONE: Could not update user ${id}`);
+                return false;
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
     }
   
     /**
-      Find user by UUID
-  
-      @returns User, if exists
-    */
+     * Find user by uuid.
+     * @param id The id of the user to search for
+     * @returns The user if exists, undefined otherwise
+     */
     static async findById(id: crypto.UUID): Promise<UserEntity | undefined> {
-      const res = await db.query("SELECT * FROM users WHERE id=$1", [id]);
-  
-      return res.rows ? res.rows[0] : undefined;
+
+        try {
+            logger.debug(`[DB] AWAIT: Getting user ${id}`);
+            const res = await db.query(
+                `
+                SELECT * 
+                FROM users 
+                WHERE id=$1
+                `, [id]);
+            if (res.rows.length > 0) {
+                logger.debug(`[DB] DONE: Got user ${id}`);
+                return res.rows[0] as UserEntity;
+            } else {
+                logger.warn(`[DB] DONE: Could not fetch the user ${id}`);
+                return undefined;
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+
     }
   
-    /**
-      Find user by username
-  
-      @returns User, if exists
+   /**
+    * Find user by username
+    * @param username The username to search for
+    * @returns User if exists, undefined otherwise
     */
     static async findByUsername(
-      username: string,
+        username: string,
     ): Promise<UserEntity | undefined> {
-      const QUERY = `SELECT * FROM users WHERE username=$1`;
-      const res = await db.query(QUERY, [username]);
-  
-      return res.rows ? res.rows[0] : undefined;
+
+        try {
+            logger.debug(`[DB] AWAIT: Getting user ${username}`);
+            const res = await db.query(
+                `
+                SELECT * 
+                FROM users 
+                WHERE username=$1
+                `, [username]);
+            if (res.rows.length > 0) {
+                logger.debug(`[DB] DONE: Got user ${username}`);
+                return res.rows[0] as UserEntity;
+            } else {
+                logger.warn(`[DB] DONE: Could not fetch the user ${username}`);
+                return undefined;
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
     }
-  
+    
     /**
-      Return all users
-  
-      @returns List of zero or more users
-    */
+     * Find all users
+     * @returns All users
+     */
     static async findAll(): Promise<UserEntity[]> {
-      const QUERY = `SELECT * FROM users`;
-      const res = await db.query(QUERY);
-  
-      return res.rows ? res.rows.map((user) => user as UserEntity) : [];
+
+        try {
+            logger.debug(`[DB] AWAIT: Getting all users`);
+            const res = await db.query(
+                `
+                SELECT * 
+                FROM users
+                `);
+            if (res.rows.length > 0) {
+                logger.debug(`[DB] DONE: Got all users`);
+                return res.rows as UserEntity[];
+            } else {
+                logger.warn(`[DB] DONE: Could not fetch the users`);
+                return [];
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
     }
   }
   
