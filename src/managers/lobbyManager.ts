@@ -82,7 +82,7 @@ export class LobbyManager {
         }
 
         const max = await LobbyRepository.getMaxPlayers(lobbyId);
-        const current = await LobbyRepository.getCurrentPlayers(lobbyId);
+        const current = await LobbyRepository.getCurrentNumberOfPlayersInLobby(lobbyId);
 
         if(max === undefined || current === undefined) {
             logger.error(`Error getting the number of players in the lobby!`);
@@ -189,8 +189,13 @@ export class LobbyManager {
 
         logger.info(`Removing player ${username} from lobby ${lobbyId}.`);
 
-        const isActive: boolean = await LobbyRepository.isActive(lobbyId);
-        const isLeader: boolean = await LobbyRepository.isLeader(username, lobbyId);
+        const isActive: boolean | undefined = await LobbyRepository.isActive(lobbyId);
+        const isLeader: boolean | undefined = await LobbyRepository.isLeader(username, lobbyId);
+
+        if(isActive === undefined || isLeader === undefined) {
+            logger.error(`Error getting the lobby state!`);
+            return;
+        }
 
         if(isActive) {
             await GameManager.disconnectPlayer(username, lobbyId);
