@@ -5,23 +5,31 @@ import { SocketManager } from "./socketManager.js";
 import { Socket } from "socket.io";
 import { GameManager } from "./gameManager.js";
 import { notifyNewPlayers, notifyLobbyDisband } from "../controllers/lobbyController.js";
+import logger from "../config/logger.js";
 
 
 export class LobbyManager {
 
+    // Map of lobbies with their game object
     static lobbiesGames: Map<string, GameObject> = new Map();
 
+    /**
+     * Remove player if he is in a lobby
+     * @param username The username of the player to be removed
+     * @returns 
+     */
     static async removePlayer(username: string): Promise<void> {
+
+        logger.info(`Removing player ${username} from the lobby if he is in one.`);
 
         const lobbyId: string | undefined = await LobbyRepository.getLobbyWithPlayer(username);
 
         if(lobbyId === undefined) {
-            console.log("Player not in any lobby!");
+            logger.info(`Player ${username} is not in a lobby.`);
             return;
         }
 
-        await LobbyManager.removePlayerFromLobby(username, lobbyId);
-        
+        await this.removePlayerFromLobby(username, lobbyId);        
     }
 
 
@@ -29,27 +37,24 @@ export class LobbyManager {
      * Create a new lobby with the given number of players and the leader socket.
      * 
      * @param numPlayers Number of players in the lobby
-     * @param leaderusername Socket id of the leader of the lobby
+     * @param lobbyLeaderUsername Socket id of the leader of the lobby
      * @returns The id of the lobby created if it was created successfully, undefined otherwise
      */
-    static async createLobby(numPlayers: number, leaderusername: string): Promise<string |undefined> {
+    static async createLobby(numPlayers: number, lobbyLeaderUsername: string): Promise<string|undefined> {
 
-        // Remove the player from the lobbies where he is leader
-        const lobbyId: string | undefined = await LobbyRepository.getLobbyWithPlayer(leaderusername);
-
-        if(lobbyId !== undefined) {
-            console.log("Removing the player from the lobby: ", lobbyId);
-            await LobbyManager.removePlayerFromLobby(leaderusername, lobbyId);
-        }
+        logger.info(`Creating a new lobby with ${numPlayers} players and leader ${lobbyLeaderUsername}.`);
+        
+        // Remove the player if he is in a lobby
+        await this.removePlayer(lobbyLeaderUsername);
 
         // Generate a new random lobby id
         const newLobbyId = this.generateLobbyId();
 
         // Create new lobby empty
-        await LobbyRepository.createLobby(newLobbyId, leaderusername, numPlayers);
+        await LobbyRepository.createLobby(newLobbyId, lobbyLeaderUsername, numPlayers);
 
         // Add the leader to the players in this lobby
-        await LobbyRepository.addPlayer(leaderusername, newLobbyId)
+        await LobbyRepository.addPlayer(lobbyLeaderUsername, newLobbyId)
 
         notifyNewPlayers(newLobbyId);
 
@@ -65,17 +70,14 @@ export class LobbyManager {
      */
     static async joinLobby(username: string, lobbyId: string): Promise<boolean> {
 
-        // Remove the player if he is in a lobby
-        const lobbyIdPlayer: string | undefined = await LobbyRepository.getLobbyWithPlayer(username);
+        logger.info(`Player ${username} is trying to join lobby ${lobbyId}.`);
 
-        if(lobbyIdPlayer !== undefined) {
-            console.log("Removing the player from the lobby: ", lobbyIdPlayer);
-            await LobbyManager.removePlayerFromLobby(username, lobbyIdPlayer);
-        }
+       // Remove the player if he is in a lobby
+        await this.removePlayer(username);
 
         // Check if the lobby is started
         if(await LobbyRepository.isActive(lobbyId)) {
-            console.log("Lobby is started.")
+            logger.warn(`Lobby ${lobbyId} is already started!`);
             return false
         }
 
@@ -83,13 +85,13 @@ export class LobbyManager {
         const current = await LobbyRepository.getCurrentPlayers(lobbyId);
 
         if(max === undefined || current === undefined) {
-            console.log("Error getting the number of players in the lobby!");
+            logger.error(`Error getting the number of players in the lobby!`);
             return false;
         }
 
         // Check if the lobby is full
         if(current >= max) {
-            console.log("The lobby is full!");
+            logger.warn(`Lobby ${lobbyId} is full!`);
             return false;
         }
     
@@ -108,29 +110,31 @@ export class LobbyManager {
      */
     static async startLobby(username: string, lobbyId: string): Promise<number| undefined> {
 
+        logger.info(`Player ${username} is trying to start lobby ${lobbyId}.`);
+
         // Check if the user is the leader of the lobby
         if (!await LobbyRepository.isLeader(username, lobbyId)) {
-            console.log("You are not the leader of the lobby!");
+            logger.warn(`Player ${username} is not the leader of the lobby!`);
             return undefined;
         }
 
         // Check if the lobby has already started
         if(await LobbyRepository.isActive(lobbyId)) {
-            console.log("Lobby already started!");
+            logger.warn(`Lobby ${lobbyId} has already started!`);
             return undefined;
         }
 
         const lobbyPlayers: { username: string, isLeader: boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
 
         if(lobbyPlayers === undefined) {
-            console.log("Error getting the players in the lobby!");
+            logger.error(`Error getting the players in the lobby ${lobbyId}!`);
             return undefined;
         }
 
         const lobbySocketsId: string[] = lobbyPlayers.map(player => player.username);
         
         if(lobbySocketsId.length < 2) {
-            console.log("Not enough players to start the game!", lobbySocketsId.length);
+            logger.warn(`Lobby ${lobbyId} has less than 2 players!`);
             return undefined;
         }
 
@@ -145,7 +149,7 @@ export class LobbyManager {
             const socket: Socket | undefined = SocketManager.getSocket(lobbySocketsId[i]);
 
             if(socket === undefined) {
-                console.log("Socket not found!");
+                logger.error(`Socket ${lobbySocketsId[i]} not found!`);
                 return undefined;
             }
 
@@ -154,7 +158,7 @@ export class LobbyManager {
         }
 
         if(leaderIdInLobby === -1) {
-            console.log("Leader not found!");
+            logger.error(`Leader ${username} not found in the lobby ${lobbyId}!`);
             return undefined;
         }
 
@@ -165,17 +169,26 @@ export class LobbyManager {
             comm,
         );
 
-        LobbyManager.lobbiesGames.set(lobbyId, game);
+        this.lobbiesGames.set(lobbyId, game);
 
         LobbyRepository.startLobby(lobbyId, game);
 
         return lobbySocketsId.length;
     }
 
-
+    /**
+     * Safe remove player from the lobby. If he is the leader, the lobby is disbanded. 
+     * Otherwise, the player is removed from the lobby.
+     * If the lobby is started, the player is disconnected from the game but not removed from the lobby.
+     * 
+     * @param username The username of the player to be removed
+     * @param lobbyId The lobby id from which the player is to be removed
+     * @returns 
+     */
     static async removePlayerFromLobby(username: string, lobbyId: string): Promise<void> {
 
-        // Disconnect the player from the started lobbies
+        logger.info(`Removing player ${username} from lobby ${lobbyId}.`);
+
         const isActive: boolean = await LobbyRepository.isActive(lobbyId);
         const isLeader: boolean = await LobbyRepository.isLeader(username, lobbyId);
 
@@ -199,12 +212,21 @@ export class LobbyManager {
     // ----------------------------------------------------------
     // Private methods
 
+    /**
+     * Generate a random id of length 9
+     * @returns A random id of length 9
+     */
     private static generateRandomId(): string {
         return Math.random().toString(36).substring(2, 11);
     }
 
+    /**
+     * Generate a random lobby id until it is unique
+     * @returns A unique lobby id
+     */
     private static generateLobbyId(): string {
         let candidate = this.generateRandomId();
+        // TODO: Check if the id is already in use
         return candidate;
     }
 
