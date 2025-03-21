@@ -32,8 +32,8 @@ usersRouter
     .route( USERS_API + "/:username")
     .get(async (req, res) => {
         logger.info(`[USERS] Getting user ${req.params.username}`);
-        let { username } = req.params;
-        let user = await UserRepository.findByUsername(username);
+        const { username } = req.params;
+        const user = await UserRepository.findByUsername(username);
 
         if (!user) {
             res.status(404).send({ message: "User not found" });
@@ -47,8 +47,8 @@ usersRouter
         filterNonModifiableUserData,
         async (req, res) => {
             logger.info(`[USERS] Updating user ${req.params.username}`);
-            let { username } = req.params;
-            let user = await UserRepository.findByUsername(username);
+            const { username } = req.params;
+            const user = await UserRepository.findByUsername(username);
 
             if (!user) {
                 logger.warn(`[USERS] User ${username} not found`);
@@ -56,7 +56,7 @@ usersRouter
                 return;
             }
 
-            let data: Partial<UserEntity> = req.body;
+            const data: Partial<UserEntity> = req.body;
             if (Object.keys(data).length === 0) {
                 logger.warn(`[USERS] No data provided`);
                 res.status(400).send({ message: "No data provided" });
@@ -75,8 +75,8 @@ usersRouter
     )
     .delete(protectUsersFromModification, async (req, res) => {
         logger.info(`[USERS] Deleting user ${req.params.username}`);
-        let { username } = req.params;
-        let user = await UserRepository.findByUsername(username);
+        const { username } = req.params;
+        const user = await UserRepository.findByUsername(username);
 
         if (!user) {
             logger.warn(`[USERS] User ${username} not found`);
@@ -98,8 +98,8 @@ usersRouter
     .route(USERS_API + ID_API + "/:uuid")
     .get(async (req, res) => {
         logger.info(`[USERS] Getting user ${req.params.uuid}`);
-        let { uuid } = req.params;
-        let user = await UserRepository.findById(uuid as crypto.UUID);
+        const{ uuid } = req.params;
+        const user = await UserRepository.findById(uuid as crypto.UUID);
 
         if (!user) {
             logger.warn(`[USERS] User ${uuid} not found`);
@@ -115,8 +115,8 @@ usersRouter
         filterNonModifiableUserData,
         async (req, res) => {
             logger.info(`[USERS] Updating user ${req.params.uuid}`);
-            let { uuid } = req.params;
-            let user = await UserRepository.findById(uuid as crypto.UUID);
+            const { uuid } = req.params;
+            const user = await UserRepository.findById(uuid as crypto.UUID);
 
             if (!user) {
                 logger.warn(`[USERS] User ${uuid} not found`);
@@ -124,7 +124,7 @@ usersRouter
                 return;
             }
 
-            let data: Partial<UserEntity> = req.body;
+            const data: Partial<UserEntity> = req.body;
             if (Object.keys(data).length === 0) {
                 logger.warn(`[USERS] No data provided`);
                 res.status(400).send({ message: "No data provided" });
@@ -143,8 +143,8 @@ usersRouter
     )
     .delete(protectUsersFromModification, async (req, res) => {
         logger.info(`[USERS] Deleting user ${req.params.uuid}`);
-        let { uuid } = req.params;
-        let user = await UserRepository.findById(uuid as crypto.UUID);
+        const { uuid } = req.params;
+        const user = await UserRepository.findById(uuid as crypto.UUID);
 
         if (!user) {
             logger.warn(`[USERS] User ${uuid} not found`);

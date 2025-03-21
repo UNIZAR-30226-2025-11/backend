@@ -36,7 +36,7 @@ export function protectUsersFromModification(
     const { username, uuid } = req.params;
 
     try {
-        let decoded = jwt.verify(token, JWT_SECRET) as {
+        const decoded = jwt.verify(token, JWT_SECRET) as {
         username: string;
         id: string;
         };

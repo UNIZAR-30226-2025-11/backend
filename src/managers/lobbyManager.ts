@@ -56,7 +56,7 @@ export class LobbyManager {
         // Add the leader to the players in this lobby
         await LobbyRepository.addPlayer(lobbyLeaderUsername, newLobbyId)
 
-        notifyNewPlayers(newLobbyId);
+        await notifyNewPlayers(newLobbyId);
 
         return newLobbyId;
     }
@@ -96,7 +96,7 @@ export class LobbyManager {
         }
     
         await LobbyRepository.addPlayer(username, lobbyId);
-        notifyNewPlayers(lobbyId);
+        await notifyNewPlayers(lobbyId);
 
         return true;
     }
@@ -140,7 +140,7 @@ export class LobbyManager {
 
         let leaderIdInLobby = -1;
 
-        let comm:socketCommunicationGateway = new socketCommunicationGateway();
+        const comm:socketCommunicationGateway = new socketCommunicationGateway();
 
         for(let i = 0; i < lobbySocketsId.length; i++) {
             if(lobbySocketsId[i] === username) {
@@ -154,7 +154,7 @@ export class LobbyManager {
             }
 
             comm.registerPlayer(i, socket);
-            LobbyRepository.setPlayerIdInGame(lobbySocketsId[i], i);
+            await LobbyRepository.setPlayerIdInGame(lobbySocketsId[i], i);
         }
 
         if(leaderIdInLobby === -1) {
@@ -171,7 +171,7 @@ export class LobbyManager {
 
         this.lobbiesGames.set(lobbyId, game);
 
-        LobbyRepository.startLobby(lobbyId);
+        await LobbyRepository.startLobby(lobbyId);
 
         return lobbySocketsId.length;
     }
@@ -230,7 +230,7 @@ export class LobbyManager {
      * @returns A unique lobby id
      */
     private static generateLobbyId(): string {
-        let candidate = this.generateRandomId();
+        const candidate = this.generateRandomId();
         // TODO: Check if the id is already in use
         return candidate;
     }

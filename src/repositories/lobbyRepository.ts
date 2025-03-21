@@ -189,7 +189,6 @@ export class LobbyRepository {
                 logger.debug(`[DB] DONE: Got lobby ${res.rows[0].lobby_id} with player ${username}`);
                 return res.rows[0].lobby_id;
             }else{
-                logger.warn(`[DB] DONE: Could not fetch the lobby with player ${username}`);
                 return undefined;
             }
         } catch (error) {

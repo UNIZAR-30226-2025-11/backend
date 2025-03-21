@@ -6,7 +6,7 @@ import logger from "./config/logger.js";
 server.listen(PORT, () => logger.info(`Server up: http://localhost:${PORT}`));
 
 // Check if DB is reachable
-(async () => {
+await (async () => {
     let success = false;
     let tries = 3;
 

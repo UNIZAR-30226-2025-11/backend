@@ -95,9 +95,9 @@ export class GameManager {
             return;
         }
 
-        GameRepository.addCoinsToPlayer(username, coinsEarned);
-        GameRepository.addWinToPlayer(username);
-        GameRepository.addGamePlayedToLobby(lobbyId);
+        await GameRepository.addCoinsToPlayer(username, coinsEarned);
+        await GameRepository.addWinToPlayer(username);
+        await GameRepository.addGamePlayedToLobby(lobbyId);
 
         LobbyManager.lobbiesGames.delete(lobbyId);
 

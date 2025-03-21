@@ -20,8 +20,8 @@ export class UserRepository {
         const userExists = await this.findByUsername(user.username);
     
         if (idExists || userExists){
-            logger.warn(`[DB] Could not create user ${user.username}`);
-            return false;
+            logger.warn(`[DB] Could not create user ${user.username} because it already exists`);
+            throw new Error("User exists");
         }
 
         try {
@@ -58,7 +58,7 @@ export class UserRepository {
         if (!idExists)
         {
             logger.warn(`[DB] Could not delete user ${id} because it does not exist`);
-            return false;
+            throw new Error("User exists");
         }
         
         try {
@@ -128,7 +128,6 @@ export class UserRepository {
     static async findById(id: crypto.UUID): Promise<UserEntity | undefined> {
 
         try {
-            logger.debug(`[DB] AWAIT: Getting user ${id}`);
             const res = await db.query(
                 `
                 SELECT * 
@@ -136,10 +135,8 @@ export class UserRepository {
                 WHERE id=$1
                 `, [id]);
             if (res.rows.length > 0) {
-                logger.debug(`[DB] DONE: Got user ${id}`);
                 return res.rows[0] as UserEntity;
             } else {
-                logger.warn(`[DB] DONE: Could not fetch the user ${id}`);
                 return undefined;
             }
         } catch (error) {
@@ -159,7 +156,6 @@ export class UserRepository {
     ): Promise<UserEntity | undefined> {
 
         try {
-            logger.debug(`[DB] AWAIT: Getting user ${username}`);
             const res = await db.query(
                 `
                 SELECT * 
@@ -167,10 +163,8 @@ export class UserRepository {
                 WHERE username=$1
                 `, [username]);
             if (res.rows.length > 0) {
-                logger.debug(`[DB] DONE: Got user ${username}`);
                 return res.rows[0] as UserEntity;
             } else {
-                logger.warn(`[DB] DONE: Could not fetch the user ${username}`);
                 return undefined;
             }
         } catch (error) {
@@ -196,7 +190,6 @@ export class UserRepository {
                 logger.debug(`[DB] DONE: Got all users`);
                 return res.rows as UserEntity[];
             } else {
-                logger.warn(`[DB] DONE: Could not fetch the users`);
                 return [];
             }
         } catch (error) {

@@ -201,7 +201,7 @@ export class GameObject {
 
     getWinner(): Player | undefined {
         logger.info(`[GAME] Checking for winner`);
-        let activePlayers: Player[] = this.players.filter(p => p.active);
+        const activePlayers: Player[] = this.players.filter(p => p.active);
         
         logger.debug(`[GAME] Active players: ${activePlayers.length}`);
         if (activePlayers.length !== 1) {
@@ -356,7 +356,7 @@ export class GameObject {
             this.attack(player);
         } 
         else if (card.type == CardType.Favor){
-            this.favor(player);
+            await this.favor(player);
         }
         else if (Card.isWild(card)){
             await this.playWildCard(play.playedCards.length(), player);

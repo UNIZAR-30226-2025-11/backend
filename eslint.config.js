@@ -7,7 +7,15 @@ export default tseslint.config(
   tseslint.configs.recommended,
   eslintConfigPrettier,
   {
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.json", // Use your TypeScript config for type checking
+      },
+    },
     rules: {
+      // Enforce camelCase for variable and property names
+      "camelcase": ["error", { "properties": "always" }],
+
       // Allow unused vars if prefixed with an _underscore
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
@@ -24,7 +32,10 @@ export default tseslint.config(
       ],
 
       // Allow let for variables that are assigned once
-      "prefer-const": "off",
+      "prefer-const": "warn",
+
+      // Detect unhandled promises (requires type checking)
+      "@typescript-eslint/no-floating-promises": "error"
     },
   },
 );

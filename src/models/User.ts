@@ -6,8 +6,8 @@ export interface UserEntity {
   username: string;
   password: string;
 
-  games_played: number;
-  games_won: number;
+  gamesPlayed: number;
+  gamesWon: number;
 
   coins: number;
   
@@ -16,8 +16,8 @@ export interface UserEntity {
 
 export class User implements UserEntity {
     id = crypto.randomUUID();
-    games_played = 0;
-    games_won = 0;
+    gamesPlayed = 0;
+    gamesWon = 0;
     coins = 0;
   
     /** Create a brand-new user */
@@ -43,8 +43,8 @@ export async function createNewUser(
         id: crypto.randomUUID(),
         username,
         password: await bcrypt.hash(password, 10),
-        games_played: 0,
-        games_won: 0,
+        gamesPlayed: 0,
+        gamesWon: 0,
         coins: 0,
     };
 }

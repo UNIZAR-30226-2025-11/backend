@@ -61,7 +61,7 @@ export const setupGameHandlers = (socket: Socket) => {
     });
 
 
-    socket.on("winner", (response: FrontendWinnerResponseJSON) => {
+    socket.on("winner", async (response: FrontendWinnerResponseJSON) => {
        
         const username: string = socket.data.user.username;
         
@@ -70,7 +70,7 @@ export const setupGameHandlers = (socket: Socket) => {
 
         handleError(response.error, response.errorMsg);
 
-        GameManager.handleWinner(username, response.coinsEarned, response.lobbyId);
+        await GameManager.handleWinner(username, response.coinsEarned, response.lobbyId);
 
     });
 

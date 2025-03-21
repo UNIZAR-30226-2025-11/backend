@@ -26,7 +26,7 @@ authRouter.route(REGISTER_API).post(async (req, res) => {
         const userExists = UserRepository.findByUsername(username);
         if (!userExists) throw new Error("Username exists");
 
-        let newUser = await createNewUser(username, password);
+        const newUser = await createNewUser(username, password);
         await UserRepository.create(newUser);
 
         logger.info(`[AUTH] User ${username} registered`);
