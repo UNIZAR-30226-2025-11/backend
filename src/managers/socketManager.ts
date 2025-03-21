@@ -72,14 +72,14 @@ export class SocketManager {
             logger.debug(`Sending request to ${username} on event ${socketEvent}:\t%j`, requestData);
             socket.emit(socketEvent, requestData);
             
-            logger.debug(`Waiting for response from ${username} on event ${socketEvent}`);
+            logger.debug(`AWAIT: Waiting for response from ${username} on event ${socketEvent}`);
             socket.once(socketEvent, (response: TResponse) => {
-                logger.debug(`Response received from ${username} on event ${socketEvent}:\t%j`, response);
+                logger.debug(`DONE: Response received from ${username} on event ${socketEvent}:\t%j`, response);
                 resolve(response); // Resolve the promise with the expected response type
             });
     
             setTimeout(() => {
-                logger.warn(`Timeout waiting for response from ${username} on event ${socketEvent}`);
+                logger.warn(`DONE: Timeout waiting for response from ${username} on event ${socketEvent}`);
                 reject(undefined); // Reject with undefined if timeout occurs
             }, timeOut);
         });

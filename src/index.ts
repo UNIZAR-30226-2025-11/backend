@@ -1,8 +1,9 @@
 import { PORT } from "./config.js";
 import { server } from "./app.js";
 import { db } from "./db.js";
+import logger from "./config/logger.js";
 
-server.listen(PORT, () => console.log(`Server up: http://localhost:${PORT}`));
+server.listen(PORT, () => logger.info(`Server up: http://localhost:${PORT}`));
 
 // Check if DB is reachable
 (async () => {
@@ -13,21 +14,21 @@ server.listen(PORT, () => console.log(`Server up: http://localhost:${PORT}`));
     try {
       await db.query("SELECT version()");
 
-      console.log(
+      logger.info(
         `DB connection: postgres://${db.options.host}:${db.options.port}`,
       );
       success = true;
       continue;
     } catch (_) {
       tries--;
-      console.log(`Failed to connect, ${tries} tries remaining`);
+      logger.error(`Failed to connect, ${tries} tries remaining`);
       if (!tries) continue;
       await new Promise((r) => setTimeout(r, 2000));
     }
   }
 
   if (!success)
-    console.log(
+    logger.error(
       "Couldn't connect to DB. If setup correctly, the DB may just be not up yet.",
     );
 })();

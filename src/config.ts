@@ -1,15 +1,18 @@
 import { config } from "dotenv";
 import assert from "node:assert";
+import logger from "./config/logger.js";
 
 config();
 
-if (!process.env.PORT) console.log(`Using default PORT: 8000`);
-if (!process.env.PGHOST) console.log(`Using default PGHOST: localhost`);
-if (!process.env.PGPORT) console.log("Using default PGPORT: 5432 ");
-if (!process.env.FRONTEND_URL)
-  console.log(
-    "Using wildcard CORS origin. REQUESTS WITH COOKIES WILL BE THROWN OUT",
-  );
+if (!process.env.PORT) logger.info(`Using default PORT: 8000`);
+if (!process.env.PGHOST) logger.info(`Using default PGHOST: localhost`);
+if (!process.env.PGPORT) logger.info("Using default PGPORT: 5432 ");
+if (!process.env.FRONTEND_URL){
+	logger.warn(
+		"Using wildcard CORS origin. REQUESTS WITH COOKIES WILL BE THROWN OUT",
+	);
+}
+
 assert(process.env.JWT_SECRET, "No JWT_SECRET provided");
 
 export const LOG_LEVEL: string = process.env.LOG_LEVEL || "info";

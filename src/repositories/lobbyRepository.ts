@@ -1,6 +1,5 @@
 import logger from "../config/logger.js";
 import { db } from "../db.js";
-import { GameObject } from "../models/GameObject.js";
 
 export class LobbyRepository {
     
@@ -37,7 +36,7 @@ export class LobbyRepository {
     }
     
 
-    static async startLobby(lobbyId: string, game:GameObject): Promise<void> {
+    static async startLobby(lobbyId: string): Promise<void> {
         try {
             logger.debug(`[DB] AWAIT: Starting lobby ${lobbyId}`);
             await db.query(
@@ -45,7 +44,7 @@ export class LobbyRepository {
                 UPDATE lobbies
                 SET active = TRUE, game=$2
                 WHERE id = $1
-                `, [lobbyId, game.toJSON()]
+                `, [lobbyId, null]
             );
             logger.debug(`[DB] DONE: Started lobby ${lobbyId}`);
         }

@@ -171,7 +171,7 @@ export class LobbyManager {
 
         this.lobbiesGames.set(lobbyId, game);
 
-        LobbyRepository.startLobby(lobbyId, game);
+        LobbyRepository.startLobby(lobbyId);
 
         return lobbySocketsId.length;
     }
