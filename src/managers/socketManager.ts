@@ -1,25 +1,63 @@
 import { Socket } from "socket.io";
+import logger from "../config/logger.js";
 
 export class SocketManager {
-    private static sockets: Map<string, Socket> = new Map();
 
+    /** Map of usernames to sockets  */
+    private static sockets: Map<string, Socket> = new Map();
+    
+    /**
+     * Add a socket to the manager
+     * @param username The username of the socket to be added
+     * @param socket The socket to be added
+     * @returns
+     */
     static addSocket(username: string, socket: Socket) {
+        console.debug(`Adding socket ${socket.id} to ${username}`);
         this.sockets.set(username, socket);
     }
 
+    /**
+     * Remove a socket from the manager
+     * @param username The username of the socket to be removed
+     * @returns
+     */
     static removeSocket(username: string) {
+        console.debug(`Removing socket from ${username}`);
         this.sockets.delete(username);
     }
 
+    /**
+     * Get a socket from the manager
+     * @param username The username of the socket to be retrieved
+     * @returns The socket if it exists, undefined otherwise
+     */
     static getSocket(username: string): Socket | undefined {
+        console.debug(`Getting socket from ${username}`);
         return this.sockets.get(username);
     }
 
+    /**
+     * Check if a username has a socket
+     * @param username The username to be checked
+     * @returns True if the username has a socket, false otherwise
+     */
     static hasSocket(username: string): boolean {
+        console.debug(`Checking if ${username} has a socket`);
         return this.sockets.has(username);
     }
 
-    static waitForPlayerResponse<TRequest, TResponse >(
+    /**
+     * This function sends a request to the player and waits for a response via
+     * the socket event. If the player does not respond within the timeOut, the
+     * promise is rejected with undefined.
+     * @param username The username of the player to wait for
+     * @param socketEvent The event to wait for
+     * @param requestData The data to send to the player
+     * @param timeOut The time to wait for the player response
+     * @returns The response from the player
+     */
+    static waitForPlayerResponse<TRequest,TResponse>(
         username: string, 
         socketEvent: string, 
         requestData: TRequest,
@@ -27,19 +65,23 @@ export class SocketManager {
     ): Promise<TResponse | undefined> {
         const socket: Socket | undefined = this.getSocket(username);
         if (socket === undefined) {
-            console.log("Socket not found");
+            logger.error(`Socket not found for ${username}`);
             return Promise.reject(undefined);
         }
-    
-        console.log("Waiting for frontend response");
+
         return new Promise((resolve, reject) => {
+
+            logger.debug(`Sending request to ${username} on event ${socketEvent}:\t%j`, requestData);
             socket.emit(socketEvent, requestData);
-    
+            
+            logger.debug(`Waiting for response from ${username} on event ${socketEvent}`);
             socket.once(socketEvent, (response: TResponse) => {
+                logger.debug(`Response received from ${username} on event ${socketEvent}:\t%j`, response);
                 resolve(response); // Resolve the promise with the expected response type
             });
     
             setTimeout(() => {
+                logger.warn(`Timeout waiting for response from ${username} on event ${socketEvent}`);
                 reject(undefined); // Reject with undefined if timeout occurs
             }, timeOut);
         });
