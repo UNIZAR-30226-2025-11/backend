@@ -3,71 +3,95 @@ import { GameRepository } from "../repositories/gameRepository.js";
 import { LobbyManager } from "./lobbyManager.js";
 import { Play } from "../models/Play.js";
 import { CardArray } from "../models/CardArray.js";
+import logger from "../config/logger.js";
 
 export class GameManager {
 
+    /**
+     * Handles the play of a player in a game
+     * @param cards The cards played by the player
+     * @param lobbyId The id of the lobby where the player is playing
+     * @param username The username of the player
+     * @returns True if the play was successful, false otherwise
+     */
     static async handlePlay(cards: CardArray, lobbyId: string, username: string): Promise<boolean>{
-        
+
+        logger.info(`Handling play of ${username} in lobby ${lobbyId}`);
+        logger.debug(`Cards played: %j`, cards);
+
         const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
 
         if (currentGame === undefined){
-            console.log("Game not found!");
+            logger.error(`Game not found for lobby ${lobbyId}`);
             return false;
         }
 
         const playerIdInGame: number | undefined = await GameRepository.getPlayerIdInGame(username);
 
         if (playerIdInGame === undefined){
-            console.log("You are not in the game!");
+            logger.error(`Player ${username} is not in the game!`);
             return false;
         }
         
         const play: Play = new Play(playerIdInGame, cards);
-        if (!await currentGame.handlePlay(play))
-        {
-            console.log("Could not send the message!");
-            return false;
-        }
 
-        return true;
+        return await currentGame.handlePlay(play);
     }
-
+    
+    /**
+     * Disconnects a player from a game
+     * @param username The username of the player to be disconnected
+     * @param lobbyId The id of the lobby where the player is playing
+     * @returns 
+     */
     static async disconnectPlayer(username: string, lobbyId: string): Promise<void>{
+
+        logger.info(`Disconnecting player ${username} from lobby ${lobbyId}`);
+
         const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
 
         if (currentGame === undefined){
-            console.log("Game not found!");
+            logger.error(`Game not found for lobby ${lobbyId}`);
             return;
         }
 
         const playerInGame: number | undefined = await GameRepository.getPlayerIdInGame(username);
 
         if (playerInGame === undefined){
-            console.log("You are not in the game!");
+            logger.error(`Player ${username} is not in the game!`);
             return;
         }
 
         currentGame.disconnectPlayer(playerInGame);
-    }
 
+        return;
+    }
+    
+    /**
+     * Handles the end of a game
+     * @param lobbyId The id of the lobby where the game ended
+     * @returns 
+     */
     static async handleWinner(username: string, coinsEarned: number, lobbyId: string): Promise<void>{
+
+        logger.info(`Handling winner ${username} in lobby ${lobbyId}`);
 
         const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
 
         if (currentGame === undefined){
-            console.log("Game not found!");
+            logger.error(`Game not found for lobby ${lobbyId}`);
             return;
         }
 
         const winnerId: number | undefined = currentGame.getWinnerId();
 
         if(winnerId === undefined){
-            console.log("Game not finished!");
+            logger.warn(`No winner found for lobby ${lobbyId}`);
             return;
         }
 
         if (await GameRepository.getPlayerIdInGame(username) !== winnerId){
-            console.log("You are not the winner!");
+            logger.warn(`Player ${username} is not the winner of the game!`);
             return;
         }
 
@@ -77,7 +101,7 @@ export class GameManager {
 
         LobbyManager.lobbiesGames.delete(lobbyId);
 
-
+        return;
     }
 
 }
