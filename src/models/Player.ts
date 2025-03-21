@@ -34,7 +34,7 @@ export class Player {
     
     toJSONHidden(): PlayerJSON{
         const response : PlayerJSON = {
-            username : this.username,
+            playerUsername : this.username,
             numCards: this.hand.length(),
             active: this.active
         };

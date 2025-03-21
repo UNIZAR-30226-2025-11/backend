@@ -3,30 +3,6 @@ import { db } from "../db.js";
 
 export class GameRepository {
 
-    static async getPlayerIdInGame(username: string): Promise<number|undefined> {
-        try {
-
-            logger.debug(`[DB] AWAIT: Getting player id in game for ${username}`);
-            const res = await db.query(
-                `
-                SELECT id_in_game 
-                FROM users_in_lobby 
-                WHERE username = $1
-                `, [username]);
-            
-            if (res.rows.length > 0) {
-                logger.debug(`[DB] DONE: Got player id ${res.rows[0].id_in_game} in game for ${username}`);
-                return res.rows[0].id_in_game
-            } else {
-                logger.warn(`[DB] DONE: Could not fetch the player ${username} id in game.`);
-                return undefined;
-            }
-        } catch (error) {
-            logger.error("[DB] Error in database.", error);
-            throw new Error("Error in database");
-        }
-    }
-
     static async addCoinsToPlayer(username: string, coins: number): Promise<void> {
         try {
             logger.debug(`[DB] AWAIT: Adding ${coins} coins to ${username}`);

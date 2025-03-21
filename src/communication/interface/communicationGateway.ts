@@ -16,16 +16,16 @@ export interface CommunicationGateway {
     broadcastStealFailedAction(triggerUser: string, targetUser: string): void;
     broadcastFavorAction(triggerUser: string, targetUser: string): void;
     broadcastWinnerNotification(winnerUsername: string, coinsEarned: number): void;
-    broadcastPlayerDisconnect(triggerUser: number): void;
+    broadcastPlayerDisconnect(playerUsername: string): void;
 
     // Individual methods to notify a player
-    notifyGameState(players: Player[], index:number, turn: number, timeOut: number): void;
+    notifyGameState(players: Player[], index:number, turnUsername: string, timeOut: number): void;
     notifyDrewCard(card: Card, username: string): void;
     notifyFutureCards(cards: CardArray, username: string): void;
     notifyOkPlayedCards(username: string): void;
     
     // Get methods to request information from the frontend
     getACardType(username: string, lobbyId: string): Promise<CardType|undefined>;
-    getAPlayerId(username: string, lobbyId: string): Promise<number|undefined>;
+    getAPlayerUsername(username: string, lobbyId: string): Promise<string|undefined>;
     getACard(username: string, lobbyId: string): Promise<Card|undefined>;
 }

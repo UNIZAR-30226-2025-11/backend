@@ -55,7 +55,7 @@ export class SocketManager {
      * @param timeOut The time to wait for the player response
      * @returns The response from the player
      */
-    static waitForPlayerResponse<TRequest,TResponse>(
+    static waitForPlayerResponse<TRequest, TResponse>(
         username: string, 
         socketEvent: string, 
         requestData: TRequest,
@@ -68,20 +68,21 @@ export class SocketManager {
         }
 
         return new Promise((resolve, reject) => {
-
             logger.debug(`Sending request to ${username} on event ${socketEvent}:\t%j`, requestData);
             socket.emit(socketEvent, requestData);
             
             logger.debug(`AWAIT: Waiting for response from ${username} on event ${socketEvent}`);
-            socket.once(socketEvent, (response: TResponse) => {
-                logger.debug(`DONE: Response received from ${username} on event ${socketEvent}:\t%j`, response);
-                resolve(response); // Resolve the promise with the expected response type
-            });
     
-            setTimeout(() => {
+            const timeout = setTimeout(() => {
                 logger.warn(`DONE: Timeout waiting for response from ${username} on event ${socketEvent}`);
-                reject(undefined); // Reject with undefined if timeout occurs
+                reject(undefined);
             }, timeOut);
+    
+            socket.once(socketEvent, (response: TResponse) => {
+                clearTimeout(timeout);
+                logger.debug(`DONE: Response received from ${username} on event ${socketEvent}:\t%j`, response);
+                resolve(response);
+            });
         });
     }
     

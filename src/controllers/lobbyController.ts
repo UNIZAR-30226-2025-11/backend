@@ -158,7 +158,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
                 lobbyId: data.lobbyId
             };
 
-            logger.debug(`Sending response "join-lobby":\t%j`, response);
+            logger.debug(`Sending response "join-lobby" to ${username}:\t%j`, response);
 
             socket.emit("join-lobby", response);
             return;
@@ -180,7 +180,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
             return;
         }
 
-        if(! await LobbyManager.playerIsInLobby(username, data.lobbyId)) {
+        if(await LobbyManager.playerIsInLobby(username, data.lobbyId)) {
             
             logger.warn(`Player ${username} is already in a lobby!`);
             const response: BackendJoinLobbyResponseJSON = {
@@ -241,7 +241,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
                 numPlayers: -1
             };
 
-            logger.debug(`Sending response "start-lobby":\t%j`, response);
+            logger.debug(`Sending response "start-lobby" to ${username}:\t%j`, response);
 
             socket.emit("start-lobby", response);
             return;

@@ -90,7 +90,7 @@ export class LobbyManager {
         }
 
         // Check if the lobby is already started
-        if(!isActive) {
+        if(isActive) {
             logger.warn(`Lobby ${lobbyId} is already started!`);
             return false
         }

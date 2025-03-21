@@ -89,7 +89,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
         return CardType[response.cardType as keyof typeof CardType];
     }
 
-    async getAPlayerId(username: string, lobbyId: string): Promise<number|undefined> {
+    async getAPlayerUsername(username: string, lobbyId: string): Promise<string|undefined> {
         
         logger.info("Waiting for player response for player ID");
 
@@ -118,12 +118,12 @@ export class socketCommunicationGateway implements CommunicationGateway {
 
         handleError(response.error, response.errorMsg);
 
-        if(response.userId === undefined) {
+        if(response.playerUsername === undefined) {
             logger.warn("Player ID not received");
             return undefined;
         }
 
-        return response.userId;
+        return response.playerUsername;
     }
 
     async getACard(username: string, lobbyId: string): Promise<Card|undefined> {
@@ -313,14 +313,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
         });
     }
 
-    broadcastPlayerDisconnect(playerId: number): void {
+    broadcastPlayerDisconnect(playerUsername: string): void {
 
-        logger.info(`Notifying all players that player ${playerId} disconnected`);
+        logger.info(`Notifying all players that player ${playerUsername} disconnected`);
         this.playersUsernamesInLobby.forEach((username) => {
             const msg: BackendPlayerDisconnectedJSON = {
                 error: false,
                 errorMsg: "",
-                playerId: playerId
+                playerUsername: playerUsername
             }
 
             const socket: Socket|undefined = SocketManager.getSocket(username);
@@ -399,22 +399,22 @@ export class socketCommunicationGateway implements CommunicationGateway {
     notifyGameState(
         players: Player[], 
         index: number,
-        turn: number, 
+        turnUsername: string, 
         timeOut: number, 
     ): void {
 
         const username: string = players[index].username;
         const playerCards: CardArray = players[index].hand;
 
-        logger.info(`Notifying player ${username} of the game`);
+        logger.info(`Notifying player ${username} of the new state of the game`);
         const response: BackendStateUpdateJSON = {
             error: false,
             errorMsg: "",
             playerCards: playerCards.toJSON(),
             players: players.map(p => p.toJSONHidden()),
-            turn: turn,
+            turnUsername: turnUsername,
             timeOut: timeOut,
-            playerId: 0
+            playerUsername: username
         }
 
         const socket: Socket|undefined = SocketManager.getSocket(username);

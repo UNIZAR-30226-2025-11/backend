@@ -11,13 +11,13 @@ export type BackendStateUpdateJSON = {
     errorMsg: string;
     playerCards: string;
     players: PlayerJSON[];
-    turn: number;
+    turnUsername: string;
     timeOut: number;
-    playerId: number;
+    playerUsername: string;
 }
 
 export type PlayerJSON = {
-    username: string;
+    playerUsername: string;
     numCards: number;
     active: boolean;
 }
@@ -86,7 +86,7 @@ export type BackendGameSelectPlayerJSON = {
 export type FrontendGameSelectPlayerResponseJSON = {
     error: boolean;
     errorMsg: string;
-    userId: number;
+    playerUsername: string;
     lobbyId: string;
 }
 
@@ -249,6 +249,6 @@ export type BackendNotifyActionJSON = {
 export type BackendPlayerDisconnectedJSON = {
     error: boolean;
     errorMsg: string;
-    playerId: number;
+    playerUsername: string;
 }
 // -----------------------------------------------------------

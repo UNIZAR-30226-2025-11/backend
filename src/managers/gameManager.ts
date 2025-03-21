@@ -48,14 +48,13 @@ export class GameManager {
             return;
         }
 
-        const playerInGame: number | undefined = await GameRepository.getPlayerIdInGame(username);
 
-        if (playerInGame === undefined){
+        if (!currentGame.isInGame(username)){
             logger.error(`Player ${username} is not in the game!`);
             return;
         }
 
-        currentGame.disconnectPlayer(playerInGame);
+        currentGame.disconnectPlayer(username);
 
         return;
     }
