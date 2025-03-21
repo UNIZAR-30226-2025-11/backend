@@ -13,7 +13,7 @@ export class SocketManager {
      * @returns
      */
     static addSocket(username: string, socket: Socket) {
-        console.debug(`Adding socket ${socket.id} to ${username}`);
+        logger.debug(`Adding socket ${socket.id} to ${username}`);
         this.sockets.set(username, socket);
     }
 
@@ -23,7 +23,7 @@ export class SocketManager {
      * @returns
      */
     static removeSocket(username: string) {
-        console.debug(`Removing socket from ${username}`);
+        logger.debug(`Removing socket from ${username}`);
         this.sockets.delete(username);
     }
 
@@ -33,7 +33,6 @@ export class SocketManager {
      * @returns The socket if it exists, undefined otherwise
      */
     static getSocket(username: string): Socket | undefined {
-        console.debug(`Getting socket from ${username}`);
         return this.sockets.get(username);
     }
 
@@ -43,10 +42,9 @@ export class SocketManager {
      * @returns True if the username has a socket, false otherwise
      */
     static hasSocket(username: string): boolean {
-        console.debug(`Checking if ${username} has a socket`);
         return this.sockets.has(username);
     }
-
+    
     /**
      * This function sends a request to the player and waits for a response via
      * the socket event. If the player does not respond within the timeOut, the

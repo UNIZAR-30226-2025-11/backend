@@ -3,12 +3,23 @@ import fs from "fs";
 import { ENABLE_LOGGING, LOG_LEVEL } from "../config.js";
 
 // Logs files
-const logFiles = ["logs/error.log", "logs/combined.log"];
+const logFiles = ["logs/_logs.log"];
 
 // Reset logs before starting (truncate)
 logFiles.forEach((file) => {
 	fs.writeFileSync(file, ""); // Clears the file content
 });
+
+// Custom colors for different log levels
+const customColors = {
+	error: 'red',
+	warn: 'yellow',
+	info: 'green',
+	debug: 'blue',
+};
+
+// Add the custom colors to winston
+winston.addColors(customColors);
 
 // Define log format
 const logFormat = winston.format.combine(
@@ -26,8 +37,7 @@ const logger = winston.createLogger({
 	level: LOG_LEVEL,
 	format: logFormat,
 	transports: [
-		new winston.transports.File({ filename: "logs/error.log", level: "error" }), // Only errors
-		new winston.transports.File({ filename: "logs/combined.log" }), // All logs
+		new winston.transports.File({ filename: "logs/_logs.log" }), // All logs
 	]
 });
 
