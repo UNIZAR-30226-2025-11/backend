@@ -20,7 +20,7 @@ export async function notifyNewPlayers(lobbyId: string): Promise<void> {
     const playersInLobby: {username:string, isLeader:boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
 
     if(playersInLobby === undefined) {
-        console.log("Error getting the players in the lobby!");
+        logger.error("Error getting the players in the lobby!");
         return;
     }
 
@@ -32,13 +32,14 @@ export async function notifyNewPlayers(lobbyId: string): Promise<void> {
     }
 
     playersInLobby.forEach(player => {
-        console.log("Notifying player: ", player.username);
         const socket: Socket | undefined = SocketManager.getSocket(player.username);
 
         if(socket === undefined) {
-            console.log("Socket not found!");
+            logger.error("Socket not found!");
             return;
         }
+
+        logger.debug(`Sending "lobby-state" message to ${player.username}:\t%j`, msg);
 
         socket.emit("lobby-state", msg);
     });
@@ -48,7 +49,7 @@ export async function notifyLobbyDisband(lobbyId: string): Promise<void> {
     const playersInLobby: {username:string, isLeader:boolean}[] | undefined = await LobbyRepository.getPlayersInLobby(lobbyId);
 
     if(playersInLobby === undefined) {
-        console.log("Error getting the players in the lobby!");
+        logger.error("Error getting the players in the lobby!");
         return;
     }
 
@@ -63,9 +64,11 @@ export async function notifyLobbyDisband(lobbyId: string): Promise<void> {
         const socket: Socket | undefined = SocketManager.getSocket(player.username);
 
         if(socket === undefined) {
-            console.log("Socket not found!");
+            logger.error("Socket not found!");
             return;
         }
+
+        logger.debug(`Sending "lobby-state" message to ${player.username}:\t%j`, msg);
 
         socket.emit("lobby-state", msg);
     });
@@ -76,14 +79,16 @@ export const setupLobbyHandlers = (socket: Socket) => {
 
     socket.on("create-lobby", async (data: FrontendCreateLobbyJSON) => {
         
-        logger.info("Create lobby request received");
-        logger.debug("Data received for create-lobby request: ", data);
+        const username: string = socket.data.user.username;
+
+        logger.info(`Create lobby request received from user: ${username}`);
+        logger.debug(`Data received for "create-lobby" request:\t%j`, data);
 
         handleError(data.error, data.errorMsg);
         
         if (data.maxPlayers === undefined) {
 
-            logger.warn("Number of players not provided!");
+            logger.warn(`Number of players not provided!`);
 
             const response: BackendCreateLobbyResponseJSON = {
                 error: true,
@@ -91,7 +96,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
                 lobbyId: ""
             };
             
-            logger.debug("Sending response: ", response);
+            logger.debug(`Sending response "create-lobby":\t%j`, response);
 
             socket.emit("create-lobby", response);
             return;
@@ -100,7 +105,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
         // Check if the number of maximum players is valid
         if (data.maxPlayers < 2 || data.maxPlayers > 4) {
 
-            logger.warn("Number of players must be between 2 and 4!");
+            logger.warn(`Number of players must be between 2 and 4!`);
 
             const response: BackendCreateLobbyResponseJSON = {
                 error: true,
@@ -108,15 +113,11 @@ export const setupLobbyHandlers = (socket: Socket) => {
                 lobbyId: ""
             };
 
-            logger.debug("Sending response: ", response);
+            logger.debug(`Sending response: `, response);
 
             socket.emit("create-lobby", response);
             return;
         }   
-
-        const username: string = socket.data.user.username;
-
-        logger.debug("Username: ", username);
 
         // Create a new lobby
         const lobbyId: string | undefined = await LobbyManager.createLobby(data.maxPlayers, username);
@@ -129,7 +130,7 @@ export const setupLobbyHandlers = (socket: Socket) => {
                 lobbyId: ""
             };
 
-            logger.debug("Sending response: ", response);
+            logger.debug(`Sending response "create-lobby":\t%j`, response);
 
             socket.emit("create-lobby", response);
             return;
@@ -143,34 +144,47 @@ export const setupLobbyHandlers = (socket: Socket) => {
             lobbyId: lobbyId
         };
 
-        logger.debug("Sending response: ", response);
+        logger.debug(`Sending response "create-lobby":\t%j`, response);
 
         socket.emit("create-lobby", response);
+        return;
     });
 
     socket.on("join-lobby", async (data: FrontendJoinLobbyJSON)  => {
 
         const username: string = socket.data.user.username;
+
+        logger.info(`Join lobby request received from user: ${username}`);
+        logger.debug(`Data received for "join-lobby" request:\t%j`, data);
+
         handleError(data.error, data.errorMsg);
 
         if (data.lobbyId === undefined || data.lobbyId === "") {
+
+            logger.warn(`No lobby id provided!`);
             const response: BackendJoinLobbyResponseJSON = {
                 error: true,
                 errorMsg: "No lobby id provided!",
                 lobbyId: data.lobbyId
             };
+
+            logger.debug(`Sending response "join-lobby":\t%j`, response);
+
             socket.emit("join-lobby", response);
             return;
         }
 
         // Check if can join the lobby
-        const ok: boolean = await LobbyManager.joinLobby(username, data.lobbyId)
-        if (!ok) {
+        if (!await LobbyManager.joinLobby(username, data.lobbyId)) {
+
             const response: BackendJoinLobbyResponseJSON = {
                 error: true,
                 errorMsg: `You cannot join the lobby`,
                 lobbyId: data.lobbyId
             };
+
+            logger.debug(`Sending response "join-lobby":\t%j`, response);
+
             socket.emit("join-lobby", response);
             return;
         }
@@ -180,22 +194,33 @@ export const setupLobbyHandlers = (socket: Socket) => {
             errorMsg: "",
             lobbyId: data.lobbyId
         };
+
+        logger.debug(`Sending response "join-lobby":\t%j`, response);
+
         socket.emit("join-lobby", response);
 
-        console.log(`User joined lobby with ID: ${data.lobbyId}`);
     });
 
     socket.on("start-lobby", async (data: FrontendStartLobbyJSON) => {
 
         const username: string = socket.data.user.username;
+
+        logger.info(`Start lobby request received from user: ${username}`);
+        logger.debug(`Data received for "start-lobby" request:\t%j`, data);
+
         handleError(data.error, data.errorMsg);
 
         if (data.lobbyId === undefined || data.lobbyId === "") {
+
+            logger.warn(`No lobby id provided!`);
             const response: BackendStartLobbyResponseJSON = {
                 error: true,
                 errorMsg: "No lobby id provided!",
                 numPlayers: -1
             };
+
+            logger.debug(`Sending response "start-lobby":\t%j`, response);
+
             socket.emit("start-lobby", response);
             return;
         }
@@ -208,6 +233,9 @@ export const setupLobbyHandlers = (socket: Socket) => {
                 errorMsg: "You cannot start the lobby",
                 numPlayers: -1
             };
+
+            logger.debug(`Sending response "start-lobby":\t%j`, response);
+
             socket.emit("start-lobby", response);
             return;
         }
@@ -217,9 +245,11 @@ export const setupLobbyHandlers = (socket: Socket) => {
             errorMsg: "",
             numPlayers: numberOfPlayersInLobby
         };
+
+        logger.debug(`Sending response "start-lobby":\t%j`, response);
+
         socket.emit("start-lobby", response);
-    
-        console.log(`Game started in lobby with ID: ${data.lobbyId}`);
+
     });
 
 };
