@@ -2,7 +2,6 @@ import { CardType, Card } from "../../models/Card.js";
 import { Player } from "../../models/Player.js";
 import { CardArray } from "../../models/CardArray.js";
 
-// src/services/communicationHandler.ts
 export interface CommunicationGateway {
     toJSON(): {comm: number};
     notifyGameState(playedCards: CardArray, players: Player[], turn: number, timeOut: number, playerId: number): void;

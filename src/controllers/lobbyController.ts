@@ -13,6 +13,7 @@ import {
 import { handleError } from "../constants/constants.js";
 import { LobbyRepository } from "../repositories/lobbyRepository.js";
 import { SocketManager } from "../managers/socketManager.js";
+import logger from "../config/logger.js";
 
 
 export async function notifyNewPlayers(lobbyId: string): Promise<void> {
@@ -75,51 +76,76 @@ export const setupLobbyHandlers = (socket: Socket) => {
 
     socket.on("create-lobby", async (data: FrontendCreateLobbyJSON) => {
         
+        logger.info("Create lobby request received");
+        logger.debug("Data received for create-lobby request: ", data);
+
         handleError(data.error, data.errorMsg);
         
         if (data.maxPlayers === undefined) {
+
+            logger.warn("Number of players not provided!");
+
             const response: BackendCreateLobbyResponseJSON = {
                 error: true,
                 errorMsg: "Number of players not provided!",
                 lobbyId: ""
             };
+            
+            logger.debug("Sending response: ", response);
+
             socket.emit("create-lobby", response);
             return;
         }
 
         // Check if the number of maximum players is valid
         if (data.maxPlayers < 2 || data.maxPlayers > 4) {
+
+            logger.warn("Number of players must be between 2 and 4!");
+
             const response: BackendCreateLobbyResponseJSON = {
                 error: true,
                 errorMsg: "Number of players must be between 2 and 4!",
                 lobbyId: ""
             };
+
+            logger.debug("Sending response: ", response);
+
             socket.emit("create-lobby", response);
             return;
         }   
 
         const username: string = socket.data.user.username;
+
+        logger.debug("Username: ", username);
+
         // Create a new lobby
         const lobbyId: string | undefined = await LobbyManager.createLobby(data.maxPlayers, username);
 
         if (lobbyId === undefined) {
-            
+
             const response: BackendCreateLobbyResponseJSON = {
                 error: true,
                 errorMsg: "Could not create the lobby!",
                 lobbyId: ""
             };
+
+            logger.debug("Sending response: ", response);
+
             socket.emit("create-lobby", response);
             return;
         }
+
+        logger.info(`Lobby created with ID: ${lobbyId}`);
 
         const response: BackendCreateLobbyResponseJSON = {
             error: false,
             errorMsg: "",
             lobbyId: lobbyId
         };
+
+        logger.debug("Sending response: ", response);
+
         socket.emit("create-lobby", response);
-        console.log(`Lobby created with ID: ${lobbyId}`);
     });
 
     socket.on("join-lobby", async (data: FrontendJoinLobbyJSON)  => {

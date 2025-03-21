@@ -1,4 +1,4 @@
-// src/services/socketCommunicationHandler.ts
+
 import { Socket } from "socket.io";
 import { CommunicationGateway } from "../interface/communicationGateway.js";
 import { 

@@ -12,6 +12,9 @@ if (!process.env.FRONTEND_URL)
   );
 assert(process.env.JWT_SECRET, "No JWT_SECRET provided");
 
+export const LOG_LEVEL: string = process.env.LOG_LEVEL || "info";
+export const ENABLE_LOGGING: boolean = process.env.ENABLE_LOGGING === "true";
+
 export const PORT: string = process.env.PORT || "8000";
 
 export const PGHOST: string = process.env.PGHOST || "localhost";
