@@ -6,6 +6,7 @@ import { Play } from "./Play.js";
 import { Card, CardType } from "./Card.js";
 import { CardArray } from "./CardArray.js";
 import logger from "../config/logger.js";
+import { PausableTimeout } from "./PausableTimeout.js";
 
 enum AttackType {
     Attack,
@@ -19,7 +20,7 @@ export class GameObject {
     players: Player[];
     deck: Deck;
     turn: number;
-    turnTimeout: NodeJS.Timeout | null;
+    turnTimeout: PausableTimeout;
     numberOfTurnsLeft: number;
     winnerUsername: string | undefined;
     callSystem: CommunicationGateway;
@@ -51,7 +52,17 @@ export class GameObject {
         this.turn = 0;
         this.winnerUsername = undefined;
         this.numberOfTurnsLeft = 1;
-        this.turnTimeout = null;
+        this.turnTimeout = new PausableTimeout(
+            () => {
+                const player: Player|undefined = this.players[this.turn];
+                if(player === undefined){
+                    logger.error(`[GAME] Player ${this.turn} not found`);
+                    return;
+                }
+                this.handlePlayerLost(player);
+            },
+            TURN_TIME_LIMIT
+        );
         this.leaderUsername = leaderUsername;
 
         this.callSystem.broadcastStartGame();
@@ -113,22 +124,43 @@ export class GameObject {
     startTurnTimer(): void 
     {
         if (this.turnTimeout) {
-            logger.debug(`[GAME] Clearing previous timeout`);
-            clearTimeout(this.turnTimeout);
+            logger.verbose(`[GAME] Clearing previous timeout`);
+            this.turnTimeout.clear();
         } 
-    
-        const cb = () => {
-            logger.debug(`[GAME] Player ${this.turn} has run out of time!`);
-            this.players[this.turn].active = false;
-            if(this.getWinner() === undefined){
-                // If there is no winner, start the next turn
-                this.forceNewTurn(1);
-            }
-            
-        }
         
         logger.debug(`[GAME] Starting turn timer for player ${this.turn}`);
-        this.turnTimeout = setTimeout(cb, TURN_TIME_LIMIT);
+        this.turnTimeout.start();
+    }
+
+    stopTurnTimer(): void {
+        if (this.turnTimeout) {
+            logger.verbose(`[GAME] Clearing previous timeout`);
+            this.turnTimeout.clear();
+
+        } 
+    }
+
+    async handleRequestInfo<T>(
+        callback: (playerUsername: string, lobbyId: string) => Promise<T|undefined>,
+        targetUser: string,
+        lobbyId: string
+    ) : Promise<T|undefined> {
+
+        this.stopTurnTimer();
+        const result: T | undefined = await callback(targetUser, lobbyId);
+
+        if ( result === undefined) {
+            logger.warn(`[GAME] Request failed. Player ${targetUser} did not respond so he loses.`);
+            const player: Player|undefined = this.getPlayerByUsername(targetUser);
+            if(player === undefined){
+                logger.error(`[GAME] Player ${targetUser} not found`);
+                return undefined;
+            }
+            this.handlePlayerLost(player);
+        }
+
+        this.startTurnTimer();
+        return result;
     }
 
     isValidPlay(play:Play): boolean{
@@ -136,27 +168,22 @@ export class GameObject {
         const player: Player|undefined = this.getPlayerByUsername(play.username);
 
         if (player === undefined) {
-            logger.warn(`Invalid player username!`);
+            logger.warn(`[GAME] Invalid player username!`);
             return false;
         } 
         
-        if (player.id != this.turn) {
-            logger.warn(`Not your turn!`);
-            return false;
-        }
-        
         if (!player.active) {
-            logger.warn(`You have already lost!`);
+            logger.warn(`[GAME] You have already lost!`);
             return false;
         } 
         
         if (!player.hand.containsAll(play.playedCards)) {
-            logger.warn(`You don't have the cards you are trying to play!`);
+            logger.warn(`[GAME] You don't have the cards you are trying to play!`);
             return false;
         } 
         
         if (!play.isPlayable()){
-            logger.warn(`The cards are not playable`);
+            logger.warn(`[GAME] The cards are not playable`);
             return false;
         }
 
@@ -227,25 +254,41 @@ export class GameObject {
         return;
     }
 
-    getWinner(): Player | undefined {
-        logger.info(`[GAME] Checking for winner`);
-        const activePlayers: Player[] = this.players.filter(p => p.active);
+    handlePlayerLost(player: Player): void {
         
-        logger.debug(`[GAME] Active players: ${activePlayers.length}`);
-        if (activePlayers.length !== 1) {
-            return undefined;
+        logger.info(`[GAME] Player ${player.username} has lost`);
+        player.active = false;
+        this.callSystem.broadcastPlayerLostAction(player.username);
+
+
+        const winner: Player | undefined = this.getWinner();
+        if(winner === undefined){
+            logger.verbose(`[GAME] There is no winner yet`);
+            if(player.id === this.turn){
+                logger.verbose(`[GAME] Player ${player.username} is the current player, so we set the next turn`);
+                this.setNextTurn();
+            }
+            logger.verbose(`[GAME] Player ${player.username} was not the current player, so we do nothing`);
+            return;
         }
 
-        logger.info(`[GAME] Player ${activePlayers[0].username} has won!`);
-
+        logger.info(`[GAME] Winner is ${winner.username}`);
         this.callSystem.broadcastWinnerNotification(
-            activePlayers[0].username, 
-            this.numberOfPlayers*100);
+            winner.username, 
+            this.numberOfPlayers*100
+        );
 
-        this.winnerUsername = activePlayers[0].username;
+        this.winnerUsername = winner.username;
 
-        return activePlayers[0];
+        this.stopTurnTimer();
+
     }
+
+    getWinner(): Player | undefined {
+        const activePlayers: Player[] = this.players.filter(p => p.active);
+        return activePlayers.length === 1 ? activePlayers[0] : undefined;
+    }
+
 
     /**
      * Function that resolves the Nope chain of cards.
@@ -339,15 +382,14 @@ export class GameObject {
 
                 this.callSystem.broadcastBombDefusedAction(player.username)
 
+                this.setNextTurn();
+
             } else {
                 // If the player does not have a deactivate card
                 logger.info(`[GAME] Player ${player.username} has exploded because he did not have a deactivate card`);
 
-                // Remove the player from the active players
-                player.active = false;
-
-                // Notify all players that the player has lost
-                this.callSystem.broadcastPlayerLostAction(player.username);
+                // The player has lost
+                this.handlePlayerLost(player);
             }
         } else{
 
@@ -356,6 +398,9 @@ export class GameObject {
 
             // Notify the player that he has gotten a new card
             this.callSystem.broadcastDrawCardAction(player.username)
+
+            // Set the next turn
+            this.setNextTurn();
         }
 
         this.callSystem.notifyDrewCard(newCard, player.username);
@@ -494,7 +539,11 @@ export class GameObject {
         logger.info(`[GAME] Player ${currentPlayer.username} is asking for a favor`);
 
         // Get the player to steal from
-        const playerUsername: string|undefined = await this.callSystem.getAPlayerUsername(currentPlayer.username, this.lobbyId);
+        const playerUsername: string|undefined = await this.handleRequestInfo(
+            this.callSystem.getAPlayerUsername,
+            currentPlayer.username, 
+            this.lobbyId
+        );
 
         if(playerUsername === undefined){
             // If the player does not select a player
@@ -529,7 +578,11 @@ export class GameObject {
         }
 
         // Get a card from the player that is going to be stolen from
-        const cardToGive: Card|undefined = await this.callSystem.getACard(playerToSteal.username, this.lobbyId);
+        const cardToGive: Card|undefined = await this.handleRequestInfo<Card>(
+            this.callSystem.getACard,
+            playerToSteal.username,
+            this.lobbyId
+        );
 
         if(cardToGive === undefined){
             // If the player does not select a card
@@ -560,12 +613,15 @@ export class GameObject {
 
     async playWildCard(numberOfPlayedCards:number, currentPlayer: Player): Promise<boolean>{
 
-        logger.info(`[GAME] Plaer ${currentPlayer.username} is playing a wild card.`);
+        logger.info(`[GAME] Player ${currentPlayer.username} is playing a wild card.`);
 
-        const playerToStealUsername: string|undefined = await this.callSystem.getAPlayerUsername(currentPlayer.username, this.lobbyId);
+        const playerToStealUsername: string|undefined = await this.handleRequestInfo<string>(
+            this.callSystem.getAPlayerUsername,
+            currentPlayer.username,
+            this.lobbyId
+        );
+
         if(playerToStealUsername === undefined){
-            // If the player does not select a player
-            logger.warn(`[GAME] Player has not selected a player to steal`);
             return false;
         }
 
@@ -640,10 +696,13 @@ export class GameObject {
         logger.info(`[GAME] Player ${currentPlayer.username} is stealing a card by type from player ${playerToSteal.id}`);
 
         // Get the card type to steal
-        const cardType: CardType|undefined  = await this.callSystem.getACardType(currentPlayer.username, this.lobbyId);
-
+        const cardType: CardType|undefined = await this.handleRequestInfo<CardType>(
+            this.callSystem.getACardType,
+            currentPlayer.username,
+            this.lobbyId
+        );
+        
         if(cardType === undefined){
-            logger.warn(`[GAME] Player has not selected a card to steal`);
             return false;
         }
 
@@ -673,12 +732,15 @@ export class GameObject {
 
     async handlePlay(play: Play): Promise<boolean>
     {
-        logger.info(`[GAME] Handling play %j`, play);
-
         const player: Player|undefined = this.getPlayerByUsername(play.username);
 
         if(player === undefined){
             logger.warn(`[GAME] Player ${play.username} not in game ${this.lobbyId}`);
+            return false;
+        }
+
+        if (player.id != this.turn) {
+            logger.warn(`[GAME] It is not your turn!`);
             return false;
         }
 
@@ -687,9 +749,6 @@ export class GameObject {
             const newCard: Card = this.deck.drawLast();
 
             this.handleNewCard(newCard, player);
-            if(this.getWinner() === undefined){
-                this.setNextTurn();
-            }
 
             this.communicateNewState();
             return true;

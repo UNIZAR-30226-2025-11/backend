@@ -35,7 +35,9 @@ export default tseslint.config(
       "prefer-const": "warn",
 
       // Detect unhandled promises (requires type checking)
-      "@typescript-eslint/no-floating-promises": "error"
+      "@typescript-eslint/no-floating-promises": "error",
+
+      "@typescript-eslint/require-await": "error",
     },
   },
 );

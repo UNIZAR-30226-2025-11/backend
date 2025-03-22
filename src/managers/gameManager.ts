@@ -37,7 +37,7 @@ export class GameManager {
      * @param lobbyId The id of the lobby where the player is playing
      * @returns 
      */
-    static async disconnectPlayer(username: string, lobbyId: string): Promise<void>{
+    static disconnectPlayer(username: string, lobbyId: string): void{
 
         logger.info(`Disconnecting player ${username} from lobby ${lobbyId}`);
 
@@ -91,7 +91,7 @@ export class GameManager {
         await GameRepository.addWinToPlayer(username);
         await GameRepository.addGamePlayedToLobby(lobbyId);
 
-        LobbyManager.lobbiesGames.delete(lobbyId);
+        await LobbyManager.deleteLobby(lobbyId);
 
         return;
     }

@@ -4,6 +4,8 @@ import { LobbyRepository } from "../repositories/lobbyRepository.js";
 import { GameManager } from "./gameManager.js";
 import { notifyNewPlayers, notifyLobbyDisband } from "../controllers/lobbyController.js";
 import logger from "../config/logger.js";
+import { Socket } from "socket.io";
+import { SocketManager } from "./socketManager.js";
 
 
 export class LobbyManager {
@@ -28,6 +30,34 @@ export class LobbyManager {
         }
 
         await this.removePlayerFromLobby(username, lobbyId);        
+    }
+
+    static async deleteLobby(lobbyId: string): Promise<void> {
+
+        logger.info(`Deleting lobby ${lobbyId}.`);
+
+        const usernames: string[] = await LobbyRepository.getPlayersInLobby(lobbyId)
+        await usernames.forEach(async username => {
+            logger.verbose(`Removing player ${username} from lobby ${lobbyId}.`);
+            await LobbyRepository.removePlayerFromLobby(username, lobbyId);
+            const socket: Socket | undefined = SocketManager.getSocket(username);
+            if(socket !== undefined) {
+                logger.verbose(`Disconnecting player ${username} from lobby ${lobbyId}.`);
+                await socket.disconnect(true);
+                SocketManager.removeSocket(username);
+            }
+        });
+
+        const game: GameObject | undefined = this.lobbiesGames.get(lobbyId);
+
+        if(game !== undefined) {
+            logger.verbose(`Deleting game ${lobbyId} locally.`);
+            this.lobbiesGames.delete(lobbyId);
+        }  
+
+        logger.verbose(`Removing lobby ${lobbyId} from the database.`);
+        await LobbyRepository.removeLobby(lobbyId);
+        return
     }
 
 
@@ -64,7 +94,7 @@ export class LobbyManager {
     }
 
     static async playerIsInLobby(username: string, lobbyId: string): Promise<boolean> {
-        const playersInLobby: {username:string, isLeader:boolean}[]  = await LobbyRepository.getPlayersInLobby(lobbyId);
+        const playersInLobby: {username:string, isLeader:boolean}[]  = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
         return playersInLobby.some(player => player.username === username);
     }
 
@@ -142,7 +172,7 @@ export class LobbyManager {
             return undefined;
         }
 
-        const lobbyPlayers: { username: string, isLeader: boolean}[] = await LobbyRepository.getPlayersInLobby(lobbyId);
+        const lobbyPlayers: { username: string, isLeader: boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
 
         const lobbyPlayersUsernames: string[] = lobbyPlayers.map(player => player.username);
         const numPlayers: number = lobbyPlayers.length;
@@ -154,7 +184,7 @@ export class LobbyManager {
 
         const comm:socketCommunicationGateway = new socketCommunicationGateway(lobbyId);
 
-        lobbyPlayersUsernames.forEach(async (username, i) => {
+        await lobbyPlayersUsernames.forEach(async (username, i) => {
             comm.registerPlayer(username);
             await LobbyRepository.setPlayerIdInGame(username, i);
         });

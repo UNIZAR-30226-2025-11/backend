@@ -17,7 +17,7 @@ import logger from "../config/logger.js";
 
 
 export async function notifyNewPlayers(lobbyId: string): Promise<void> {
-    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobby(lobbyId);
+    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
 
     const msg: BackendLobbyStateUpdateJSON = {
         error: false,
@@ -41,7 +41,7 @@ export async function notifyNewPlayers(lobbyId: string): Promise<void> {
 }
 
 export async function notifyLobbyDisband(lobbyId: string): Promise<void> {
-    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobby(lobbyId);
+    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
 
     const msg: BackendLobbyStateUpdateJSON = {
         error: false,

@@ -25,6 +25,8 @@ const customColors = {
     warn: 'yellow',
     info: 'green',
     debug: 'blue',
+    verbose: 'cyan',
+    silly: 'magenta',
 };
 
 // Add the custom colors to winston

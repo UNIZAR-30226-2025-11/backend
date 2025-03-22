@@ -25,7 +25,7 @@ export class UserRepository {
         }
 
         try {
-            logger.debug(`[DB] AWAIT: Creating user ${user.username}`);
+            logger.silly(`[DB] AWAIT: Creating user ${user.username}`);
             const res = await db.query(
                 `
                 INSERT INTO users(id, username, password)
@@ -33,7 +33,7 @@ export class UserRepository {
                 `, [user.id, user.username, user.password]
             );
             if (res.rowCount !== 0) {
-                logger.debug(`[DB] DONE: Created user ${user.username}`);
+                logger.silly(`[DB] DONE: Created user ${user.username}`);
                 return true;
             } else {
                 logger.warn(`[DB] DONE: Could not create user ${user.username}`);
@@ -62,14 +62,14 @@ export class UserRepository {
         }
         
         try {
-            logger.debug(`[DB] AWAIT: Deleting user ${id}`);
+            logger.silly(`[DB] AWAIT: Deleting user ${id}`);
             const res = await db.query(
                 `
                 DELETE FROM users
                 WHERE id = $1
                 `, [id]);
             if (res.rowCount !== 0) {
-                logger.debug(`[DB] DONE: Deleted user ${id}`);
+                logger.silly(`[DB] DONE: Deleted user ${id}`);
                 return true;
             } else {
                 logger.warn(`[DB] DONE: Could not delete user ${id}`);
@@ -100,7 +100,7 @@ export class UserRepository {
         const values = [id, ...columns.map((key) => user[key])];
     
         try{
-            logger.debug(`[DB] AWAIT: Updating user ${id}`);
+            logger.silly(`[DB] AWAIT: Updating user ${id}`);
             const res = await db.query(
                 `
                 UPDATE users
@@ -108,7 +108,7 @@ export class UserRepository {
                 WHERE id = $1
                 `, values);
             if (res.rowCount !== 0) {
-                logger.debug(`[DB] DONE: Updated user ${id}`);
+                logger.silly(`[DB] DONE: Updated user ${id}`);
                 return true;
             } else {
                 logger.warn(`[DB] DONE: Could not update user ${id}`);
@@ -180,14 +180,14 @@ export class UserRepository {
     static async findAll(): Promise<UserEntity[]> {
 
         try {
-            logger.debug(`[DB] AWAIT: Getting all users`);
+            logger.silly(`[DB] AWAIT: Getting all users`);
             const res = await db.query(
                 `
                 SELECT * 
                 FROM users
                 `);
             if (res.rows.length > 0) {
-                logger.debug(`[DB] DONE: Got all users`);
+                logger.silly(`[DB] DONE: Got all users`);
                 return res.rows as UserEntity[];
             } else {
                 return [];

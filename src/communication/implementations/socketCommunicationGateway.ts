@@ -307,7 +307,6 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 logger.error("Socket not found!");
                 return;
             }
-
             logger.debug(`Sending "winner" message to ${username}: %j`, msg);
             socket.emit("winner", msg);
         });
