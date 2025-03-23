@@ -13,7 +13,9 @@ import {
     BackendGameSelectCardJSON,
     BackendNotifyActionJSON,
     BackendStartGameResponseJSON,
-    BackendPlayerStatusJSON
+    BackendPlayerStatusJSON,
+    BackendGameSelectNopeJSON,
+    FrontendGameSelectNopeResponseJSON
 } from "../../api/socketAPI.js";
 import { SocketManager } from "../../managers/socketManager.js";
 import { TIMEOUT_RESPONSE } from "../../constants/constants.js";
@@ -156,6 +158,40 @@ export class socketCommunicationGateway implements CommunicationGateway {
         return Card.fromJSON(response.card);
     }
 
+    async getNopeUsage(username: string, lobbyId: string): Promise<boolean|undefined> {
+        
+        logger.info("Waiting for player response for Nope usage");
+        const petition: BackendGameSelectNopeJSON = {
+            error: false,
+            errorMsg: "",
+            lobbyId: lobbyId,
+        };
+
+        const response: FrontendGameSelectNopeResponseJSON | undefined =
+            await SocketManager.waitForPlayerResponse<
+                BackendGameSelectNopeJSON, 
+                FrontendGameSelectNopeResponseJSON
+            >
+        (
+            username,
+            "game-select-nope", 
+            petition,
+            TIMEOUT_RESPONSE
+        );
+
+        if(response === undefined) {
+            return undefined;
+        }
+
+        handleError(response.error, response.errorMsg);
+
+        if(response.useNope === undefined) {
+            return undefined;
+        }
+
+        return response.useNope;
+    }
+
     broadcastStartGame(): void {
         logger.info("Notifying all players to start the game");
         const response: BackendStartGameResponseJSON = 
@@ -218,14 +254,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
         this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
     }
 
-    broadcastSkipTurnAction(triggerUser: string): void {
+    broadcastSkipTurnAction(triggerUser: string, targetUser: string): void {
 
         logger.info(`Notifying all players that player ${triggerUser} skipped their turn`);
         const msg: BackendNotifyActionJSON = {
             error: false,
             errorMsg: "",
             triggerUser: triggerUser,
-            targetUser: "",
+            targetUser: targetUser,
             action: ActionType[ActionType.SkipTurn]
         }
         this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
@@ -279,6 +315,30 @@ export class socketCommunicationGateway implements CommunicationGateway {
             triggerUser: triggerUser,
             targetUser: targetUser,
             action: ActionType[ActionType.FavorAttack]
+        }
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+    broadcastNopeAction(triggerUser: string, targetUser: string): void {
+        logger.info(`Notifying all players that player ${triggerUser} used Nope on player ${targetUser}`);
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: targetUser,
+            action: ActionType[ActionType.NopeUsed]
+        }
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+    broadcastWildCardAction(triggerUser: string, targetUser: string, cardsNumber: number): void {
+        logger.info(`Notifying all players that player ${triggerUser} attacked player ${targetUser} with ${cardsNumber} wild cards`);
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: targetUser,
+            action: cardsNumber == 2 ? ActionType[ActionType.TwoWildCardAttack] : ActionType[ActionType.ThreeWildCardAttack]
         }
         this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
     }

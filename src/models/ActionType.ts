@@ -1,12 +1,15 @@
 export enum ActionType {
     ShuffleDeck,
     Attack,
+    AttackFailed,
     CardReceived,
     BombDefused,
     BombExploded,
     DrawCard,
     SkipTurn,
     FutureSeen,
-    AttackFailed,
-    FavorAttack
+    NopeUsed,
+    FavorAttack,
+    TwoWildCardAttack,
+    ThreeWildCardAttack,
 }

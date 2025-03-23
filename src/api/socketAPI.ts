@@ -139,6 +139,28 @@ export type FrontendGameSelectCardTypeResponseJSON = {
     lobbyId: string;
 }
 
+// -----------------------------------------------------------
+// Message to send a petition to use or not a Nope card
+// Started by: The backend
+// Listened by: One player in the frontend
+// Ack: Yes, a response of the usage of the Nope card
+// Socket-event: "game-select-nope"
+// -----------------------------------------------------------
+export type BackendGameSelectNopeJSON = {
+    error: boolean;
+    errorMsg: string;
+    lobbyId: string;
+}
+
+export type FrontendGameSelectNopeResponseJSON = {
+    error: boolean;
+    errorMsg: string;
+    useNope: boolean;
+    lobbyId: string;
+}
+
+
+
 
 // -----------------------------------------------------------
 // Message to create a lobby

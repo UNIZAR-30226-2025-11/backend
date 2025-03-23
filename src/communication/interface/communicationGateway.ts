@@ -10,11 +10,13 @@ export interface CommunicationGateway {
     broadcastPlayerLostAction(triggerUser: string): void;
     broadcastDrawCardAction(triggerUser: string): void;
     broadcastShuffleDeckAction(triggerUser: string): void;
-    broadcastSkipTurnAction(triggerUser: string): void;
+    broadcastSkipTurnAction(triggerUser: string, targetUser: string): void;
     broadcastFutureAction(triggerUser: string): void;
     broadcastAttackAction(triggerUser: string, targetUser: string): void;
     broadcastStealFailedAction(triggerUser: string, targetUser: string): void;
     broadcastFavorAction(triggerUser: string, targetUser: string): void;
+    broadcastNopeAction(triggerUser: string, targetUser: string): void;
+    broadcastWildCardAction(triggerUser: string, targetUser: string, cardsNumber: number): void;
     broadcastWinnerNotification(winnerUsername: string, coinsEarned: number): void;
     broadcastPlayerDisconnect(playerUsername: string): void;
     broadcastPlayerReconnect(playerUsername: string): void;
@@ -29,4 +31,5 @@ export interface CommunicationGateway {
     getACardType(username: string, lobbyId: string): Promise<CardType|undefined>;
     getAPlayerUsername(username: string, lobbyId: string): Promise<string|undefined>;
     getACard(username: string, lobbyId: string): Promise<Card|undefined>;
+    getNopeUsage(username: string, lobbyId: string): Promise<boolean|undefined>;
 }

@@ -228,6 +228,7 @@ export class LobbyRepository {
                 logger.silly(`[DB] DONE: Got lobby ${res.rows[0].lobby_id} with player ${username}`);
                 return res.rows[0].lobby_id;
             }else{
+                logger.silly(`[DB] DONE: Could not find lobby with player ${username}`);
                 return undefined;
             }
         } catch (error) {
