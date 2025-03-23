@@ -50,12 +50,13 @@ export class GameObject {
             [CardType.Favor]: 5,
             [CardType.Deactivate]: 6-numberOfPlayers,
             [CardType.RainbowCat]: 5,
-            [CardType.TacoCat]: 5,
+            [CardType.TacoCat]: 100,
             [CardType.HairyPotatoCat]: 5,
             [CardType.Cattermelon]: 5,
             [CardType.BeardCat]: 5
         };
         this.deck.addCards(cardCounts);
+        this.deck.shuffle();
 
         this.players = [];
         for(let i = 0; i < numberOfPlayers; i++)
@@ -211,7 +212,7 @@ export class GameObject {
         requesterPlayer: Player
     ) : Promise<{cardToGive: Card, cardIndex: number}> {
         
-        const {defaultCard, cardIndex: defaultIndex} = this.randomCard(requesterPlayer);
+        const {defaultCard: defaultCard, cardIndex: defaultIndex} = this.randomCard(requesterPlayer);
         
         const cardToSteal: Card = await this.handleRequestInfo<Card>(
             this.callSystem.getACard,
@@ -220,9 +221,11 @@ export class GameObject {
             defaultCard
         );
 
-        const cardIndexToSteal: number = requesterPlayer.hand.hasCard(cardToSteal.type);
+        logger.verbose(`[GAME] Player ${requesterPlayer.username} wants to steal card ${cardToSteal}`);
+
+        const cardIndexToSteal: number = requesterPlayer.hand.hasCard(cardToSteal);
         if(cardIndexToSteal === -1){
-            logger.warn(`[GAME] Player does not have the card you want to steal`);
+            logger.warn(`[GAME] Player does not have the card you want to steal. Returning default card ${defaultCard}`);
             return {cardToGive: defaultCard, cardIndex: defaultIndex};
         }
 
@@ -729,7 +732,7 @@ export class GameObject {
         // Steal the card
         const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
 
-        logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card from player ${playerToSteal.id}`);
+        logger.debug(`[GAME] Player ${currentPlayer.username} has stolen the card ${cardToSteal.toString()} from player ${playerToSteal.id}`);
         this.callSystem.notifyOkPlayedCards(currentPlayer.username);
         
         // Add the card to the current player
@@ -744,7 +747,7 @@ export class GameObject {
         // Get the card type to steal
         const cardType: CardType = await this.requestCardType(currentPlayer);
 
-        const cardIndex: number = playerToSteal.hand.hasCard(cardType);
+        const cardIndex: number = playerToSteal.hand.hasCardType(cardType);
 
         if(cardIndex === -1){
             logger.info(`[GAME] Player does not have the card you want to steal`);

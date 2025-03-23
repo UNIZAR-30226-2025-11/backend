@@ -32,6 +32,10 @@ export class Card {
         return new Card(card.id, CardType[card.type as keyof typeof CardType] as CardType);
     }
 
+    toString(): string {
+        return this.id + " --> " + CardType[this.type];
+    }
+
     toJSON(): CardJSON {
         return {
             id: this.id,

@@ -87,7 +87,7 @@ export class CardArray {
     }
 
     toString(): string {
-        return this.values.map((card:Card, index:number) => `${index}: ${CardType[card.type]}`).join(', ');
+        return this.values.map((card:Card, index:number) => `${index}: ${card.id} --> ${CardType[card.type]}`).join(', ');
     }
 
     arePlayable(): boolean {
@@ -112,14 +112,16 @@ export class CardArray {
      * @param type - Type of the card
      * @returns True if there is a card of this type, else False.
      */
-    hasCard(type:CardType): number {
+    hasCardType(type:CardType): number {
         return this.values.findIndex(card => card.type == type);
     }
 
+    hasCard(card: Card): number {
+        return this.values.findIndex(c => c.equals(card));
+    }
+
     containsAll(cards: CardArray): boolean {
-        return cards.values.every(card =>
-            this.values.filter(c => c.type == card.type).length >= cards.values.filter(c => c.type == card.type).length
-        );
+        return cards.values.every(card => this.hasCard(card) != -1);
     }
 
     allSameType(): boolean {
@@ -128,9 +130,9 @@ export class CardArray {
 
     removeCards(cards: CardArray): void{
         cards.values.forEach(card => {
-            const index = this.values.findIndex(c => c.type == card.type);
-            if (index != -1) {
-                this.values.splice(index, 1); // Remove only one occurrence
+            const index = this.hasCard(card);
+            if(index != -1){
+                this.values.splice(index, 1);
             }
         });
     }
