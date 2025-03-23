@@ -3,7 +3,7 @@
 import logger from "../config/logger.js";
 
 export const INITIAL_HAND_SIZE = 6;
-export const TURN_TIME_LIMIT = 10000;
+export const TURN_TIME_LIMIT = 1;
 export const TIMEOUT_RESPONSE = 10000;
 
 

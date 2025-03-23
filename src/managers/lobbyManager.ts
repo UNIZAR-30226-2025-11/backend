@@ -37,16 +37,15 @@ export class LobbyManager {
         logger.info(`Deleting lobby ${lobbyId}.`);
 
         const usernames: string[] = await LobbyRepository.getPlayersInLobby(lobbyId)
-        await usernames.forEach(async username => {
+        for (const username of usernames) {
             logger.verbose(`Removing player ${username} from lobby ${lobbyId}.`);
             await LobbyRepository.removePlayerFromLobby(username, lobbyId);
+            
             const socket: Socket | undefined = SocketManager.getSocket(username);
-            if(socket !== undefined) {
-                logger.verbose(`Disconnecting player ${username} from lobby ${lobbyId}.`);
-                await socket.disconnect(true);
+            if (socket !== undefined) {
                 SocketManager.removeSocket(username);
             }
-        });
+        }
 
         const game: GameObject | undefined = this.lobbiesGames.get(lobbyId);
 
@@ -184,10 +183,10 @@ export class LobbyManager {
 
         const comm:socketCommunicationGateway = new socketCommunicationGateway(lobbyId);
 
-        await lobbyPlayersUsernames.forEach(async (username, i) => {
-            comm.registerPlayer(username);
-            await LobbyRepository.setPlayerIdInGame(username, i);
-        });
+        for(let i = 0; i < numPlayers; i++) {
+            comm.registerPlayer(lobbyPlayersUsernames[i]);
+            await LobbyRepository.setPlayerIdInGame(lobbyPlayersUsernames[i], i);
+        }
 
         const game:GameObject = new GameObject(
             lobbyId,

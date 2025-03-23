@@ -140,28 +140,138 @@ export class GameObject {
         } 
     }
 
+    // --------------------------------------------------------------------------------------
+    // Random Methods
+
+    private randomPermutation(n: number): number[] {
+        return [...Array(n).keys()].sort(() => Math.random() - 0.5);
+    }
+
+    private isThereAtackablePlayer(player: Player): boolean {
+        return this.players.some(p => p !== player && p.hand.length() > 0 && p.active);
+    }
+
+
+    randomAtackablePlayer(player: Player): Player {
+        const randomPermutation: number[] = this.randomPermutation(this.numberOfPlayers);
+
+        for (let i = 0; i < this.numberOfPlayers; i++) {
+            const id = randomPermutation[i];
+            if(this.players[id] !== player && this.players[id].hand.length() > 0 && this.players[id].active){
+                return this.players[id];
+            }
+        }
+
+        console.log(`[GAME] No player to steal from`);
+        throw new Error(`No player to steal from!`);
+    }
+
+    randomCard(player: Player): {defaultCard: Card, cardIndex: number} {
+        const randomPermutation: number[] = this.randomPermutation(player.hand.length());
+        return {defaultCard: player.hand.values[randomPermutation[0]], cardIndex: randomPermutation[0]};
+    }
+
+    // --------------------------------------------------------------------------------------
+    // Request Methods
+
+    async requestCardType(
+        requesterPlayer: Player
+    ) : Promise<CardType> {
+
+        const defaultType: CardType = CardType.Deactivate;
+
+        const cardType: CardType = await this.handleRequestInfo<CardType>(
+            this.callSystem.getACardType,
+            requesterPlayer.username, 
+            this.lobbyId,
+            defaultType
+        );
+
+        return cardType;
+
+    }
+
+    async requestCard(
+        requesterPlayer: Player
+    ) : Promise<{cardToGive: Card, cardIndex: number}> {
+        
+        const {defaultCard, cardIndex: defaultIndex} = this.randomCard(requesterPlayer);
+        
+        const cardToSteal: Card = await this.handleRequestInfo<Card>(
+            this.callSystem.getACard,
+            requesterPlayer.username, 
+            this.lobbyId,
+            defaultCard
+        );
+
+        const cardIndexToSteal: number = requesterPlayer.hand.hasCard(cardToSteal.type);
+        if(cardIndexToSteal === -1){
+            logger.warn(`[GAME] Player does not have the card you want to steal`);
+            return {cardToGive: defaultCard, cardIndex: defaultIndex};
+        }
+
+        return {cardToGive: cardToSteal, cardIndex: cardIndexToSteal};
+
+    }
+
+    async requestPlayer(
+        requesterPlayer: Player
+    ) : Promise<Player> {
+
+        const defaultPlayer: Player = this.randomAtackablePlayer(requesterPlayer);
+
+        const playerUsername: string = await this.handleRequestInfo<string>(
+            this.callSystem.getAPlayerUsername,
+            requesterPlayer.username, 
+            this.lobbyId,
+            defaultPlayer.username
+        );
+
+        const playerToSteal: Player | undefined = this.getPlayerByUsername(playerUsername);
+
+        if(playerToSteal === undefined){
+            // If the player does not exist
+            logger.warn(`[GAME] Player does not exist. Returning default player ${defaultPlayer.username}`);
+            return defaultPlayer;
+        }
+
+        if(playerToSteal.hand.length() === 0){
+            // If the player has no cards to steal
+            logger.warn(`[GAME] Player has no cards to steal. Returning default player ${defaultPlayer.username}`);
+            return defaultPlayer;
+        }
+
+        if(playerToSteal === requesterPlayer){
+            // If the player tries to steal from itself
+            logger.warn(`[GAME] Player cannot steal from itself. Returning default player ${defaultPlayer.username}`);
+            return defaultPlayer;
+        }
+
+        return playerToSteal;
+
+    }
+
     async handleRequestInfo<T>(
         callback: (playerUsername: string, lobbyId: string) => Promise<T|undefined>,
         targetUser: string,
-        lobbyId: string
-    ) : Promise<T|undefined> {
+        lobbyId: string,
+        defaultValue: T
+    ) : Promise<T> {
 
         this.stopTurnTimer();
         const result: T | undefined = await callback(targetUser, lobbyId);
 
-        if ( result === undefined) {
-            logger.warn(`[GAME] Request failed. Player ${targetUser} did not respond so he loses.`);
-            const player: Player|undefined = this.getPlayerByUsername(targetUser);
-            if(player === undefined){
-                logger.error(`[GAME] Player ${targetUser} not found`);
-                return undefined;
-            }
-            this.handlePlayerLost(player);
+        if (result === undefined) {
+            logger.warn(`[GAME] Request failed. Player ${targetUser} did not respond. Giving default value ${defaultValue}.`);
+            return defaultValue;
         }
 
         this.startTurnTimer();
         return result;
     }
+
+    // --------------------------------------------------------------------------------------
+
 
     isValidPlay(play:Play): boolean{
         
@@ -187,6 +297,10 @@ export class GameObject {
             return false;
         }
 
+        if (Card.isAttack(play.playedCards.values[0]) && !this.isThereAtackablePlayer(player)) {
+            logger.warn(`[GAME] There is no player to attack`);
+            return false;
+        }
         return true;
 
     }
@@ -412,10 +526,8 @@ export class GameObject {
         logger.info(`[GAME] Player ${player.username} is playing cards`);
         logger.debug(`[GAME] Cards played: ${playedCards}`);
 
-        let actuallyPlayed: boolean = true;
-        let cardsFuture: CardArray | undefined = undefined;
         if (card.type == CardType.SeeFuture){
-            cardsFuture = this.seeFuture(player);
+            this.seeFuture(player);
         }
         else if (card.type == CardType.Shuffle){
             this.shuffle(player);
@@ -427,29 +539,18 @@ export class GameObject {
             this.attack(player);
         } 
         else if (card.type == CardType.Favor){
-            actuallyPlayed = await this.favor(player);
+            await this.favor(player);
         }
         else if (Card.isWild(card)){
-            actuallyPlayed = await this.playWildCard(playedCards.length(), player);
+            await this.playWildCard(playedCards.length(), player);
         }
         else{
             logger.error(`[GAME] Card type not recognized`);
             return false;
         }
 
-        // Remove the cards from the player's hand if they were actually played
-        if(actuallyPlayed){
-            player.hand.removeCards(playedCards);
-        }
-
-        if(cardsFuture !== undefined){
-            this.callSystem.notifyFutureCards(cardsFuture, player.username);
-        } else {
-            this.callSystem.notifyOkPlayedCards(player.username);
-        }
-
-        return actuallyPlayed;
-
+        player.hand.removeCards(playedCards);
+        return true;
     }   
 
     // --------------------------------
@@ -461,6 +562,7 @@ export class GameObject {
     shuffle(currentPlayer: Player): void{
 
         logger.info(`[GAME] Player ${currentPlayer.username} is shuffling the deck`);
+        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
 
         // Randomly shuffle the deck
         this.deck.shuffle();
@@ -482,6 +584,7 @@ export class GameObject {
         }
 
         logger.info(`[GAME] Player ${currentPlayer.username} has skipped the turn`);
+        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
         
         // If the skip is not noped, change the turn
         this.setNextTurn();
@@ -494,16 +597,15 @@ export class GameObject {
      * Shows the next 3 cards of the deck to the current player.
      * @param currentPlayer - The player who is playing the card
      */
-    seeFuture(currentPlayer: Player): CardArray {
+    seeFuture(currentPlayer: Player): void {
 
-        logger.info(`[GAME] Player ${currentPlayer.username} is seeing the future`);
-        
         // Get the next 3 cards
         const nextCards: CardArray = this.deck.peekN(3);
 
-        this.callSystem.broadcastFutureAction(currentPlayer.username);
+        logger.info(`[GAME] Player ${currentPlayer.username} is seeing the future`);
+        this.callSystem.notifyFutureCards(nextCards, currentPlayer.username);
 
-        return nextCards;
+        this.callSystem.broadcastFutureAction(currentPlayer.username);
     }
 
     /**
@@ -526,6 +628,8 @@ export class GameObject {
         // If the attack is a success, give two turn to the next one
         this.forceNewTurn(2);
 
+        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
+
         // Notify the player that the attack is successful
         this.callSystem.broadcastAttackAction(currentPlayer.username, attackedPlayer.username);
     }
@@ -534,71 +638,27 @@ export class GameObject {
      * Asks a player to give a card to another player.
      * @param currentPlayer - The player who is playing the card
      */
-    async favor(currentPlayer: Player): Promise<boolean> {
+    async favor(currentPlayer: Player): Promise<void> {
 
         logger.info(`[GAME] Player ${currentPlayer.username} is asking for a favor`);
 
         // Get the player to steal from
-        const playerUsername: string|undefined = await this.handleRequestInfo(
-            this.callSystem.getAPlayerUsername,
-            currentPlayer.username, 
-            this.lobbyId
-        );
 
-        if(playerUsername === undefined){
-            // If the player does not select a player
-            logger.warn(`[GAME] Player has not selected a player to steal`);
-            return false;
-        }
+        const playerToSteal: Player = await this.requestPlayer(currentPlayer);
 
-        const playerToSteal: Player | undefined = this.getPlayerByUsername(playerUsername);
-
-        if(playerToSteal === undefined){
-            // If the player does not exist
-            logger.warn(`[GAME] Player does not exist`);
-            return false;
-        }
-
-        if(playerToSteal.hand.length() === 0){
-            // If the player has no cards to steal
-            logger.warn(`[GAME] Player has no cards to steal`);
-            return false;
-        }
-
-        if(playerToSteal === currentPlayer){
-            // If the player tries to steal from itself
-            logger.warn(`[GAME] Player cannot steal from itself`);
-            return false;
-        }
 
         if(!this.resolveNopeChain(currentPlayer, playerToSteal, CardType.Favor, AttackType.Favor)){
             // If the player is noped dont do anything
             logger.info(`[GAME] Player has won the nope chain, favor canceled`);
-            return true;
+            return;
         }
 
-        // Get a card from the player that is going to be stolen from
-        const cardToGive: Card|undefined = await this.handleRequestInfo<Card>(
-            this.callSystem.getACard,
-            playerToSteal.username,
-            this.lobbyId
-        );
-
-        if(cardToGive === undefined){
-            // If the player does not select a card
-            logger.warn(`[GAME] Player has not selected a card to give`);
-            return false;
-        }
-
-        const cardIndex: number = playerToSteal.hand.hasCard(cardToGive.type);
-
-        if(cardIndex === -1){
-            // If the player does not have the card
-            logger.warn(`[GAME] Player tried to give a card that does not have`);
-            return false;
-        }
+        const { cardToGive, cardIndex }: {cardToGive:Card, cardIndex:number} = await this.requestCard(playerToSteal);
 
         logger.info(`[GAME] Player ${playerToSteal.username} gave a card to player ${currentPlayer.username}`);
+
+        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
+
         // Steal the card
         playerToSteal.hand.popNth(cardIndex);
 
@@ -608,69 +668,38 @@ export class GameObject {
         // Notify the attack
         this.callSystem.broadcastAttackAction(currentPlayer.username, playerToSteal.username);
 
-        return true;
+        return;
     }
 
-    async playWildCard(numberOfPlayedCards:number, currentPlayer: Player): Promise<boolean>{
+    async playWildCard(numberOfPlayedCards:number, currentPlayer: Player): Promise<void>{
 
         logger.info(`[GAME] Player ${currentPlayer.username} is playing a wild card.`);
 
-        const playerToStealUsername: string|undefined = await this.handleRequestInfo<string>(
-            this.callSystem.getAPlayerUsername,
-            currentPlayer.username,
-            this.lobbyId
-        );
-
-        if(playerToStealUsername === undefined){
-            return false;
-        }
-
-        const playerToSteal: Player | undefined = this.getPlayerByUsername(playerToStealUsername);
-
-        if(playerToSteal === undefined){
-            // If the player does not exist
-            logger.warn(`[GAME] Player does not exist`);
-            return false;
-        }
-
-        // Get the number of cards of the player to steal
-        const numberOfCardsPlayerToSteal: number = playerToSteal.hand.length();
-
-        if(numberOfCardsPlayerToSteal === 0){
-            // If the player has no cards to steal
-            logger.warn(`[GAME] Player has no cards to steal`);
-            return false;
-        }
-
-        if(playerToSteal === currentPlayer){
-            // If the player tries to steal from itself
-            logger.warn(`[GAME] Player cannot steal from itself`);
-            return false;
-        }
+        const playerToSteal: Player = await this.requestPlayer(currentPlayer);
 
         if(!this.resolveNopeChain(currentPlayer, playerToSteal, CardType.Favor, AttackType.Favor)){
             // If the player is noped notify attack failed
             logger.info(`[GAME] Player has won the nope chain, favor canceled`);
-            return true;
+            return;
         }
 
         logger.info(`[GAME] Player ${currentPlayer.username} is playing a wild card`);
 
-        if (numberOfPlayedCards == 1){
+        if (numberOfPlayedCards <= 1 || numberOfPlayedCards > 3){
             // If the player plays a single wild card
-            logger.error(`[GAME] Cannot play a single wild card`);
-            return false;
-        } else if (numberOfPlayedCards === 2 ){
+            logger.error(`[GAME] Cannot play this number of wild cards.`);
+            return;
+        } 
+        
+        if (numberOfPlayedCards === 2 ){
             // If the player plays two wild cards, steal a random card from the player
             this.stealRandomCard(playerToSteal, currentPlayer);
-            return true;
-        } else if (numberOfPlayedCards === 3 ){
-            return await this.stealCardByType(playerToSteal, currentPlayer);
-        } else {
-            // If the player plays more than three wild cards
-            logger.error(`[GAME] Cannot play more than three wild cards`);
-            return false;
+        } else{
+            // If the player plays three wild cards, steal a card by type from the player
+            await this.stealCardByType(playerToSteal, currentPlayer);
         }
+
+        return;
     }
 
 
@@ -685,46 +714,41 @@ export class GameObject {
         const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
 
         logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card from player ${playerToSteal.id}`);
+        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
         
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
         this.callSystem.broadcastAttackAction(currentPlayer.username, playerToSteal.username);
     }
 
-    async stealCardByType(playerToSteal: Player, currentPlayer: Player): Promise<boolean> {
+    async stealCardByType(playerToSteal: Player, currentPlayer: Player): Promise<void> {
 
         logger.info(`[GAME] Player ${currentPlayer.username} is stealing a card by type from player ${playerToSteal.id}`);
 
         // Get the card type to steal
-        const cardType: CardType|undefined = await this.handleRequestInfo<CardType>(
-            this.callSystem.getACardType,
-            currentPlayer.username,
-            this.lobbyId
-        );
-        
-        if(cardType === undefined){
-            return false;
-        }
+        const cardType: CardType = await this.requestCardType(currentPlayer);
 
-        // Get the card id to steal
-        const cardId: number = playerToSteal.hand.hasCard(cardType);
+        const cardIndex: number = playerToSteal.hand.hasCard(cardType);
 
-        if(cardId === -1){
+        if(cardIndex === -1){
             logger.info(`[GAME] Player does not have the card you want to steal`);
-            return true;
+            return;
         }
 
-        logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card from player ${playerToSteal.id}`);
+        logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card of type ${CardType[cardType]} from player ${playerToSteal.id}`);
+        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
 
         // Steal the card
-        const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
+        const cardToSteal: Card = playerToSteal.hand.popNth(cardIndex);
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
 
+        
+
         this.callSystem.broadcastAttackAction(currentPlayer.username, playerToSteal.username);
 
-        return true;
+        return;
     }
 
     // --------------------------------
@@ -760,11 +784,8 @@ export class GameObject {
             return false;
         }
 
-        const canPlayCards:boolean = await this.playCards(play.playedCards, player);
-        if(!canPlayCards){
-            return false;
-        }
-        
+        await this.playCards(play.playedCards, player);
+
         // Reset timer withouth changing turn
         this.startTurnTimer();
         this.communicateNewState();

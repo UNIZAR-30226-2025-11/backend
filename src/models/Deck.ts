@@ -96,11 +96,8 @@ export class Deck {
      * @throws Error if the deck is empty.
      */
     peekN(n: number): CardArray {
-        if (this.cards.length() < n) {
-            throw new Error('Not enough cards in the deck to peek at ' + n + ' cards');
-        }
-    
-        return new CardArray(this.cards.values.slice(-n).reverse()); 
+        const actuallNumberToPeek = Math.min(n, this.cards.length());
+        return new CardArray(this.cards.values.slice(-actuallNumberToPeek).reverse()); 
     }    
 
 

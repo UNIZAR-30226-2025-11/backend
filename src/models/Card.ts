@@ -33,6 +33,10 @@ export class Card {
         return card.type == CardType.RainbowCat || card.type == CardType.TacoCat || card.type == CardType.HairyPotatoCat || card.type == CardType.Cattermelon || card.type == CardType.BeardCat;
     }
 
+    static isAttack(card: Card): boolean {
+        return card.type == CardType.Attack || this.isWild(card) || card.type == CardType.Favor;
+    }
+
     static isPlayable(card: Card): boolean {
         return card.type != CardType.Bomb && card.type != CardType.Deactivate && card.type != CardType.Nope
     }

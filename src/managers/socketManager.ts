@@ -64,10 +64,10 @@ export class SocketManager {
         const socket: Socket | undefined = this.getSocket(username);
         if (socket === undefined) {
             logger.error(`Socket not found for ${username}`);
-            return Promise.reject(undefined);
+            return Promise.resolve(undefined);
         }
 
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             logger.debug(`Sending request to ${username} on event ${socketEvent}:\t%j`, requestData);
             socket.emit(socketEvent, requestData);
             
@@ -75,7 +75,7 @@ export class SocketManager {
     
             const timeout = setTimeout(() => {
                 logger.warn(`DONE: Timeout waiting for response from ${username} on event ${socketEvent}`);
-                reject(undefined);
+                resolve(undefined);
             }, timeOut);
     
             socket.once(socketEvent, (response: TResponse) => {

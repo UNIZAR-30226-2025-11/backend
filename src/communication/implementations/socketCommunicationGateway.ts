@@ -75,14 +75,12 @@ export class socketCommunicationGateway implements CommunicationGateway {
         );
 
         if(response === undefined) {
-            logger.warn("Response not received");
             return undefined;
         }
 
         handleError(response.error, response.errorMsg);
         
         if(response.cardType === undefined) {
-            logger.warn("Card type not received");
             return undefined;
         }
         
@@ -112,14 +110,12 @@ export class socketCommunicationGateway implements CommunicationGateway {
         );
 
         if (response === undefined) {
-            logger.warn("Response not received");
             return undefined;
         }
 
         handleError(response.error, response.errorMsg);
 
         if(response.playerUsername === undefined) {
-            logger.warn("Player ID not received");
             return undefined;
         }
 
@@ -148,14 +144,12 @@ export class socketCommunicationGateway implements CommunicationGateway {
         );
 
         if(response === undefined) {
-            logger.warn("Response not received");
             return undefined;
         }
 
         handleError(response.error, response.errorMsg);
 
         if(response.card === undefined) {
-            logger.warn("Card not received");
             return undefined;
         }
 
