@@ -39,7 +39,23 @@ export class GameObject {
         this.lobbyId = lobbyId;
         this.callSystem = comm;
 
-        this.deck = Deck.createStandardDeck(numberOfPlayers);
+        this.deck = new Deck();
+        const cardCounts: { [key in CardType]: number } = {
+            [CardType.Bomb]: 0,
+            [CardType.SeeFuture]: 5,
+            [CardType.Shuffle]: 5,
+            [CardType.Skip]: 5,
+            [CardType.Attack]: 3,
+            [CardType.Nope]: 5,
+            [CardType.Favor]: 5,
+            [CardType.Deactivate]: 6-numberOfPlayers,
+            [CardType.RainbowCat]: 5,
+            [CardType.TacoCat]: 5,
+            [CardType.HairyPotatoCat]: 5,
+            [CardType.Cattermelon]: 5,
+            [CardType.BeardCat]: 5
+        };
+        this.deck.addCards(cardCounts);
 
         this.players = [];
         for(let i = 0; i < numberOfPlayers; i++)

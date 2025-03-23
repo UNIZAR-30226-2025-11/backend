@@ -1,3 +1,4 @@
+import { CardJSON } from "../api/socketAPI.js";
 
 
 export enum CardType {
@@ -19,9 +20,27 @@ export enum CardType {
 
 export class Card {
     type: CardType;
+    id: number;
 
-    constructor(type: CardType) {
+    constructor(id:number, type: CardType) {
+        this.id = id;
         this.type = type;
+    }
+
+
+    static fromJSON(card: CardJSON): Card {
+        return new Card(card.id, CardType[card.type as keyof typeof CardType] as CardType);
+    }
+
+    toJSON(): CardJSON {
+        return {
+            id: this.id,
+            type: CardType[this.type]
+        };
+    }
+
+    equals(card: Card): boolean {
+        return this.id == card.id && this.type == card.type;
     }
 
     /**
@@ -40,8 +59,6 @@ export class Card {
     static isPlayable(card: Card): boolean {
         return card.type != CardType.Bomb && card.type != CardType.Deactivate && card.type != CardType.Nope
     }
-    toString(): string {
-        return CardType[this.type];
-    }
+
 }
 

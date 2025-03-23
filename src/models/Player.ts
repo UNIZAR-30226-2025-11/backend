@@ -1,6 +1,6 @@
 import { CardArray } from "./CardArray.js";
 import { Deck } from "./Deck.js";
-import { Card, CardType } from "./Card.js";
+import { CardType } from "./Card.js";
 import { INITIAL_HAND_SIZE } from "../constants/constants.js";
 import { PlayerJSON } from "../api/socketAPI.js";
 
@@ -24,11 +24,13 @@ export class Player {
     * @returns A player
     */
     static createStandarPlayer(id:number, username:string, deck: Deck): Player {
+        
         // Create a hand with 7 cards
         const hand = deck.draw(INITIAL_HAND_SIZE);
     
         // Add the deactive card 
-        hand.push(new Card(CardType.Deactivate));
+        hand.push(deck.getNewCard(CardType.Deactivate));
+
         return new Player(id, username, hand);
     }
     

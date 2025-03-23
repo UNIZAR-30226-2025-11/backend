@@ -6,7 +6,6 @@ export const INITIAL_HAND_SIZE = 6;
 export const TURN_TIME_LIMIT = 1;
 export const TIMEOUT_RESPONSE = 10000;
 
-
 export function handleError(error: boolean|undefined, errorMsg: string|undefined): void {
     if (error === undefined || errorMsg === undefined) {
         logger.error(" Not <error> or <errorMsg> specify")

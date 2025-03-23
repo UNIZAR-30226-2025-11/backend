@@ -17,7 +17,7 @@ export class GameManager {
     static async handlePlay(cards: CardArray, lobbyId: string, username: string): Promise<boolean>{
 
         logger.info(`Handling play of ${username} in lobby ${lobbyId}`);
-        logger.debug(`Cards played: %j`, cards);
+        logger.debug(`Cards played: ${cards.toString()}`,);
 
         const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
 

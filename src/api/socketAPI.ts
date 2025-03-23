@@ -9,11 +9,16 @@
 export type BackendStateUpdateJSON = {
     error: boolean;
     errorMsg: string;
-    playerCards: string;
+    playerCards: CardJSON[];
     players: PlayerJSON[];
     turnUsername: string;
     timeOut: number;
     playerUsername: string;
+}
+
+export type CardJSON = {
+    id: number;
+    type: string;
 }
 
 export type PlayerJSON = {
@@ -33,7 +38,7 @@ export type PlayerJSON = {
 export type FrontendGamePlayedCardsJSON = {
     error: boolean;
     errorMsg: string;
-    playedCards: string;
+    playedCards: CardJSON[];
     lobbyId: string;
 }
 
@@ -41,8 +46,8 @@ export type FrontendGamePlayedCardsJSON = {
 export type BackendGamePlayedCardsResponseJSON = {
     error: boolean;
     errorMsg: string;
-    cardsSeeFuture: string;
-    cardReceived: string;
+    cardsSeeFuture: CardJSON[];
+    cardReceived: CardJSON;
 }
 
 // -----------------------------------------------------------
@@ -107,7 +112,7 @@ export type BackendGameSelectCardJSON = {
 export type FrontendGameSelectCardResponseJSON = {
     error: boolean;
     errorMsg: string;
-    card: string;
+    card: CardJSON;
     lobbyId: string;
 }
 

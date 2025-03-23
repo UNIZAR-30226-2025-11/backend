@@ -5,7 +5,6 @@ import {
     BackendGamePlayedCardsResponseJSON,
     FrontendWinnerResponseJSON
 } from "../api/socketAPI.js";
-import { Card, CardType } from "../models/Card.js";
 import { CardArray } from "../models/CardArray.js";
 import { handleError } from "../constants/constants.js";
 import logger from "../config/logger.js";
@@ -30,8 +29,8 @@ export const setupGameHandlers = (socket: Socket) => {
             {
                 error: true,
                 errorMsg: "Not lobby id provided!",
-                cardsSeeFuture: "",
-                cardReceived: "",
+                cardsSeeFuture: [],
+                cardReceived: {id: -1, type: ""},
             };
 
             logger.debug(`Sending response "game-played-cards":\t%j`, response);
@@ -39,18 +38,16 @@ export const setupGameHandlers = (socket: Socket) => {
             return;
         }
 
-        const cardsPlayedString: string[] = JSON.parse(playedCardsJSON.playedCards);
-        const cardsPlayed: Card[] = cardsPlayedString.map((cardString) => new Card(CardType[cardString as keyof typeof CardType]));
-        const cardArray: CardArray = new CardArray(cardsPlayed);
+        const playedCards: CardArray = CardArray.fromJSON(playedCardsJSON.playedCards);
 
-        if(!await GameManager.handlePlay(cardArray, lobbyId, username))
+        if(!await GameManager.handlePlay(playedCards, lobbyId, username))
         {
             const response: BackendGamePlayedCardsResponseJSON = 
             {
                 error: true,
                 errorMsg: "Could not play the cards",
-                cardsSeeFuture: "",
-                cardReceived: "",
+                cardsSeeFuture: [],
+                cardReceived: {id: -1, type: ""},
             };
             
             logger.debug(`Sending response "game-played-cards":\t%j`, response);

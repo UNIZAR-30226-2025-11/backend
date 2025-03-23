@@ -1,9 +1,19 @@
+import { CardJSON } from '../api/socketAPI.js';
 import { Card, CardType } from './Card.js';
 
 export class CardArray {
     values: Card[];
     constructor(cards: Card[]) {
         this.values = cards;
+    }
+
+    static fromJSON(cards: CardJSON[])
+    {
+        return new CardArray(cards.map(card => Card.fromJSON(card)));
+    }
+
+    toJSON(): CardJSON[] {
+        return this.values.map(card => card.toJSON());
     }
 
     /**
@@ -74,10 +84,6 @@ export class CardArray {
         };
 
         return new CardArray(newCards);
-    }
-
-    toJSON(): string {
-        return JSON.stringify(this.values.map(card => CardType[card.type]));
     }
 
     toString(): string {

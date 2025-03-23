@@ -7,52 +7,33 @@ import {Card, CardType} from './Card.js';
 export class Deck {
     /** Array containing the cards in the deck. */
     cards: CardArray;
+    id: number;
 
     /**
      * Creates a new deck instance.
      * @param cards - An array of cards to initialize the deck.
      */
-    constructor(cards: CardArray) {
-        this.cards = cards;
+    constructor() {
+        this.cards = new CardArray([]);
+        this.id = 0;
     }
-    
-    /**
-     * Creates a standard deck of cards without bombs and without
-     * the number of players deactivates.
-     * @param nPlayers - Number of players who play
-     * @returns A new deck instance with a standard set of cards.
-     */
-    static createStandardDeck(nPlayers: number): Deck {
-        const cards: CardArray = new CardArray([]);
 
-        // Add a specific number of each type of card to the deck
-        const cardCounts: { [key in CardType]: number } = {
-            [CardType.Bomb]: 0,
-            [CardType.SeeFuture]: 5,
-            [CardType.Shuffle]: 5,
-            [CardType.Skip]: 5,
-            [CardType.Attack]: 3,
-            [CardType.Nope]: 5,
-            [CardType.Favor]: 5,
-            [CardType.Deactivate]: 6-nPlayers,
-            [CardType.RainbowCat]: 5,
-            [CardType.TacoCat]: 5,
-            [CardType.HairyPotatoCat]: 5,
-            [CardType.Cattermelon]: 5,
-            [CardType.BeardCat]: 5
-        };
+    getNewCard(cardType: CardType): Card {
+        return new Card(this.id++, cardType);
+    }
 
-        for (const type in cardCounts) {
-            for (let i = 0; i < cardCounts[type as unknown as CardType]; i++) {
-                cards.push(new Card(type as unknown as CardType));
+    addNewCard(cardType: CardType): void {
+        this.cards.push(this.getNewCard(cardType));
+    }
+
+    addCards(cardsTypes:  { [key in CardType]: number }): void {
+        for (const cardType in cardsTypes) {
+            for (let i = 0; i < cardsTypes[cardType as unknown as CardType]; i++) {
+                this.addNewCard(cardType as unknown as CardType);
             }
         }
-        const deck: Deck = new Deck(cards);
-        deck.shuffle();
-        return deck;
-        
     }
-
+    
     /**
      * Shuffles the deck by randomly rearranging the cards.
      * Uses the `.sort()` method with `Math.random()`.
@@ -66,8 +47,8 @@ export class Deck {
      * @param numPlayers - Number of players who play
      */
     addBombs(numPlayers: number){
-        for (let i = 0; i < numPlayers; i++) {
-            this.cards.push(new Card(CardType.Bomb));
+        for (let i = 0; i < numPlayers-1; i++) {
+            this.addNewCard(CardType.Bomb);
         }
         this.shuffle();
     }

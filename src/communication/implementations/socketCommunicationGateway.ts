@@ -153,7 +153,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             return undefined;
         }
 
-        return new Card(CardType[response.card as keyof typeof CardType]);
+        return Card.fromJSON(response.card);
     }
 
     broadcastStartGame(): void {
@@ -334,8 +334,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
         const msg: BackendGamePlayedCardsResponseJSON = {
             error: false,
             errorMsg: "",
-            cardsSeeFuture: "",
-            cardReceived: card.toString()
+            cardsSeeFuture: [],
+            cardReceived: card.toJSON()
         }
         const socket: Socket|undefined = SocketManager.getSocket(username);
 
@@ -354,8 +354,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
         const msg: BackendGamePlayedCardsResponseJSON = {
             error: false,
             errorMsg: "",
-            cardsSeeFuture: cards.toString(),
-            cardReceived: ""
+            cardsSeeFuture: cards.toJSON(),
+            cardReceived: {id: -1, type: ""}
         }
 
         const socket: Socket|undefined = SocketManager.getSocket(username);
@@ -374,8 +374,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
         const msg: BackendGamePlayedCardsResponseJSON = {
             error: false,
             errorMsg: "",
-            cardsSeeFuture: "",
-            cardReceived: ""
+            cardsSeeFuture: [],
+            cardReceived: {id: -1, type: ""}
         }
 
         const socket: Socket|undefined = SocketManager.getSocket(username);
