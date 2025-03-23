@@ -328,6 +328,30 @@ export class GameObject {
     // --------------------------------------------------------------------------------------
     // Starting and disconnect related methods
 
+    reconnectPlayer(playerUsername: string): void {
+        logger.info(`[GAME] Player ${playerUsername} has reconnected`);
+        
+        const player: Player|undefined = this.getPlayerByUsername(playerUsername);
+
+        if(player === undefined){
+            logger.error(`[GAME] Player ${playerUsername} not found`);
+            return;
+        }
+
+        player.disconnected = false;
+
+        this.callSystem.broadcastPlayerReconnect(playerUsername);
+
+        logger.info(`[GAME] Comunicating state to connected player.`);
+        
+        this.callSystem.notifyGameState(
+            this.players, 
+            player.id,
+            this.players[this.turn].username, 
+            this.turnTimeout.getRemainingTime(), 
+        )
+    }
+
     disconnectPlayer(playerUsername: string): void {
         
         logger.info(`[GAME] Player ${playerUsername} has disconnected`);

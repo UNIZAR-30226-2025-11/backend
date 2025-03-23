@@ -17,6 +17,7 @@ export interface CommunicationGateway {
     broadcastFavorAction(triggerUser: string, targetUser: string): void;
     broadcastWinnerNotification(winnerUsername: string, coinsEarned: number): void;
     broadcastPlayerDisconnect(playerUsername: string): void;
+    broadcastPlayerReconnect(playerUsername: string): void;
 
     // Individual methods to notify a player
     notifyGameState(players: Player[], index:number, turnUsername: string, timeOut: number): void;

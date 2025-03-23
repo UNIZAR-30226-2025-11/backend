@@ -23,7 +23,8 @@ export async function notifyNewPlayers(lobbyId: string): Promise<void> {
         error: false,
         errorMsg: "",
         players: playersInLobby.map(player => { return { name: player.username, isLeader: player.isLeader } }),
-        disband: false
+        disband: false,
+        lobbyId: lobbyId
     }
 
     playersInLobby.forEach(player => {
@@ -48,6 +49,7 @@ export async function notifyLobbyDisband(lobbyId: string): Promise<void> {
         errorMsg: "",
         players: [],
         disband: true,
+        lobbyId: lobbyId
     }
 
     playersInLobby.forEach(player => {

@@ -13,7 +13,7 @@ import {
     BackendGameSelectCardJSON,
     BackendNotifyActionJSON,
     BackendStartGameResponseJSON,
-    BackendPlayerDisconnectedJSON
+    BackendPlayerStatusJSON
 } from "../../api/socketAPI.js";
 import { SocketManager } from "../../managers/socketManager.js";
 import { TIMEOUT_RESPONSE } from "../../constants/constants.js";
@@ -309,23 +309,26 @@ export class socketCommunicationGateway implements CommunicationGateway {
     broadcastPlayerDisconnect(playerUsername: string): void {
 
         logger.info(`Notifying all players that player ${playerUsername} disconnected`);
-        this.playersUsernamesInLobby.forEach((username) => {
-            const msg: BackendPlayerDisconnectedJSON = {
-                error: false,
-                errorMsg: "",
-                playerUsername: playerUsername
-            }
+        const msg: BackendPlayerStatusJSON = {
+            error: false,
+            errorMsg: "",
+            playerUsername: playerUsername,
+            connected: false
+        }
+        
+        this.broadcastMsg<BackendPlayerStatusJSON>(msg, "player-status");
+    }
 
-            const socket: Socket|undefined = SocketManager.getSocket(username);
-
-            if(socket === undefined) {
-                logger.error("Socket not found!");
-                return;
-            }
-
-            logger.debug(`Sending "player-disconnected" message to ${socket.data.user.username}: %j`, msg);
-            socket.emit("player-disconnected", msg);
-        });
+    broadcastPlayerReconnect(playerUsername: string): void {
+            
+        logger.info(`Notifying all players that player ${playerUsername} reconnected`);
+        const msg: BackendPlayerStatusJSON = {
+            error: false,
+            errorMsg: "",
+            playerUsername: playerUsername,
+            connected: true
+        }
+        this.broadcastMsg<BackendPlayerStatusJSON>(msg, "player-status");
     }
 
     notifyDrewCard(card: Card, username: string): void {
@@ -403,6 +406,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
         const response: BackendStateUpdateJSON = {
             error: false,
             errorMsg: "",
+            lobbyId: this.lobbyId,
             playerCards: playerCards.toJSON(),
             players: players.map(p => p.toJSONHidden()),
             turnUsername: turnUsername,

@@ -9,6 +9,7 @@
 export type BackendStateUpdateJSON = {
     error: boolean;
     errorMsg: string;
+    lobbyId: string;
     playerCards: CardJSON[];
     players: PlayerJSON[];
     turnUsername: string;
@@ -189,6 +190,7 @@ export type BackendLobbyStateUpdateJSON = {
     errorMsg: string;
     players: PlayerLobbyJSON[];
     disband: boolean;
+    lobbyId: string;
 }
 
 export type PlayerLobbyJSON = {
@@ -244,16 +246,17 @@ export type BackendNotifyActionJSON = {
 
 
 // -----------------------------------------------------------
-// Message to notify a player disconnected
+// Message to notify a player connection or disconnection
 // Started by: The backend
 // Listened by: The frontend
 // Ack: None
-// Socket-event: "player-disconnected"
+// Socket-event: "player-status"
 // -----------------------------------------------------------
 
-export type BackendPlayerDisconnectedJSON = {
+export type BackendPlayerStatusJSON = {
     error: boolean;
     errorMsg: string;
     playerUsername: string;
+    connected: boolean;
 }
 // -----------------------------------------------------------

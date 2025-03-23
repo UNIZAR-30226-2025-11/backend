@@ -25,7 +25,7 @@ export class LobbyManager {
         const lobbyId: string | undefined = await LobbyRepository.getLobbyWithPlayer(username);
 
         if(lobbyId === undefined) {
-            logger.info(`Player ${username} is not in a lobby.`);
+            logger.verbose(`Player ${username} is not in a lobby.`);
             return;
         }
 
@@ -240,6 +240,40 @@ export class LobbyManager {
 
         return;
     }
+
+    static async handleReconnection(username: string): Promise<void> {
+        
+        logger.verbose(`Handling reconnection for player ${username}.`);
+        const lobbyId: string | undefined = await LobbyRepository.getLobbyWithPlayer(username);
+
+        if(lobbyId === undefined) {
+            logger.verbose(`Player ${username} is not in a lobby.`);
+            return;
+        }
+
+        const isActive: boolean | undefined = await LobbyRepository.isActive(lobbyId);
+
+        if(isActive === undefined) {
+            logger.error(`Error getting the lobby state!`);
+            return;
+        }
+
+        if(!isActive){
+            logger.verbose(`Player ${username} is in lobby ${lobbyId}.`);
+            return;
+        }
+
+        const game: GameObject | undefined = this.lobbiesGames.get(lobbyId);
+
+        if(game === undefined) {
+            logger.error(`Error getting the game object!`);
+            return;
+        }
+
+        game.reconnectPlayer(username);
+    
+    }
+
 
     // ----------------------------------------------------------
     // Private methods
