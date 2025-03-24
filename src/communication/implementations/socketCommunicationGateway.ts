@@ -519,7 +519,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             return;
         }
 
-        logger.debug(`Sending "game-state" message to ${username}: %j`, response);
+        logger.debug(`Sending "game-state" message to ${username}.`);
         socket.emit("game-state", response);
     }
 

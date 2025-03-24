@@ -504,32 +504,31 @@ export class GameObject {
                 const usedNope: boolean = await this.requestNopeUsage(players[playerToNope]);
                 if(usedNope){
                     // If the player uses the nope card
-
                     // Remove the nope card from the player
                     players[playerToNope].hand.popNth(indexNope);
 
                     // Notify the rest of the players that the nope card has been used
                     this.callSystem.broadcastNopeAction(players[playerToNope].username, players[(playerToNope + 1) % 2].username);
-
+                    logger.verbose(`[GAME] Player ${players[playerToNope].username} has used a nope card`);
                     // Switch the player to nope
                     playerToNope = (playerToNope + 1) % 2;
+
+                    this.communicateNewState();
                 } else {
                     // If the player does not use the nope card
-
+                    logger.verbose(`[GAME] Player ${players[playerToNope].username} does not want to use a nope card`);
                     // The nope chain is resolved
                     resolved = true;
                 }
             } else {
                 // If the player does not have a nope card
-
+                logger.verbose(`[GAME] Player ${players[playerToNope].username} does not have a nope card`);
                 // The nope chain is resolved
                 resolved = true;
             }
         }
 
-        // Notify the result of the attack
-        // this.callSystem.notify_attack_result(attackedPlayer, currentPlayer, typeAttack, playerToNope===1);
-        
+        logger.verbose(`[GAME] Nope chain resolved. Winner is ${players[(playerToNope + 1)%2].username}`);
         // Return if the attack is successful
         return playerToNope === 1;
     }
