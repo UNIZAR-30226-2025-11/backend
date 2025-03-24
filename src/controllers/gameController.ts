@@ -3,7 +3,8 @@ import { GameManager } from "../managers/gameManager.js";
 import { 
     FrontendGamePlayedCardsJSON,
     BackendGamePlayedCardsResponseJSON,
-    FrontendWinnerResponseJSON
+    FrontendWinnerResponseJSON,
+    FrontendPostMsgJSON
 } from "../api/socketAPI.js";
 import { CardArray } from "../models/CardArray.js";
 import { handleError } from "../constants/constants.js";
@@ -55,6 +56,27 @@ export const setupGameHandlers = (socket: Socket) => {
             return;
         }
     
+    });
+
+    socket.on("post-message", (msg: FrontendPostMsgJSON) => {
+
+        const username: string = socket.data.user.username;
+
+        logger.info(`Got message from player ${username}`);
+
+        const lobbyId: string = msg.lobbyId;
+
+        if(lobbyId === undefined || lobbyId === ""){
+            logger.warn(`No lobby specified.`);
+            return;
+        }
+
+        if(msg.msg === ""){
+            logger.warn(`No message specified.`);
+            return;
+        }
+
+        GameManager.addMessage(msg.msg, username, msg.lobbyId);
     });
 
 

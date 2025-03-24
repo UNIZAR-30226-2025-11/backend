@@ -7,6 +7,25 @@ import logger from "../config/logger.js";
 
 export class GameManager {
 
+
+    static addMessage(msg: string, username: string, lobbyId: string): void {
+
+        const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
+
+        if (currentGame === undefined){
+            logger.error(`Game not found for lobby ${lobbyId}`);
+            return;
+        }
+
+
+        if (!currentGame.isInGame(username)){
+            logger.warn(`Player ${username} not in lobby ${lobbyId}.`);
+            return;
+        }
+
+        currentGame.postMsg(msg, username);
+    }
+
     /**
      * Handles the play of a player in a game
      * @param cards The cards played by the player

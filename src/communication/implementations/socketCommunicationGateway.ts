@@ -15,7 +15,9 @@ import {
     BackendStartGameResponseJSON,
     BackendPlayerStatusJSON,
     BackendGameSelectNopeJSON,
-    FrontendGameSelectNopeResponseJSON
+    FrontendGameSelectNopeResponseJSON,
+    BackendGetMessagesJSON,
+    MsgJSON,
 } from "../../api/socketAPI.js";
 import { SocketManager } from "../../managers/socketManager.js";
 import { TIMEOUT_RESPONSE } from "../../constants/constants.js";
@@ -25,6 +27,7 @@ import { ActionType } from "../../models/ActionType.js";
 import { CardArray } from "../../models/CardArray.js";
 import { Player } from "../../models/Player.js";
 import logger from "../../config/logger.js";
+import { Message } from "../../models/Message.js";
 
 export class socketCommunicationGateway implements CommunicationGateway {
 
@@ -39,6 +42,19 @@ export class socketCommunicationGateway implements CommunicationGateway {
     registerPlayer(username: string): void {
         logger.debug(`Registering player ${username} in Gateway for lobby ${this.lobbyId}`);
         this.playersUsernamesInLobby.push(username);
+    }
+
+    broadcastNewMessages(messages: Message[]): void {
+
+        const messagesJSON: MsgJSON[] = messages.map((msg) => (msg.toJSON()));
+        const msg: BackendGetMessagesJSON = {
+            error: false,
+            errorMsg: "",
+            messages: messagesJSON,
+            lobbyId: this.lobbyId
+        }
+
+        this.broadcastMsg(msg, "get-messages")
     }
 
     private broadcastMsg<TMsg>(msg: TMsg, socketChannel: string): void {
@@ -450,6 +466,28 @@ export class socketCommunicationGateway implements CommunicationGateway {
 
         logger.debug(`Sending "game-played-cards" message to ${username}: %j`, msg);
         socket.emit("game-played-cards", msg);
+    }
+
+    notifyMessages(username: string, messages: Message[]): void {
+        logger.info(`Notifying player ${username} the messages of the lobby`);
+
+        const messagesJSON: MsgJSON[] = messages.map((msg) => msg.toJSON());
+        const msg: BackendGetMessagesJSON = {
+            error: false,
+            errorMsg: "",
+            messages: messagesJSON,
+            lobbyId: this.lobbyId
+        };
+
+        const socket: Socket|undefined = SocketManager.getSocket(username);
+
+        if(socket === undefined) {
+            logger.error("Socket not found!");
+            return;
+        }
+
+        logger.debug(`Sending "game-played-cards" message to ${username}: %j`, msg);
+        socket.emit("game-played-cards", msg);        
     }
 
     notifyGameState(

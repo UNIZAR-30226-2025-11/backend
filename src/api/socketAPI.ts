@@ -282,3 +282,42 @@ export type BackendPlayerStatusJSON = {
     connected: boolean;
 }
 // -----------------------------------------------------------
+
+
+// -----------------------------------------------------------
+// Message to post a message in the chat
+// Started by: The frontend
+// Listened by: The backend
+// Ack: None
+// Socket-event: "post-message"
+// -----------------------------------------------------------
+
+export type FrontendPostMsgJSON = {
+    error: boolean;
+    errorMsg: string;
+    msg: string;
+    lobbyId: string;
+}
+
+// -----------------------------------------------------------
+// Message to send all chat messages
+// Started by: The backend
+// Listened by: The frontend
+// Ack: None
+// Socket-event: "get-messages"
+// -----------------------------------------------------------
+
+export type BackendGetMessagesJSON = {
+
+    error: boolean;
+    errorMsg: string;
+    messages: MsgJSON[];
+    lobbyId: string;
+}
+
+
+export type MsgJSON = {
+    msg: string;
+    username: string;
+    date: string;
+}

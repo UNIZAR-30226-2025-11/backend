@@ -7,6 +7,7 @@ import { Card, CardType } from "./Card.js";
 import { CardArray } from "./CardArray.js";
 import logger from "../config/logger.js";
 import { PausableTimeout } from "./PausableTimeout.js";
+import { Message } from "./Message.js";
 
 export class GameObject {
     lobbyId: string;
@@ -19,6 +20,7 @@ export class GameObject {
     winnerUsername: string | undefined;
     callSystem: CommunicationGateway;
     leaderUsername : string;
+    messages: Message[];
 
     constructor(
         lobbyId:string,
@@ -75,6 +77,7 @@ export class GameObject {
             TURN_TIME_LIMIT
         );
         this.leaderUsername = leaderUsername;
+        this.messages = []
 
         this.callSystem.broadcastStartGame();
         this.communicateNewState();
@@ -99,6 +102,15 @@ export class GameObject {
                 )
             }
         });
+    }
+
+    // --------------------------------------------------------------------------------------
+    // Mesasges methods
+
+    postMsg(msg:string, username:string): void{
+        this.messages.push(new Message(msg, username));
+
+        this.callSystem.broadcastNewMessages(this.messages);
     }
 
     // --------------------------------------------------------------------------------------
@@ -360,6 +372,13 @@ export class GameObject {
             this.players[this.turn].username, 
             this.turnTimeout.getRemainingTime(), 
         )
+
+        this.callSystem.notifyMessages(
+            playerUsername,
+            this.messages
+        );
+
+
     }
 
     disconnectPlayer(playerUsername: string): void {

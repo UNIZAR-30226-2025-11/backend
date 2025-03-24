@@ -1,11 +1,13 @@
 import { CardType, Card } from "../../models/Card.js";
 import { Player } from "../../models/Player.js";
 import { CardArray } from "../../models/CardArray.js";
+import { Message } from "../../models/Message.js";
 
 export interface CommunicationGateway {
 
     // Broadcast methods to notify all players
     broadcastStartGame(): void;
+    broadcastNewMessages(messages: Message[]): void;
     broadcastBombDefusedAction(triggerUser: string): void;
     broadcastPlayerLostAction(triggerUser: string): void;
     broadcastDrawCardAction(triggerUser: string): void;
@@ -26,6 +28,7 @@ export interface CommunicationGateway {
     notifyDrewCard(card: Card, username: string): void;
     notifyFutureCards(cards: CardArray, username: string): void;
     notifyOkPlayedCards(username: string): void;
+    notifyMessages(username: string, messages: Message[]): void;
     
     // Get methods to request information from the frontend
     getACardType(username: string, lobbyId: string): Promise<CardType|undefined>;
