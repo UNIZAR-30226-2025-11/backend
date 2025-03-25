@@ -28,6 +28,18 @@ CREATE TABLE lobbies_sockets (
     PRIMARY KEY(socket_id)
 );
 
+CREATE TABLE shop_products (
+    product_id INT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    price INT NOT NULL
+)
+
+CREATE TABLE user_products (
+    id_user INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id_product INT NOT NULL REFERENCES shop_products(product_id) ON DELETE CASCADE
+)
+
+
 -- DO THIS AT THE END, CREATE A TESTING DB THAT IS A COPY OF THE ACTUAL ONE
 DROP DATABASE IF EXISTS katboom_testing;
 CREATE DATABASE katboom_testing WITH TEMPLATE katboom;

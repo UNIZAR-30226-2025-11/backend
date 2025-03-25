@@ -8,6 +8,7 @@ import { usersRouter } from "./users/routes.js";
 import { setupSocket } from "./socketSetup.js";
 import { FRONTEND_URL, SOCKET_AUT } from "./config.js";
 import { protectSocket } from "./auth/middleware.js";
+import { shopRouter } from "./users/shop.js";
 
 export const app = express();
 export const server = createServer(app);
@@ -40,6 +41,7 @@ app.use(cookieParser()); // Parse cookies, store them in req.cookies
 
 app.use(authRouter);
 app.use(usersRouter);
+app.use(shopRouter);
 
 //app.use(handleErrors); // This runs if an exception is not handled earlier
 console.log("SOCKET_AUT", SOCKET_AUT);
