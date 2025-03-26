@@ -2,14 +2,18 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 import { JWT_SECRET } from "../config.js";
+import logger from "../config/logger.js";
 
 /**
  * Check for access token. If invalid, reject request.
  */
 export function protectRoute(req: Request, res: Response, next: NextFunction) {
+    
+    logger.verbose(`[USERS] Checking access token`);
     const token = req.cookies.access_token;
 
     if (!token) {
+        logger.warn(`[USERS] No access token provided`);
         res.status(401).send({ message: "No access token" });
         return;
     }
@@ -24,6 +28,7 @@ export function protectRoute(req: Request, res: Response, next: NextFunction) {
         req.body.id = decoded.id;
 
     } catch (_) {
+        logger.warn(`[USERS] Invalid token`);
         res.status(401).send({ message: "Invalid token" });
         return;
     }
@@ -39,23 +44,23 @@ export function protectUsersFromModification(
     res: Response,
     next: NextFunction,
 ) {
-    const token = req.cookies.access_token;
+    logger.verbose(`[USERS] Checking user modification permissions`);
     const { username, uuid } = req.params;
 
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET) as {
-        username: string;
-        id: string;
-        };
+    const decoded = req.body;
 
+    try {
         if (
-        (username && decoded.username !== username) ||
-        (uuid && decoded.id !== uuid)
+            (username && decoded.user !== username) ||
+            (uuid && decoded.id !== uuid)
         ) {
-        res.status(403).send({ message: "Cannot modify other users data" });
-        return;
+            logger.warn(`[USERS] User ${decoded.username} cannot modify other users data`);
+            logger.silly(`[USERS] User ${decoded.username} cannot modify user ${username}`);
+            res.status(403).send({ message: "Cannot modify other users data" });
+            return;
         }
     } catch {
+        logger.warn(`[USERS] Invalid token`);
         res.status(401).send({ message: "Invalid token" });
         return;
     }

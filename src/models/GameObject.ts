@@ -42,7 +42,7 @@ export class GameObject {
             [CardType.Shuffle]: 5,
             [CardType.Skip]: 5,
             [CardType.Attack]: 3,
-            [CardType.Nope]: 60,
+            [CardType.Nope]: 0,
             [CardType.Favor]: 5,
             [CardType.Deactivate]: 6-numberOfPlayers,
             [CardType.RainbowCat]: 5,
@@ -99,6 +99,7 @@ export class GameObject {
                     index,
                     this.players[this.turn].username, 
                     TURN_TIME_LIMIT, 
+                    this.deck.length()
                 )
             }
         });
@@ -140,6 +141,7 @@ export class GameObject {
         const id: number | undefined = this.getIdByUsername(username);
         return id !== undefined ? this.players[id] : undefined;
     }
+    
 
     /**
      * Start the turn timer
@@ -352,7 +354,7 @@ export class GameObject {
 
     reconnectPlayer(playerUsername: string): void {
         logger.info(`[GAME] Player ${playerUsername} has reconnected`);
-        
+
         const player: Player|undefined = this.getPlayerByUsername(playerUsername);
 
         if(player === undefined){
@@ -371,6 +373,7 @@ export class GameObject {
             player.id,
             this.players[this.turn].username, 
             this.turnTimeout.getRemainingTime(), 
+            this.deck.length()
         )
 
         this.callSystem.notifyMessages(

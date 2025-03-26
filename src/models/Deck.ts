@@ -33,7 +33,11 @@ export class Deck {
             }
         }
     }
-    
+
+    length(): number {
+        return this.cards.length();
+    }
+
     /**
      * Shuffles the deck by randomly rearranging the cards.
      * Uses the `.sort()` method with `Math.random()`.
