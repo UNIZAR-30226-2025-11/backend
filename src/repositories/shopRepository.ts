@@ -35,7 +35,14 @@ export class shopRepository {
         }
     };
 
-
+     /**
+     * Retrieves the price of a product based on its name and category.
+     *
+     * @param {string} product_name - The name of the product.
+     * @param {string} category_name - The name of the category to which the product belongs.
+     * @returns {Promise<number>} A promise that resolves to the price of the product.
+     *                            Throws an error if the product is not found.
+     */
     static async obtainCoinsProduct(
         product_name: string,
         category_name: string
@@ -59,6 +66,14 @@ export class shopRepository {
         }
     }
 
+    /**
+     * Retrieves the product ID based on its name and category.
+     *
+     * @param {string} product_name - The name of the product.
+     * @param {string} category_name - The name of the category to which the product belongs.
+     * @returns {Promise<number>} A promise that resolves to the product ID.
+     *                            Throws an error if the product is not found.
+     */
     static async obtainId(
         product_name: string,
         category_name: string
@@ -82,6 +97,14 @@ export class shopRepository {
         }
     }
 
+     /**
+     * Adds a product to a user's product list in the 'user_products' table.
+     *
+     * @param {number} product_id - The ID of the product to be added.
+     * @param {crypto.UUID} user_id - The ID of the user to whom the product will be added.
+     * @returns {Promise<void>} A promise that resolves when the product is successfully added to the user's list.
+     *                          Logs an error if the insertion fails.
+     */
     static async addProduct(
         product_id: number,
         user_id: crypto.UUID,
@@ -99,6 +122,14 @@ export class shopRepository {
         }
     }
 
+    /**
+     * Checks whether a product exists in the database based on its name and category.
+     *
+     * @param {string} product_name - The name of the product to check.
+     * @param {string} category_name - The name of the category to which the product belongs.
+     * @returns {Promise<boolean>} A promise that resolves to `true` if the product exists, 
+     *                            or `false` if it does not exist.
+     */
     static async existProduct(
         product_name: string,
         category_name: string
@@ -123,6 +154,12 @@ export class shopRepository {
 
     }
 
+    /**
+     * Retrieves a list of distinct categories from the database.
+     *
+     * @returns {Promise<string[]>} A promise that resolves to an array of category names.
+     *                              Returns an empty array if no categories are found.
+     */
     static async obtainAllCategories() : Promise<string[]>{
         try {
             const res = await db.query(
@@ -143,6 +180,14 @@ export class shopRepository {
 
     }
 
+     /**
+     * Retrieves all products for a given category from the database.
+     *
+     * @param {string} category - The name of the category for which to retrieve products.
+     * @returns {Promise<{ name: string, price: number, product_id: number }[]>} 
+     * A promise that resolves to an array of product objects, each containing `name`, `price`, and `product_id`.
+     * Returns an empty array if no products are found for the category.
+     */
     static async obtainProducts(
         category: string
     ) : Promise<{ name: string, price: number, product_id: number }[]>{
@@ -170,6 +215,14 @@ export class shopRepository {
         }
     }
 
+    /**
+     * Checks if a product has been purchased by a user.
+     *
+     * @param {number} productId - The ID of the product to check.
+     * @param {crypto.UUID} userId - The ID of the user to check.
+     * @returns {Promise<boolean>} A promise that resolves to `true` if the product has been bought by the user,
+     *                             or `false` if it has not been bought.
+     */
     static async isBought(
         productId: number,
         userId: crypto.UUID
