@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS users_in_lobby (
 CREATE TABLE shop_products (
     product_id INT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
+    category TEST NOT NULL,
     price INT NOT NULL
 )
 

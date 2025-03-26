@@ -1,39 +1,69 @@
 import { Router } from "express";
  
 import {
-  protectRoute
+    protectRoute
 } from "../middleware/auth.js";
 
+import { SHOP_API } from "../api/restAPI.js";
+import {UserRepository} from "../repositories/userRepository.js"
+import { shopRepository } from "../repositories/shopRepository.js";
 
 const shopRouter = Router();
 shopRouter.use(protectRoute);
 
 shopRouter
-  .route("/shop")
+    .route(SHOP_API)
 
-  // Obtain all the shops products for the user
-  .get(async (_req, res) => {
-    try {
-        const userId = (_req as any).user.id;
-    
-        res.json(userId);
-      } catch (error) {
-        res.status(400).json({ error: "You can not obtain the shop" });
-      }
-  })
+    // Obtain all the shops products for the user
+    .get(async (_req, res) => {
+        try {
+            const userId = (_req as any).user.id;
 
-  // Buy a new product
-  .post((_req, res) => {
+    
+            res.json(userId);
+        } catch (error) {
+            res.status(400).json({ error: "You can not obtain the shop" });
+        }
+    })
 
-    try {
-        const userId = (_req as any).user.id;
-        const { productId } = _req.body;
+    // Buy a new product
+    .post(async (_req, res) => {
+        try {
+            const userId = (_req as any).user?.id;
+            const { category_name, product_name } = _req.body;
     
-    
-        res.status(200).json(productId);
-      } catch (error) {
-        res.status(400).json({ error: "Error buying the new product" });
-      }
-  });
+            if (!category_name || !product_name) {
+                res.status(400).json({ error: "category_name and product_name are required" });
+            }
+
+            // Exist the product
+            const productExists = await shopRepository.existProduct(product_name, category_name);
+            if (!productExists) {
+                res.status(404).json({ error: "Product not found" });
+            }
+
+            // Obtain the coins
+            const coins = await shopRepository.obtainCoinsProduct(product_name, category_name);
+
+            // is valid the buy
+            const hasEnoughCoins = await UserRepository.isEnoughCoins(coins, userId);
+            if (!hasEnoughCoins) {
+                res.status(400).json({ error: "Not enough coins" });
+            }
+
+            // update coins
+            await UserRepository.removeCoins(coins, userId);
+
+            // add product to the table
+            const product_id = await shopRepository.obtainId(product_name, category_name);
+            await shopRepository.addProduct(product_id, userId);
+
+            res.status(200).json({ message: "Product purchased successfully", userId });
+        }
+        catch (error) {
+            console.error("Error in purchase:", error);
+            res.status(500).json({ error: "Error buying the new product" });
+        }
+    });
 
 export { shopRouter };

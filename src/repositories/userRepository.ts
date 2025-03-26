@@ -197,5 +197,75 @@ export class UserRepository {
             throw new Error("Error in database");
         }
     }
+
+    /**
+     * Check if the player has more coins than 'coins'
+     * @param coins: coins necessary
+     * @param id: number id of the user
+     * @returns True if the user has enough coins, else False
+     */
+    static async isEnoughCoins(
+        coins: number,
+        id: crypto.UUID
+    ) :Promise<boolean> {
+        try {
+            const res = await db.query(
+                `
+                SELECT coins 
+                FROM users
+                WHERE id=$1
+                `, [id]);
+            if (res.rows.length > 0) {
+                if(res.rows[0].coins - coins > 0){
+                    return true;
+                } else{
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
+    /**
+     * Reduce the coins of a user
+     * @param coins: coins necessary
+     * @param id: number id of the user
+     */
+    static async removeCoins(
+        coins: number,
+        id: crypto.UUID
+    ) :Promise<void> {
+        try {
+            const res = await db.query(
+                `
+                SELECT coins 
+                FROM users
+                WHERE id=$1
+                `, [id]);
+
+            if (res.rows.length > 0) {
+                let future_coins = res.rows[0].coins - coins
+                if( future_coins > 0){
+                    await db.query(
+                        `
+                        UPDATE users 
+                        SET coins = $1
+                        WHERE id = $2;
+                        `,
+                        [coins, id]
+                    );
+                } 
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
   }
+
+
   
