@@ -582,7 +582,7 @@ export class GameObject {
             this.setNextTurn();
         }
 
-        this.callSystem.notifyDrewCard(newCard, player.username);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(newCard, player.username);
     }
 
     async playCards(playedCards: CardArray, player:Player): Promise<boolean>
@@ -723,7 +723,7 @@ export class GameObject {
 
         logger.info(`[GAME] Player ${playerToSteal.username} gave a card to player ${currentPlayer.username}`);
 
-        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(cardToGive, currentPlayer.username);
 
         // Steal the card
         playerToSteal.hand.popNth(cardIndex);
@@ -781,7 +781,7 @@ export class GameObject {
         const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
 
         logger.debug(`[GAME] Player ${currentPlayer.username} has stolen the card ${cardToSteal.toString()} from player ${playerToSteal.id}`);
-        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(cardToSteal, currentPlayer.username);
         
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
@@ -798,14 +798,16 @@ export class GameObject {
 
         if(cardIndex === -1){
             logger.info(`[GAME] Player does not have the card you want to steal`);
+            this.callSystem.notifyOkPlayedCards(currentPlayer.username);
             return;
         }
 
         logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card of type ${CardType[cardType]} from player ${playerToSteal.id}`);
-        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
 
         // Steal the card
         const cardToSteal: Card = playerToSteal.hand.popNth(cardIndex);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(cardToSteal, currentPlayer.username);
+
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);

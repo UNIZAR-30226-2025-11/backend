@@ -15,7 +15,14 @@ export function protectRoute(req: Request, res: Response, next: NextFunction) {
     }
 
     try {
-        jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET) as {
+            username: string;
+            id: string;
+        };
+
+        req.body.username = decoded.username;
+        req.body.id = decoded.id;
+
     } catch (_) {
         res.status(401).send({ message: "Invalid token" });
         return;

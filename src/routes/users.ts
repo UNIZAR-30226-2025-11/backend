@@ -8,12 +8,23 @@ import {
 import { UserRepository } from "../repositories/userRepository.js";
 import { getPublicUser, UserEntity } from "../models/User.js";
 import { filterNonModifiableUserData } from "../middleware/users.js";
-import { USERS_API, ID_API } from "../api/restAPI.js";
+import { USERS_API, ID_API, USER_API } from "../api/restAPI.js";
 import logger from "../config/logger.js";
 
 const usersRouter = Router();
 usersRouter.use(protectRoute);
 
+usersRouter
+    .route(USER_API)
+    .get(async (req, res) => {
+        logger.info(`[USERS] Getting specific user ${req.body.username}`);
+        const user = await UserRepository.findByUsername(req.body.username);
+        if (!user) {
+            res.status(404).send({ message: "User not found" });
+            return;
+        }
+        res.status(200).send(getPublicUser(user));
+    })
 usersRouter
     .route(USERS_API)
     .get(async (_req, res) => {

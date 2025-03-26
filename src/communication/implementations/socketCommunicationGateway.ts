@@ -407,7 +407,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
         this.broadcastMsg<BackendPlayerStatusJSON>(msg, "player-status");
     }
 
-    notifyDrewCard(card: Card, username: string): void {
+    notifyOkPlayedCardWithCardObtained(card: Card, username: string): void {
 
         logger.info(`Notifying player ${username} that they drew a card`);
         const msg: BackendGamePlayedCardsResponseJSON = {
