@@ -4,7 +4,7 @@ import {
     protectRoute
 } from "../middleware/auth.js";
 
-import { SHOP_API } from "../api/restAPI.js";
+import { SHOP_API , CategoryJSON, ProductJSON} from "../api/restAPI.js";
 import {UserRepository} from "../repositories/userRepository.js"
 import { shopRepository } from "../repositories/shopRepository.js";
 
@@ -19,8 +19,37 @@ shopRouter
         try {
             const userId = (_req as any).user.id;
 
-    
-            res.json(userId);
+            let JSON: CategoryJSON[] = [];
+
+            let categories = await shopRepository.obtainAllCategories();
+
+            let isBought=false;
+           
+            for (let category of categories){
+
+                let categoryJSON: CategoryJSON = {
+                    name: category,
+                    products: []
+                };
+
+                let products = await shopRepository.obtainProducts(category);
+                for(let product of products){
+
+                    isBought = await shopRepository.isBought(product.product_id, userId);
+
+                    let productJSON: ProductJSON = {
+                        name: product.name,
+                        price: product.price,
+                        isBought: isBought
+                    };
+                    
+                    categoryJSON.products.push(productJSON);
+                }
+
+                JSON.push(categoryJSON);
+            }
+
+            res.json(JSON);
         } catch (error) {
             res.status(400).json({ error: "You can not obtain the shop" });
         }

@@ -122,6 +122,76 @@ export class shopRepository {
         }
 
     }
+
+    static async obtainAllCategories() : Promise<string[]>{
+        try {
+            const res = await db.query(
+                `
+                SELECT DISTINCT category 
+                FROM shop_products
+                `);
+            if (res.rows.length > 0) {
+                // Usamos map para extraer solo los valores de la columna 'category'
+                return res.rows.map(row => row.category);
+            } else {
+                return [];  // Si no hay categorías, devolvemos un arreglo vacío
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+
+    }
+
+    static async obtainProducts(
+        category: string
+    ) : Promise<{ name: string, price: number, product_id: number }[]>{
+        try {
+            const res = await db.query(
+                `
+                SELECT name, price, product_id
+                FROM shop_products
+                WHERE category=$1
+                `,[category]);
+
+            if (res.rows.length > 0) {
+               
+                return res.rows.map(row => ({
+                    name: row.name,
+                    price: row.price,
+                    product_id: row.product_id
+                }));
+            } else {
+                return []; 
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
+    static async isBought(
+        productId: number,
+        userId: crypto.UUID
+    ) : Promise<boolean>{
+        try {
+        const res = await db.query(
+            `
+            SELECT id_user
+            FROM user_products
+            WHERE product_id=$2 and user_id=$1);
+            `,[productId, userId]);
+        
+            if (res.rows.length > 0) {
+                return true;
+            } else {
+                return false; 
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
     
 }
 
