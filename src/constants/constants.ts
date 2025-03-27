@@ -3,8 +3,8 @@
 import logger from "../config/logger.js";
 
 export const INITIAL_HAND_SIZE = 6;
-export const TURN_TIME_LIMIT = 1000000;
-export const TIMEOUT_RESPONSE = 1000000;
+export const TURN_TIME_LIMIT = 50000;
+export const TIMEOUT_RESPONSE = 20000;
 export const TIME_FORMAT =  "dd/MM/yyyy HH:mm:ss";
 
 export function handleError(error: boolean|undefined, errorMsg: string|undefined): void {

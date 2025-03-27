@@ -59,7 +59,8 @@ export class GameObject {
         {
             this.players.push(Player.createStandarPlayer(i, playersUsernames[i], this.deck));
         }
-        this.deck.addBombs(numberOfPlayers-1);
+
+        this.deck.addBombs(numberOfPlayers+300);
 
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
@@ -546,11 +547,11 @@ export class GameObject {
         logger.info(`[GAME] Handling new card for player ${player.username}`);
         logger.debug(`[GAME] New card: ${newCard}`);
 
-        if (newCard.type === CardType.Bomb) {
+        if (newCard.type == CardType.Bomb) {
             // If the card is a bomb
 
             // Check if the player has a deactivate card
-            const indexDeactivate = player.hand.values.findIndex( card => card.type === CardType.Deactivate );
+            const indexDeactivate = player.hand.values.findIndex( card => card.type == CardType.Deactivate );
 
             if (indexDeactivate !== -1) {
                 // If the player has a deactivate card
