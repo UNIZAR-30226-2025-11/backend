@@ -60,7 +60,7 @@ export class GameObject {
             this.players.push(Player.createStandarPlayer(i, playersUsernames[i], this.deck));
         }
 
-        this.deck.addBombs(numberOfPlayers+300);
+        this.deck.addBombs(numberOfPlayers-1);
 
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
