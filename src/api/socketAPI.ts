@@ -157,6 +157,8 @@ export type BackendGameSelectNopeJSON = {
     timeOut: number;
 }
 
+
+
 export type FrontendGameSelectNopeResponseJSON = {
     error: boolean;
     errorMsg: string;

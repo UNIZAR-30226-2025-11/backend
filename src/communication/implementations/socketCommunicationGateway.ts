@@ -90,6 +90,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-card-type", 
             petition,
+            this.playersUsernamesInLobby,
+            {
+                error: false,
+                errorMsg: "",
+                triggerUser: username,
+                targetUser: "",
+                action: ActionType[ActionType.AskingCardType]
+            },
             TIMEOUT_RESPONSE
         );
 
@@ -126,6 +134,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-player", 
             petition,
+            this.playersUsernamesInLobby,
+            {
+                error: false,
+                errorMsg: "",
+                triggerUser: username,
+                targetUser: "",
+                action: ActionType[ActionType.AskingPlayer]
+            },
             TIMEOUT_RESPONSE
         );
 
@@ -161,6 +177,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-card", 
             petition,
+            this.playersUsernamesInLobby,
+            {
+                error: false,
+                errorMsg: "",
+                triggerUser: username,
+                targetUser: "",
+                action: ActionType[ActionType.AskingCard]
+            },
             TIMEOUT_RESPONSE
         );
 
@@ -196,6 +220,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-nope", 
             petition,
+            this.playersUsernamesInLobby,
+            {
+                error: false,
+                errorMsg: "",
+                triggerUser: username,
+                targetUser: "",
+                action: ActionType[ActionType.AskingNope]
+            },
             TIMEOUT_RESPONSE
         );
 
@@ -358,7 +390,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             errorMsg: "",
             triggerUser: triggerUser,
             targetUser: targetUser,
-            action: cardsNumber == 2 ? ActionType[ActionType.TwoWildCardAttack] : ActionType[ActionType.ThreeWildCardAttack]
+            action: cardsNumber == 2 ? ActionType[ActionType.TwoWildCardAttackSuccessful] : ActionType[ActionType.ThreeWildCardAttackSuccessful]
         }
         this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
     }
