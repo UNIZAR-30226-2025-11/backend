@@ -527,6 +527,8 @@ export class GameObject {
             } else {
                 // If the player does not have a nope card
                 logger.verbose(`[GAME] Player ${players[playerToNope].username} does not have a nope card`);
+                
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 3000));
                 // The nope chain is resolved
                 resolved = true;
             }
