@@ -27,7 +27,7 @@ export class shopRepository {
                     (1,'PotatoCat', 'Avatar', 1000),
                     (2, 'BeardCat', 'Avatar', 1500),
                     (3, 'Blue', 'Background', 300),
-                    (4, 'Yellow', 'Background', 600);
+                    (4, 'Yellow', 'Background', 600)
                 `);
             } 
         } catch (error) {
@@ -113,7 +113,7 @@ export class shopRepository {
             const res = await db.query(
                 `
                 INSERT INTO user_products (id_user, id_product)
-                VALUES ($2, $1);
+                VALUES ($2, $1)
                 `,[product_id, user_id]);
 
         } catch (error) {
@@ -232,7 +232,7 @@ export class shopRepository {
             `
             SELECT id_user
             FROM user_products
-            WHERE product_id=$2 and user_id=$1);
+            WHERE product_id=$2 and user_id=$1)
             `,[productId, userId]);
         
             if (res.rows.length > 0) {

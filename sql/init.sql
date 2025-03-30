@@ -40,6 +40,12 @@ CREATE TABLE IF NOT EXISTS user_products (
     id_product INT NOT NULL REFERENCES shop_products(product_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS friends (
+    applier_username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+    applied_username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+    isAccepted BOOLEAN NOT NULL DEFAULT FALSE
+);
+
 -- DO THIS AT THE END, CREATE A TESTING DB THAT IS A COPY OF THE ACTUAL ONE
 DROP DATABASE IF EXISTS katboom_testing;
 CREATE DATABASE katboom_testing WITH TEMPLATE katboom;

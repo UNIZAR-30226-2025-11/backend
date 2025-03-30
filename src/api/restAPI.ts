@@ -4,6 +4,7 @@ export const LOGOUT_API: string = "/logout";
 export const USERS_API: string = "/users";
 export const ID_API: string = "/id";
 export const SHOP_API: string = "/shop";
+export const FRIENDS_API: string = "/friends";
 
 
 export type CategoryJSON = {
@@ -15,4 +16,9 @@ export type ProductJSON = {
     name: string;
     price: number;
     isBought: boolean;
+}
+
+export type FriendsJSON = {
+    username: string;
+    avatar: string;
 }
