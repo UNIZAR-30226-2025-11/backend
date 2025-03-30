@@ -17,6 +17,9 @@ shopRouter
     // Obtain all the shops products for the user
     .get(async (_req, res) => {
         try {
+            
+            shopRepository.initProducts();
+
             const userId = (_req as any).user.id;
 
             let JSON: CategoryJSON[] = [];

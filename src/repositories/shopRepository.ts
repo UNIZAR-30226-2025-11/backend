@@ -22,12 +22,12 @@ export class shopRepository {
             if (productCount === 0) {
                 // Si no hay productos, insertamos los productos iniciales
                 await db.query(`
-                    INSERT INTO products (name, category_name, price) VALUES
-                    ('HairyCat', 'Avatar', 500),
-                    ('PotatoCat', 'Avatar', 1000),
-                    ('BeardCat', 'Avatar', 1500),
-                    ('Blue', 'Background', 300),
-                    ('Yellow', 'Background', 600);
+                    INSERT INTO shop_products (product_id,name, category, price) VALUES
+                    (0,'HairyCat', 'Avatar', 500),
+                    (1,'PotatoCat', 'Avatar', 1000),
+                    (2, 'BeardCat', 'Avatar', 1500),
+                    (3, 'Blue', 'Background', 300),
+                    (4, 'Yellow', 'Background', 600);
                 `);
             } 
         } catch (error) {

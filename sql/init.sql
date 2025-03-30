@@ -28,17 +28,17 @@ CREATE TABLE IF NOT EXISTS users_in_lobby (
     PRIMARY KEY(username, lobby_id)
 );
 
-CREATE TABLE shop_products (
+CREATE TABLE IF NOT EXISTS shop_products (
     product_id INT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
-    category TEST NOT NULL,
+    category TEXT NOT NULL,
     price INT NOT NULL
-)
+);
 
-CREATE TABLE user_products (
+CREATE TABLE IF NOT EXISTS user_products (
     id_user INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     id_product INT NOT NULL REFERENCES shop_products(product_id) ON DELETE CASCADE
-)
+);
 
 -- DO THIS AT THE END, CREATE A TESTING DB THAT IS A COPY OF THE ACTUAL ONE
 DROP DATABASE IF EXISTS katboom_testing;
