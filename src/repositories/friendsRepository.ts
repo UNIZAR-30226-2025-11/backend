@@ -1,6 +1,7 @@
 import { db } from "../db.js";
 import crypto from "node:crypto";
 import logger from "../config/logger.js";
+import { FriendsJSON } from "../api/restAPI.js";
 
 
 export class friendsRepository {
@@ -11,22 +12,24 @@ export class friendsRepository {
      * @returns Array of friend usernames
      * @throws Error if database operation fails
      */
-    static async obtainFriends (username: string) {
+    static async obtainFriends (username: string): Promise<FriendsJSON[]> {
         try {
             const res = await db.query(
                 `
-                SELECT applier_username as username
-                FROM friends
-                WHERE applied_username = $1 AND isAccepted = true
-
-                UNION
-
-                SELECT applied_username as username
-                FROM friends
-                WHERE applier_username = $1 AND isAccepted = true
+                SELECT u.username, u.avatar
+                FROM friends f
+                JOIN users u ON (
+                    (f.applier_username = u.username AND f.applied_username = $1)
+                    OR
+                    (f.applied_username = u.username AND f.applier_username = $1)
+                )
+                WHERE f.isAccepted = true
                 `, [username]);
             if (res.rows.length > 0) {
-                return res.rows.map(row => row.username);
+                return res.rows.map(row => ({
+                    username: row.username,
+                    avatar: row.avatar
+                }));
             } else {
                 logger.error("[DB] Error in database.");
                 throw new Error("Error in database");
@@ -43,16 +46,22 @@ export class friendsRepository {
      * @returns Array of usernames who sent pending requests
      * @throws Error if database operation fails
      */
-    static async obtainAppliedFriends (username :string){
+    static async obtainAppliedFriends (username :string):  Promise<FriendsJSON[]>{
         try {
             const res = await db.query(
                 `
-                SELECT applier_username as username
-                FROM friends
-                WHERE applied_username = $1 AND isAccepted = false
+                SELECT u.username, u.avatar
+                FROM friends f
+                JOIN users u ON (
+                    (f.applier_username = u.username AND f.applied_username = $1)
+                )
+                WHERE f.isAccepted = false
                 `, [username]);
             if (res.rows.length > 0) {
-                return res.rows.map(row => row.username);
+                return res.rows.map(row => ({
+                    username: row.username,
+                    avatar: row.avatar
+                }));
             } else {
                 logger.error("[DB] Error in database.");
                 throw new Error("Error in database");
@@ -69,16 +78,22 @@ export class friendsRepository {
      * @returns Array of usernames who received pending requests
      * @throws Error if database operation fails
      */
-    static async obtainApplierFriends (username :string){
+    static async obtainApplierFriends (username :string):  Promise<FriendsJSON[]>{
         try {
             const res = await db.query(
                 `
-                SELECT applied_username as username
-                FROM friends
-                WHERE applier_username = $1 AND isAccepted = false
+                SELECT u.username, u.avatar
+                FROM friends f
+                JOIN users u ON (
+                    (f.applied_username = u.username AND f.applier_username = $1)
+                )
+                WHERE f.isAccepted = false
                 `, [username]);
             if (res.rows.length > 0) {
-                return res.rows.map(row => row.username);
+                return res.rows.map(row => ({
+                    username: row.username,
+                    avatar: row.avatar
+                }));
             } else {
                 logger.error("[DB] Error in database.");
                 throw new Error("Error in database");
@@ -89,19 +104,37 @@ export class friendsRepository {
         }
     }
 
+    /**
+     * Counts the number of pending friend requests sent by a user
+     * @param username - The username to check for pending requests
+     * @returns Number of pending friend requests sent by the user
+     * @throws Error if database operation fails
+     */
+    static async numRequest(username:string): Promise<number>{
+        try {
+            const friends = await friendsRepository.obtainApplierFriends(username);
+            
+            return friends.length;
+            
+        } catch (error) {
+            logger.error("[DB] Error in database:", error);
+            throw new Error("Error in database");
+        }
+    }
+
      /**
      * Finds potential new friends (users with no existing relationship)
      * @param username - The user searching for new friends
      * @returns Array of available usernames
      * @throws Error if database operation fails
      */
-    static async searchNewFriends (username :string){
+    static async searchNewFriends (username :string) :  Promise<FriendsJSON[]>{
         try {
             const res = await db.query(
                 `
-                SELECT username 
+                SELECT username, avatar
                 FROM users
-                WHERE not username = $1 AND username is not in 
+                WHERE username != $1 AND username NOT IN 
                 (
                 SELECT applier_username as username
                 FROM friends
@@ -115,7 +148,10 @@ export class friendsRepository {
                 )
                 `, [username]);
             if (res.rows.length > 0) {
-                return res.rows.map(row => row.username);
+                return res.rows.map(row => ({
+                    username: row.username,
+                    avatar: row.avatar
+                }));
             } else {
                 logger.error("[DB] Error in database.");
                 throw new Error("Error in database");
