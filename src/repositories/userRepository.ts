@@ -248,8 +248,8 @@ export class UserRepository {
                 `, [id]);
 
             if (res.rows.length > 0) {
-                let future_coins = res.rows[0].coins - coins
-                if( future_coins > 0){
+                const futureCoins = res.rows[0].coins - coins
+                if( futureCoins > 0){
                     await db.query(
                         `
                         UPDATE users 

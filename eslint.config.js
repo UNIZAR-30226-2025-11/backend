@@ -34,10 +34,10 @@ export default tseslint.config(
       // Allow let for variables that are assigned once
       "prefer-const": "warn",
 
-      // // Detect unhandled promises (requires type checking)
-      // "@typescript-eslint/no-floating-promises": "error",
+      // Detect unhandled promises (requires type checking)
+      "@typescript-eslint/no-floating-promises": "error",
 
-      // "@typescript-eslint/require-await": "error",
+      "@typescript-eslint/require-await": "error",
     },
   },
 );

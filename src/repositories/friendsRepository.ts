@@ -1,5 +1,4 @@
 import { db } from "../db.js";
-import crypto from "node:crypto";
 import logger from "../config/logger.js";
 import { FriendsJSON } from "../api/restAPI.js";
 
@@ -164,18 +163,18 @@ export class friendsRepository {
 
     /**
      * Updates a friend request to accepted status
-     * @param applied_username - The recipient of the friend request
-     * @param applier_username - The sender of the friend request
+     * @param appliedUsername - The recipient of the friend request
+     * @param applierUsername - The sender of the friend request
      * @throws Error if database operation fails
      */
-    static async addNewFriend(applied_username:string, applier_username:string){
+    static async addNewFriend(appliedUsername:string, applierUsername:string){
         try {
-            const res = await db.query(
+            await db.query(
                 `
                 UPDATE friends 
                 SET isAccepted = true
                 WHERE applied_username = $1 AND applier_username = $2
-                `,[applied_username, applier_username]);
+                `,[appliedUsername, applierUsername]);
 
         } catch (error) {
             logger.error("[DB] Error in database.", error);
@@ -185,17 +184,17 @@ export class friendsRepository {
 
      /**
      * Creates a new accepted friend relationship (NOTE: Contains syntax error)
-     * @param applied_username - The recipient of the friend request
-     * @param applier_username - The sender of the friend request
+     * @param appliedUsername - The recipient of the friend request
+     * @param applierUsername - The sender of the friend request
      * @throws Error if database operation fails
      */
-    static async acceptNewFriend(applied_username:string, applier_username:string){
+    static async acceptNewFriend(appliedUsername:string, applierUsername:string){
         try {
-            const res = await db.query(
+            await db.query(
                 `
                 UPDATE INTO friends (applied_username, applier_username, isAccepted)
                 VALUES ($1, $2, true)
-                `,[applied_username, applier_username]);
+                `,[appliedUsername, applierUsername]);
 
         } catch (error) {
             logger.error("[DB] Error in database.", error);
@@ -205,17 +204,17 @@ export class friendsRepository {
 
     /**
      * Deletes a friend relationship
-     * @param applied_username - One user in the relationship
-     * @param applier_username - The other user in the relationship
+     * @param appliedUsername - One user in the relationship
+     * @param applierUsername - The other user in the relationship
      * @throws Error if database operation fails
      */
-    static async deleteNewFriend(applied_username:string, applier_username:string){
+    static async deleteNewFriend(appliedUsername:string, applierUsername:string){
         try {
-            const res = await db.query(
+            await db.query(
                 `
                 DELETE FROM friends 
                 WHERE applied_username = $1 AND applier_username = $2
-                `,[applied_username, applier_username]);
+                `,[appliedUsername, applierUsername]);
 
         } catch (error) {
             logger.error("[DB] Error in database.", error);

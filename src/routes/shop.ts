@@ -15,32 +15,32 @@ shopRouter
     .route(SHOP_API)
 
     // Obtain all the shops products for the user
-    .get(async (_req, res) => {
+    .get(async (req, res) => {
         try {
             
-            shopRepository.initProducts();
+            await shopRepository.initProducts();
 
-            const userId = (_req as any).user.id;
+            const userId = req.body.id;
 
-            let JSON: CategoryJSON[] = [];
+            const JSON: CategoryJSON[] = [];
 
-            let categories = await shopRepository.obtainAllCategories();
+            const categories = await shopRepository.obtainAllCategories();
 
             let isBought=false;
            
-            for (let category of categories){
+            for (const category of categories){
 
-                let categoryJSON: CategoryJSON = {
+                const categoryJSON: CategoryJSON = {
                     name: category,
                     products: []
                 };
 
-                let products = await shopRepository.obtainProducts(category);
-                for(let product of products){
+                const products = await shopRepository.obtainProducts(category);
+                for(const product of products){
 
-                    isBought = await shopRepository.isBought(product.product_id, userId);
+                    isBought = await shopRepository.isBought(product.productId, userId);
 
-                    let productJSON: ProductJSON = {
+                    const productJSON: ProductJSON = {
                         name: product.name,
                         price: product.price,
                         isBought: isBought
@@ -54,28 +54,29 @@ shopRouter
 
             res.json(JSON);
         } catch (error) {
+            console.error("Error in delete:", error);
             res.status(400).json({ error: "You can not obtain the shop" });
         }
     })
 
     // Buy a new product
-    .post(async (_req, res) => {
+    .post(async (req, res) => {
         try {
-            const userId = (_req as any).user?.id;
-            const { category_name, product_name } = _req.body;
+            const userId = req.body.id;
+            const { categoryName, productName } = req.body;
     
-            if (!category_name || !product_name) {
+            if (!categoryName || !productName) {
                 res.status(400).json({ error: "category_name and product_name are required" });
             }
 
             // Exist the product
-            const productExists = await shopRepository.existProduct(product_name, category_name);
+            const productExists = await shopRepository.existProduct(productName, categoryName);
             if (!productExists) {
                 res.status(404).json({ error: "Product not found" });
             }
 
             // Obtain the coins
-            const coins = await shopRepository.obtainCoinsProduct(product_name, category_name);
+            const coins = await shopRepository.obtainCoinsProduct(productName, categoryName);
 
             // is valid the buy
             const hasEnoughCoins = await UserRepository.isEnoughCoins(coins, userId);
@@ -87,8 +88,8 @@ shopRouter
             await UserRepository.removeCoins(coins, userId);
 
             // add product to the table
-            const product_id = await shopRepository.obtainId(product_name, category_name);
-            await shopRepository.addProduct(product_id, userId);
+            const productId = await shopRepository.obtainId(productName, categoryName);
+            await shopRepository.addProduct(productId, userId);
 
             res.status(200).json({ message: "Product purchased successfully", userId });
         }

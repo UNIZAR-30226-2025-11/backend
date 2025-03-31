@@ -38,14 +38,14 @@ export class shopRepository {
      /**
      * Retrieves the price of a product based on its name and category.
      *
-     * @param {string} product_name - The name of the product.
-     * @param {string} category_name - The name of the category to which the product belongs.
+     * @param {string} productName - The name of the product.
+     * @param {string} categoryName - The name of the category to which the product belongs.
      * @returns {Promise<number>} A promise that resolves to the price of the product.
      *                            Throws an error if the product is not found.
      */
     static async obtainCoinsProduct(
-        product_name: string,
-        category_name: string
+        productName: string,
+        categoryName: string
     ) : Promise<number> {
         try {
             const res = await db.query(
@@ -53,7 +53,7 @@ export class shopRepository {
                 SELECT price 
                 FROM shop_products
                 WHERE category=$1 and name=$2
-                `, [category_name, product_name]);
+                `, [categoryName, productName]);
             if (res.rows.length > 0) {
                 return res.rows[0].price;
             } else {
@@ -69,14 +69,14 @@ export class shopRepository {
     /**
      * Retrieves the product ID based on its name and category.
      *
-     * @param {string} product_name - The name of the product.
-     * @param {string} category_name - The name of the category to which the product belongs.
+     * @param {string} productName - The name of the product.
+     * @param {string} categoryName - The name of the category to which the product belongs.
      * @returns {Promise<number>} A promise that resolves to the product ID.
      *                            Throws an error if the product is not found.
      */
     static async obtainId(
-        product_name: string,
-        category_name: string
+        productName: string,
+        categoryName: string
     ) : Promise<number>{
         try {
             const res = await db.query(
@@ -84,7 +84,7 @@ export class shopRepository {
                 SELECT product_id 
                 FROM shop_products
                 WHERE category=$1 and name=$2
-                `, [category_name, product_name]);
+                `, [categoryName, productName]);
             if (res.rows.length > 0) {
                 return res.rows[0].product_id;
             } else {
@@ -100,21 +100,21 @@ export class shopRepository {
      /**
      * Adds a product to a user's product list in the 'user_products' table.
      *
-     * @param {number} product_id - The ID of the product to be added.
-     * @param {crypto.UUID} user_id - The ID of the user to whom the product will be added.
+     * @param {number} productId - The ID of the product to be added.
+     * @param {crypto.UUID} userId - The ID of the user to whom the product will be added.
      * @returns {Promise<void>} A promise that resolves when the product is successfully added to the user's list.
      *                          Logs an error if the insertion fails.
      */
     static async addProduct(
-        product_id: number,
-        user_id: crypto.UUID,
+        productId: number,
+        userId: crypto.UUID,
     ){
         try {
-            const res = await db.query(
+            await db.query(
                 `
                 INSERT INTO user_products (id_user, id_product)
                 VALUES ($2, $1)
-                `,[product_id, user_id]);
+                `,[productId, userId]);
 
         } catch (error) {
             logger.error("[DB] Error in database.", error);
@@ -125,14 +125,14 @@ export class shopRepository {
     /**
      * Checks whether a product exists in the database based on its name and category.
      *
-     * @param {string} product_name - The name of the product to check.
-     * @param {string} category_name - The name of the category to which the product belongs.
+     * @param {string} productName - The name of the product to check.
+     * @param {string} categoryName - The name of the category to which the product belongs.
      * @returns {Promise<boolean>} A promise that resolves to `true` if the product exists, 
      *                            or `false` if it does not exist.
      */
     static async existProduct(
-        product_name: string,
-        category_name: string
+        productName: string,
+        categoryName: string
     ) : Promise<boolean>{
 
         try {
@@ -141,7 +141,7 @@ export class shopRepository {
                 SELECT price 
                 FROM shop_products
                 WHERE category=$1 and name=$2
-                `, [category_name, product_name]);
+                `, [categoryName, productName]);
             if (res.rows.length > 0) {
                 return true;
             } else {
@@ -190,7 +190,7 @@ export class shopRepository {
      */
     static async obtainProducts(
         category: string
-    ) : Promise<{ name: string, price: number, product_id: number }[]>{
+    ) : Promise<{ name: string, price: number, productId: number }[]>{
         try {
             const res = await db.query(
                 `
@@ -204,7 +204,7 @@ export class shopRepository {
                 return res.rows.map(row => ({
                     name: row.name,
                     price: row.price,
-                    product_id: row.product_id
+                    productId: row.product_id
                 }));
             } else {
                 return []; 

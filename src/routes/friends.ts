@@ -14,31 +14,32 @@ friendRouter
     .route(FRIENDS_API)
 
     // Obtain all friends for the user
-    .get(async (_req, res) => {
+    .get(async (req, res) => {
         try {
-            const userId = (_req as any).user?.id;
-            let friends = friendsRepository.obtainFriends(userId);
-            let numReq = friendsRepository.numRequest(userId);
+            const userUsername = req.body.username;
+            const friends = await friendsRepository.obtainFriends(userUsername);
+            const numReq = await friendsRepository.numRequest(userUsername);
             res.json({
                 user: friends,
                 numReq: numReq
             });
         } catch (error) {
+            console.error("Error in add:", error);
             res.status(400).json({ error: "Not posible to access to the friends" });
         }
     })
 
     // Make a new friend
-    .post(async (_req, res) => {
+    .post(async (req, res) => {
         try {
-            const userId = (_req as any).user?.id;
-            const { username } = _req.body;
+            const userId = req.body.username;
+            const { username } = req.body;
     
             if (!username) {
                 res.status(400).json({ error: "username are required" });
             }
 
-            friendsRepository.addNewFriend(username, userId);
+            await friendsRepository.addNewFriend(username, userId);
             
             res.status(200).json({ message: "New friend add successfully", userId });
         }
@@ -48,16 +49,16 @@ friendRouter
         }
     })
 
-    .delete(async (_req, res) => {
+    .delete(async (req, res) => {
         try {
-            const userId = (_req as any).user?.id;
-            const { username } = _req.body;
+            const userId = req.body.username;
+            const { username } = req.body;
     
             if (!username) {
                 res.status(400).json({ error: "username are required" });
             }
 
-            friendsRepository.deleteNewFriend(username, userId);
+            await friendsRepository.deleteNewFriend(username, userId);
             
             res.status(200).json({ message: "New friend delete successfully", userId });
         }
@@ -71,12 +72,13 @@ friendRouter
     .route(ALL_USERS)
 
     // Obtain all users
-    .get(async (_req, res) => {
+    .get(async (req, res) => {
         try {
-            const userId = (_req as any).user?.id;
-            let friends = friendsRepository.searchNewFriends(userId);
+            const userId = req.body.username;
+            const friends = await friendsRepository.searchNewFriends(userId);
             res.json(friends);
         } catch (error) {
+            console.error("Error in delete:", error);
             res.status(400).json({ error: "Not posible to access to the friends" });
         }
     })
@@ -85,26 +87,28 @@ friendRouter
     .route(FRIENDS_REQ)
 
     // friends petitions
-    .get(async (_req, res) => {
+    .get(async (req, res) => {
         try {
-            const userId = (_req as any).user?.id;
-            let friends = friendsRepository.obtainAppliedFriends(userId);
+            const userId = req.body.username;
+            const friends = await friendsRepository.obtainAppliedFriends(userId);
             res.json(friends);
         } catch (error) {
+            console.error("Error in delete:", error);
             res.status(400).json({ error: "Not posible to access to the friends" });
         }
     })
 
-    .post(async (_req, res) =>{
+    .post(async (req, res) =>{
         try {
-            const userId = (_req as any).user?.id;
-            const { username,accept } = _req.body;
+            const userId = req.body.username;
+            const { username,accept } = req.body;
             if(accept){
-                friendsRepository.acceptNewFriend(userId, username);
+                await friendsRepository.acceptNewFriend(userId, username);
             } else{
-                friendsRepository.deleteNewFriend(userId, username);
+                await friendsRepository.deleteNewFriend(userId, username);
             }
         } catch (error) {
+            console.error("Error in delete:", error);
             res.status(400).json({ error: "Not posible to access to the friends" });
         }
     });
