@@ -6,6 +6,7 @@ import {
 
 import { FRIENDS_API,ALL_USERS, FRIENDS_REQ} from "../api/restAPI.js";
 import { friendsRepository } from "../repositories/friendsRepository.js";
+import logger from "../config/logger.js";
 
 const friendRouter = Router();
 friendRouter.use(protectRoute);
@@ -20,9 +21,12 @@ friendRouter
             const friends = await friendsRepository.obtainFriends(userUsername);
             const numReq = await friendsRepository.numRequest(userUsername);
             res.json({
-                user: friends,
-                numReq: numReq
+                users: friends,
+                numRequests: numReq
             });
+            console.log(res.json);
+
+            logger.info(`[FRIENDS] Friends send correctly`);
         } catch (error) {
             console.error("Error in add:", error);
             res.status(400).json({ error: "Not posible to access to the friends" });
@@ -33,7 +37,7 @@ friendRouter
     .post(async (req, res) => {
         try {
             const userId = req.body.username;
-            const { username } = req.body;
+            const { username } = req.body.resp;
     
             if (!username) {
                 res.status(400).json({ error: "username are required" });
@@ -52,7 +56,7 @@ friendRouter
     .delete(async (req, res) => {
         try {
             const userId = req.body.username;
-            const { username } = req.body;
+            const { username } = req.body.resp;
     
             if (!username) {
                 res.status(400).json({ error: "username are required" });
@@ -101,7 +105,7 @@ friendRouter
     .post(async (req, res) =>{
         try {
             const userId = req.body.username;
-            const { username,accept } = req.body;
+            const { username,accept } = req.body.resp;
             if(accept){
                 await friendsRepository.acceptNewFriend(userId, username);
             } else{

@@ -30,8 +30,7 @@ export class friendsRepository {
                     avatar: row.avatar
                 }));
             } else {
-                logger.error("[DB] Error in database.");
-                throw new Error("Error in database");
+                return [];
             }
         } catch (error) {
             logger.error("[DB] Error in database.", error);
@@ -62,8 +61,7 @@ export class friendsRepository {
                     avatar: row.avatar
                 }));
             } else {
-                logger.error("[DB] Error in database.");
-                throw new Error("Error in database");
+                return [];
             }
         } catch (error) {
             logger.error("[DB] Error in database.", error);
@@ -94,8 +92,7 @@ export class friendsRepository {
                     avatar: row.avatar
                 }));
             } else {
-                logger.error("[DB] Error in database.");
-                throw new Error("Error in database");
+                return [];
             }
         } catch (error) {
             logger.error("[DB] Error in database.", error);
@@ -192,8 +189,9 @@ export class friendsRepository {
         try {
             await db.query(
                 `
-                UPDATE INTO friends (applied_username, applier_username, isAccepted)
-                VALUES ($1, $2, true)
+                UPDATE friends
+                SET isAccepted = true
+                WHERE applied_username = $1 AND applier_username = $2
                 `,[appliedUsername, applierUsername]);
 
         } catch (error) {
