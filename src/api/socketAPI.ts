@@ -15,6 +15,7 @@ export type BackendStateUpdateJSON = {
     turnUsername: string;
     timeOut: number;
     playerUsername: string;
+    cardsLeftInDeck: number;
 }
 
 export type CardJSON = {
@@ -87,6 +88,7 @@ export type BackendGameSelectPlayerJSON = {
     error: boolean;
     errorMsg: string;
     lobbyId: string;
+    timeOut: number;
 }
 
 export type FrontendGameSelectPlayerResponseJSON = {
@@ -108,6 +110,7 @@ export type BackendGameSelectCardJSON = {
     error: boolean;
     errorMsg: string;
     lobbyId: string;
+    timeOut: number;
 }
 
 export type FrontendGameSelectCardResponseJSON = {
@@ -130,6 +133,7 @@ export type BackendGameSelectCardTypeJSON = {
     error: boolean;
     errorMsg: string;
     lobbyId: string;
+    timeOut: number;
 }
 
 export type FrontendGameSelectCardTypeResponseJSON = {
@@ -150,7 +154,10 @@ export type BackendGameSelectNopeJSON = {
     error: boolean;
     errorMsg: string;
     lobbyId: string;
+    timeOut: number;
 }
+
+
 
 export type FrontendGameSelectNopeResponseJSON = {
     error: boolean;

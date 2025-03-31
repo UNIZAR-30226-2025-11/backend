@@ -42,7 +42,7 @@ export class GameObject {
             [CardType.Shuffle]: 5,
             [CardType.Skip]: 5,
             [CardType.Attack]: 3,
-            [CardType.Nope]: 60,
+            [CardType.Nope]: 0,
             [CardType.Favor]: 5,
             [CardType.Deactivate]: 6-numberOfPlayers,
             [CardType.RainbowCat]: 5,
@@ -59,6 +59,7 @@ export class GameObject {
         {
             this.players.push(Player.createStandarPlayer(i, playersUsernames[i], this.deck));
         }
+
         this.deck.addBombs(numberOfPlayers-1);
 
         this.numberOfPlayers = numberOfPlayers;
@@ -99,6 +100,7 @@ export class GameObject {
                     index,
                     this.players[this.turn].username, 
                     TURN_TIME_LIMIT, 
+                    this.deck.length()
                 )
             }
         });
@@ -140,6 +142,7 @@ export class GameObject {
         const id: number | undefined = this.getIdByUsername(username);
         return id !== undefined ? this.players[id] : undefined;
     }
+    
 
     /**
      * Start the turn timer
@@ -352,7 +355,7 @@ export class GameObject {
 
     reconnectPlayer(playerUsername: string): void {
         logger.info(`[GAME] Player ${playerUsername} has reconnected`);
-        
+
         const player: Player|undefined = this.getPlayerByUsername(playerUsername);
 
         if(player === undefined){
@@ -371,6 +374,7 @@ export class GameObject {
             player.id,
             this.players[this.turn].username, 
             this.turnTimeout.getRemainingTime(), 
+            this.deck.length()
         )
 
         this.callSystem.notifyMessages(
@@ -543,11 +547,11 @@ export class GameObject {
         logger.info(`[GAME] Handling new card for player ${player.username}`);
         logger.debug(`[GAME] New card: ${newCard}`);
 
-        if (newCard.type === CardType.Bomb) {
+        if (newCard.type == CardType.Bomb) {
             // If the card is a bomb
 
             // Check if the player has a deactivate card
-            const indexDeactivate = player.hand.values.findIndex( card => card.type === CardType.Deactivate );
+            const indexDeactivate = player.hand.values.findIndex( card => card.type == CardType.Deactivate );
 
             if (indexDeactivate !== -1) {
                 // If the player has a deactivate card
@@ -582,7 +586,7 @@ export class GameObject {
             this.setNextTurn();
         }
 
-        this.callSystem.notifyDrewCard(newCard, player.username);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(newCard, player.username);
     }
 
     async playCards(playedCards: CardArray, player:Player): Promise<boolean>
@@ -723,7 +727,7 @@ export class GameObject {
 
         logger.info(`[GAME] Player ${playerToSteal.username} gave a card to player ${currentPlayer.username}`);
 
-        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(cardToGive, currentPlayer.username);
 
         // Steal the card
         playerToSteal.hand.popNth(cardIndex);
@@ -781,7 +785,7 @@ export class GameObject {
         const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
 
         logger.debug(`[GAME] Player ${currentPlayer.username} has stolen the card ${cardToSteal.toString()} from player ${playerToSteal.id}`);
-        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(cardToSteal, currentPlayer.username);
         
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
@@ -798,14 +802,16 @@ export class GameObject {
 
         if(cardIndex === -1){
             logger.info(`[GAME] Player does not have the card you want to steal`);
+            this.callSystem.notifyOkPlayedCards(currentPlayer.username);
             return;
         }
 
         logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card of type ${CardType[cardType]} from player ${playerToSteal.id}`);
-        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
 
         // Steal the card
         const cardToSteal: Card = playerToSteal.hand.popNth(cardIndex);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(cardToSteal, currentPlayer.username);
+
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);

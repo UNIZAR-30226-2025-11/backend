@@ -7,6 +7,7 @@ export const SHOP_API: string = "/shop";
 export const FRIENDS_API: string = "/friends";
 export const ALL_USERS: string = "/friendsusers";
 export const FRIENDS_REQ: string = "/friends/request";
+export const USER_API: string = "/user";
 
 
 export type CategoryJSON = {

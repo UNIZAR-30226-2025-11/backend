@@ -77,7 +77,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
         const petition: BackendGameSelectCardTypeJSON = {
             error: false,
             errorMsg: "",
-            lobbyId: lobbyId
+            lobbyId: lobbyId,
+            timeOut: TIMEOUT_RESPONSE
         };
 
         const response: FrontendGameSelectCardTypeResponseJSON | undefined = 
@@ -89,6 +90,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-card-type", 
             petition,
+            this.playersUsernamesInLobby,
+            {
+                error: false,
+                errorMsg: "",
+                triggerUser: username,
+                targetUser: "",
+                action: ActionType[ActionType.AskingCardType]
+            },
             TIMEOUT_RESPONSE
         );
 
@@ -112,7 +121,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
         const petition: BackendGameSelectPlayerJSON = {
             error: false,
             errorMsg: "",
-            lobbyId: lobbyId
+            lobbyId: lobbyId,
+            timeOut: TIMEOUT_RESPONSE
         };
         
         const response: FrontendGameSelectPlayerResponseJSON | undefined = 
@@ -124,6 +134,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-player", 
             petition,
+            this.playersUsernamesInLobby,
+            {
+                error: false,
+                errorMsg: "",
+                triggerUser: username,
+                targetUser: "",
+                action: ActionType[ActionType.AskingPlayer]
+            },
             TIMEOUT_RESPONSE
         );
 
@@ -146,7 +164,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
         const petition: BackendGameSelectCardJSON = {
             error: false,
             errorMsg: "",
-            lobbyId: lobbyId
+            lobbyId: lobbyId,
+            timeOut: TIMEOUT_RESPONSE
         };
 
         const response: FrontendGameSelectCardResponseJSON | undefined = 
@@ -158,6 +177,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-card", 
             petition,
+            this.playersUsernamesInLobby,
+            {
+                error: false,
+                errorMsg: "",
+                triggerUser: username,
+                targetUser: "",
+                action: ActionType[ActionType.AskingCard]
+            },
             TIMEOUT_RESPONSE
         );
 
@@ -181,6 +208,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             error: false,
             errorMsg: "",
             lobbyId: lobbyId,
+            timeOut: TIMEOUT_RESPONSE
         };
 
         const response: FrontendGameSelectNopeResponseJSON | undefined =
@@ -192,6 +220,14 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-nope", 
             petition,
+            this.playersUsernamesInLobby,
+            {
+                error: false,
+                errorMsg: "",
+                triggerUser: username,
+                targetUser: "",
+                action: ActionType[ActionType.AskingNope]
+            },
             TIMEOUT_RESPONSE
         );
 
@@ -354,7 +390,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             errorMsg: "",
             triggerUser: triggerUser,
             targetUser: targetUser,
-            action: cardsNumber == 2 ? ActionType[ActionType.TwoWildCardAttack] : ActionType[ActionType.ThreeWildCardAttack]
+            action: cardsNumber == 2 ? ActionType[ActionType.TwoWildCardAttackSuccessful] : ActionType[ActionType.ThreeWildCardAttackSuccessful]
         }
         this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
     }
@@ -407,7 +443,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
         this.broadcastMsg<BackendPlayerStatusJSON>(msg, "player-status");
     }
 
-    notifyDrewCard(card: Card, username: string): void {
+    notifyOkPlayedCardWithCardObtained(card: Card, username: string): void {
 
         logger.info(`Notifying player ${username} that they drew a card`);
         const msg: BackendGamePlayedCardsResponseJSON = {
@@ -495,6 +531,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
         index: number,
         turnUsername: string, 
         timeOut: number, 
+        cardsLeftInDeck: number
     ): void {
 
         const username: string = players[index].username;
@@ -509,7 +546,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
             players: players.map(p => p.toJSONHidden()),
             turnUsername: turnUsername,
             timeOut: timeOut,
-            playerUsername: username
+            playerUsername: username,
+            cardsLeftInDeck: cardsLeftInDeck
         }
 
         const socket: Socket|undefined = SocketManager.getSocket(username);

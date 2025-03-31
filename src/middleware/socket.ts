@@ -52,8 +52,10 @@ export const protectSocket = (socket: Socket, next: (err?: Error) => void) => {
             return next(new Error("User already connected!"));
         }
         
+        logger.debug(`[SOCK] User ${decoded.username} authenticated!`);
         // Proceed to the next middleware or handler
         next();
+
     } catch (err) {
         if (err instanceof Error) {
             logger.error(`Authentication error: ${err.message}`);
