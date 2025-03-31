@@ -7,6 +7,7 @@ import {
 import { SHOP_API , CategoryJSON, ProductJSON} from "../api/restAPI.js";
 import {UserRepository} from "../repositories/userRepository.js"
 import { shopRepository } from "../repositories/shopRepository.js";
+import logger from "../config/logger.js";
 
 const shopRouter = Router();
 shopRouter.use(protectRoute);
@@ -48,8 +49,8 @@ shopRouter
                 JSONResponse.categories.push(categoryJSON);
             }
            
-            console.log(JSON.stringify(JSONResponse, null, 2));
             res.json({categories: JSON});
+            logger.info(`[SHOP] All shop send`);
         } catch (error) {
             console.error("Error in delete:", error);
             res.status(400).json({ error: "You can not obtain the shop" });
@@ -63,18 +64,21 @@ shopRouter
             const { categoryName, productName } = req.body.resp;
     
             if (!categoryName || !productName) {
+                logger.warn(`[SHOP] ${categoryName} and ${productName} are required`);
                 res.status(400).json({ error: "category_name and product_name are required" });
             }
 
             // Exist the product
             const productExists = await shopRepository.existProduct(productName, categoryName);
             if (!productExists) {
+                logger.warn(`[SHOP] ${categoryName} and ${productName} not exist`);
                 res.status(404).json({ error: "Product not found" });
             }
 
             const productId = await shopRepository.obtainId(productName, categoryName);
             
             if(await shopRepository.isBought(productId, username)){
+                logger.warn(`[SHOP] ${categoryName} and ${productName} just buy for the user`)
                 res.status(400).json({ error: "You have just buy this product" });
             }
 
@@ -84,6 +88,7 @@ shopRouter
             // is valid the buy
             const hasEnoughCoins = await UserRepository.isEnoughCoins(coins, username);
             if (!hasEnoughCoins) {
+                logger.warn(`[SHOP] The user do not have the necessary coins`)
                 res.status(400).json({ error: "Not enough coins" });
             }
 
@@ -93,6 +98,7 @@ shopRouter
             // add product to the table
             await shopRepository.addProduct(productId, username);
 
+            logger.info(`[SHOP] The product ${categoryName} and ${productName} has been bought`)
             res.status(200).json({ message: "Product purchased successfully", userId: username });
         }
         catch (error) {
