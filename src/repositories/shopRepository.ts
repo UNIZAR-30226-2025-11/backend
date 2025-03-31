@@ -101,7 +101,7 @@ export class shopRepository {
      * Adds a product to a user's product list in the 'user_products' table.
      *
      * @param {number} productId - The ID of the product to be added.
-     * @param {crypto.UUID} username - The ID of the user to whom the product will be added.
+     * @param {string} username - The ID of the user to whom the product will be added.
      * @returns {Promise<void>} A promise that resolves when the product is successfully added to the user's list.
      *                          Logs an error if the insertion fails.
      */
@@ -225,7 +225,7 @@ export class shopRepository {
      */
     static async isBought(
         productId: number,
-        username: crypto.UUID
+        username: string
     ) : Promise<boolean>{
         try {
         const res = await db.query(

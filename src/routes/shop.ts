@@ -60,28 +60,30 @@ shopRouter
     .post(async (req, res) => {
         try {
             const username = req.body.username;
-            const { categoryName, productName } = req.body;
+            const { categoryName, productName } = req.body.resp;
     
-            console.log('names cogidos')
             if (!categoryName || !productName) {
                 res.status(400).json({ error: "category_name and product_name are required" });
             }
 
-            console.log('busco si existe el producto')
             // Exist the product
             const productExists = await shopRepository.existProduct(productName, categoryName);
             if (!productExists) {
-                console.log('el producto ', productName, ' de la categoria ', categoryName,' no existe')
                 res.status(404).json({ error: "Product not found" });
+            }
+
+            const productId = await shopRepository.obtainId(productName, categoryName);
+            
+            if(await shopRepository.isBought(productId, username)){
+                res.status(400).json({ error: "You have just buy this product" });
             }
 
             // Obtain the coins
             const coins = await shopRepository.obtainCoinsProduct(productName, categoryName);
-            console.log('saco monedas')
+
             // is valid the buy
             const hasEnoughCoins = await UserRepository.isEnoughCoins(coins, username);
             if (!hasEnoughCoins) {
-                console.log('Not enough coins')
                 res.status(400).json({ error: "Not enough coins" });
             }
 
@@ -89,7 +91,6 @@ shopRouter
             await UserRepository.removeCoins(coins, username);
 
             // add product to the table
-            const productId = await shopRepository.obtainId(productName, categoryName);
             await shopRepository.addProduct(productId, username);
 
             res.status(200).json({ message: "Product purchased successfully", userId: username });

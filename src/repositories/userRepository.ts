@@ -201,20 +201,20 @@ export class UserRepository {
     /**
      * Check if the player has more coins than 'coins'
      * @param coins: coins necessary
-     * @param id: number id of the user
+     * @param username: number id of the user
      * @returns True if the user has enough coins, else False
      */
     static async isEnoughCoins(
         coins: number,
-        id: crypto.UUID
+        username: string
     ) :Promise<boolean> {
         try {
             const res = await db.query(
                 `
                 SELECT coins 
                 FROM users
-                WHERE id=$1
-                `, [id]);
+                WHERE username=$1
+                `, [username]);
             if (res.rows.length > 0) {
                 if(res.rows[0].coins - coins > 0){
                     return true;
@@ -233,19 +233,19 @@ export class UserRepository {
     /**
      * Reduce the coins of a user
      * @param coins: coins necessary
-     * @param id: number id of the user
+     * @param username: number id of the user
      */
     static async removeCoins(
         coins: number,
-        id: crypto.UUID
+        username: string
     ) :Promise<void> {
         try {
             const res = await db.query(
                 `
                 SELECT coins 
                 FROM users
-                WHERE id=$1
-                `, [id]);
+                WHERE username=$1
+                `, [username]);
 
             if (res.rows.length > 0) {
                 const futureCoins = res.rows[0].coins - coins
@@ -254,9 +254,9 @@ export class UserRepository {
                         `
                         UPDATE users 
                         SET coins = $1
-                        WHERE id = $2;
+                        WHERE username = $2;
                         `,
-                        [coins, id]
+                        [coins, username]
                     );
                 } 
             }
