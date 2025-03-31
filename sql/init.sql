@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS shop_products (
 );
 
 CREATE TABLE IF NOT EXISTS user_products (
-    id_user INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
     id_product INT NOT NULL REFERENCES shop_products(product_id) ON DELETE CASCADE
 );
 
@@ -45,6 +45,14 @@ CREATE TABLE IF NOT EXISTS friends (
     applied_username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
     isAccepted BOOLEAN NOT NULL DEFAULT FALSE
 );
+
+INSERT INTO shop_products (product_id,name, category, price) VALUES
+                    (0,'HairyCat', 'Avatar', 500),
+                    (1,'PotatoCat', 'Avatar', 1000),
+                    (2, 'BeardCat', 'Avatar', 1500),
+                    (3, 'Blue', 'Background', 300),
+                    (4, 'Yellow', 'Background', 600);
+
 
 -- DO THIS AT THE END, CREATE A TESTING DB THAT IS A COPY OF THE ACTUAL ONE
 DROP DATABASE IF EXISTS katboom_testing;

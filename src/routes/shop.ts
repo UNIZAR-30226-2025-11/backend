@@ -18,11 +18,9 @@ shopRouter
     .get(async (req, res) => {
         try {
             
-            await shopRepository.initProducts();
+            const JSONResponse: { categories: CategoryJSON[] } = { categories: [] };
 
-            const userId = req.body.id;
-
-            const JSON: CategoryJSON[] = [];
+            const username = req.body.username;
 
             const categories = await shopRepository.obtainAllCategories();
 
@@ -34,25 +32,24 @@ shopRouter
                     name: category,
                     products: []
                 };
-
                 const products = await shopRepository.obtainProducts(category);
                 for(const product of products){
 
-                    isBought = await shopRepository.isBought(product.productId, userId);
-
-                    const productJSON: ProductJSON = {
+                    isBought = await shopRepository.isBought(product.productId, username);
+                    
+                    categoryJSON.products.push({
                         name: product.name,
                         price: product.price,
                         isBought: isBought
-                    };
+                    });
                     
-                    categoryJSON.products.push(productJSON);
                 }
 
-                JSON.push(categoryJSON);
+                JSONResponse.categories.push(categoryJSON);
             }
-
-            res.json(JSON);
+           
+            console.log(JSON.stringify(JSONResponse, null, 2));
+            res.json({categories: JSON});
         } catch (error) {
             console.error("Error in delete:", error);
             res.status(400).json({ error: "You can not obtain the shop" });
@@ -62,36 +59,40 @@ shopRouter
     // Buy a new product
     .post(async (req, res) => {
         try {
-            const userId = req.body.id;
+            const username = req.body.username;
             const { categoryName, productName } = req.body;
     
+            console.log('names cogidos')
             if (!categoryName || !productName) {
                 res.status(400).json({ error: "category_name and product_name are required" });
             }
 
+            console.log('busco si existe el producto')
             // Exist the product
             const productExists = await shopRepository.existProduct(productName, categoryName);
             if (!productExists) {
+                console.log('el producto ', productName, ' de la categoria ', categoryName,' no existe')
                 res.status(404).json({ error: "Product not found" });
             }
 
             // Obtain the coins
             const coins = await shopRepository.obtainCoinsProduct(productName, categoryName);
-
+            console.log('saco monedas')
             // is valid the buy
-            const hasEnoughCoins = await UserRepository.isEnoughCoins(coins, userId);
+            const hasEnoughCoins = await UserRepository.isEnoughCoins(coins, username);
             if (!hasEnoughCoins) {
+                console.log('Not enough coins')
                 res.status(400).json({ error: "Not enough coins" });
             }
 
             // update coins
-            await UserRepository.removeCoins(coins, userId);
+            await UserRepository.removeCoins(coins, username);
 
             // add product to the table
             const productId = await shopRepository.obtainId(productName, categoryName);
-            await shopRepository.addProduct(productId, userId);
+            await shopRepository.addProduct(productId, username);
 
-            res.status(200).json({ message: "Product purchased successfully", userId });
+            res.status(200).json({ message: "Product purchased successfully", userId: username });
         }
         catch (error) {
             console.error("Error in purchase:", error);

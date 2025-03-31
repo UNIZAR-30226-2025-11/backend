@@ -101,20 +101,20 @@ export class shopRepository {
      * Adds a product to a user's product list in the 'user_products' table.
      *
      * @param {number} productId - The ID of the product to be added.
-     * @param {crypto.UUID} userId - The ID of the user to whom the product will be added.
+     * @param {crypto.UUID} username - The ID of the user to whom the product will be added.
      * @returns {Promise<void>} A promise that resolves when the product is successfully added to the user's list.
      *                          Logs an error if the insertion fails.
      */
     static async addProduct(
         productId: number,
-        userId: crypto.UUID,
+        username: string,
     ){
         try {
             await db.query(
                 `
-                INSERT INTO user_products (id_user, id_product)
+                INSERT INTO user_products (username, id_product)
                 VALUES ($2, $1)
-                `,[productId, userId]);
+                `,[productId, username]);
 
         } catch (error) {
             logger.error("[DB] Error in database.", error);
@@ -219,21 +219,21 @@ export class shopRepository {
      * Checks if a product has been purchased by a user.
      *
      * @param {number} productId - The ID of the product to check.
-     * @param {crypto.UUID} userId - The ID of the user to check.
+     * @param {crypto.UUID} username - The ID of the user to check.
      * @returns {Promise<boolean>} A promise that resolves to `true` if the product has been bought by the user,
      *                             or `false` if it has not been bought.
      */
     static async isBought(
         productId: number,
-        userId: crypto.UUID
+        username: crypto.UUID
     ) : Promise<boolean>{
         try {
         const res = await db.query(
             `
-            SELECT id_user
+            SELECT username
             FROM user_products
-            WHERE product_id=$2 and user_id=$1)
-            `,[productId, userId]);
+            WHERE id_product=$1 and username=$2
+            `,[productId, username]);
         
             if (res.rows.length > 0) {
                 return true;
