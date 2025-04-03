@@ -49,7 +49,7 @@ shopRouter
                 JSONResponse.categories.push(categoryJSON);
             }
            
-            res.json({categories: JSON});
+            res.json({categories: JSONResponse});
             logger.info(`[SHOP] All shop send`);
         } catch (error) {
             console.error("Error in delete:", error);
