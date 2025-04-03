@@ -4,7 +4,7 @@ import {
     protectRoute
 } from "../middleware/auth.js";
 
-import { SHOP_API , CategoryJSON, ProductJSON} from "../api/restAPI.js";
+import { SHOP_API , CategoryJSON} from "../api/restAPI.js";
 import {UserRepository} from "../repositories/userRepository.js"
 import { shopRepository } from "../repositories/shopRepository.js";
 
