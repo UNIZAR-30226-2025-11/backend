@@ -219,26 +219,4 @@ export class friendsRepository {
         }
     }
 
-    static async obtainAllOfFriends(){
-        try {
-            const res = await db.query(
-                `
-                SELECT *
-                FROM friends
-                `);
-
-                if (res.rows.length > 0) {
-                    return res.rows.map(row => ({
-                        appliedUsername: row.applied_username,
-                        applierUsername: row.applier_username,
-                        accept: row.accept
-                    }));
-                } 
-                return [];
-
-        } catch (error) {
-            logger.error("[DB] Error in database.", error);
-            throw new Error("Error in database");
-        }
-    }
 }

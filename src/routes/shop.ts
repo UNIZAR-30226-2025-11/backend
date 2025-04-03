@@ -48,8 +48,7 @@ shopRouter
                 JSONResponse.categories.push(categoryJSON);
             }
            
-            console.log(JSON.stringify(JSONResponse, null, 2));
-            res.json({categories: JSON});
+            res.json({categories: JSONResponse});
         } catch (error) {
             console.error("Error in delete:", error);
             res.status(400).json({ error: "You can not obtain the shop" });

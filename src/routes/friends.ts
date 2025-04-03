@@ -25,7 +25,6 @@ friendRouter
                 numRequests: numReq
             });
 
-            console.log(friends);
 
             logger.info(`[FRIENDS] Friends send correctly`);
         } catch (error) {
@@ -47,7 +46,6 @@ friendRouter
             await friendsRepository.addNewFriend(username, userId);
             
             logger.info(`[FRIENDS] The friend has been added`);
-            console.log('Applied: ' + username + ' Applier: ' + userId);
             
             res.status(200).json({ message: "New friend add successfully", userId });
         }
@@ -86,7 +84,7 @@ friendRouter
         try {
             const userId = req.body.username;
             const friends = await friendsRepository.searchNewFriends(userId);
-            res.json(friends);
+            res.json({users: friends});
 
             logger.info(`[FRIENDS] Obtaining all users`);
         } catch (error) {
@@ -105,7 +103,6 @@ friendRouter
             const friends = await friendsRepository.obtainAppliedFriends(userId);
             res.json(friends);
             logger.info(`[FRIENDS] Obtaining all requests`);
-            console.log(friends);
         } catch (error) {
             console.error("Error in delete:", error);
             res.status(400).json({ error: "Not posible to access to the friends" });
@@ -119,11 +116,9 @@ friendRouter
             if(accept){
                 await friendsRepository.acceptNewFriend(userId, username);
                 logger.info(`[FRIENDS] Accept one friend`);
-                console.log('Applied: ' + userId + 'Applier: ' + username);
             } else{
                 await friendsRepository.deleteNewFriend(userId, username);
                 logger.info(`[FRIENDS] Refuse one friend`);
-                console.log('Applied: ' + userId + 'Applier: ' + username);
             }
         } catch (error) {
             console.error("Error in delete:", error);
