@@ -168,9 +168,8 @@ export class friendsRepository {
         try {
             await db.query(
                 `
-                UPDATE friends 
-                SET isAccepted = true
-                WHERE applied_username = $1 AND applier_username = $2
+                INSERT INTO friends (applied_username, applier_username, isAccepted)
+                VALUES ($1, $2, false)
                 `,[appliedUsername, applierUsername]);
 
         } catch (error) {
@@ -213,6 +212,29 @@ export class friendsRepository {
                 DELETE FROM friends 
                 WHERE applied_username = $1 AND applier_username = $2
                 `,[appliedUsername, applierUsername]);
+
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
+    static async obtainAllOfFriends(){
+        try {
+            const res = await db.query(
+                `
+                SELECT *
+                FROM friends
+                `);
+
+                if (res.rows.length > 0) {
+                    return res.rows.map(row => ({
+                        appliedUsername: row.applied_username,
+                        applierUsername: row.applier_username,
+                        accept: row.accept
+                    }));
+                } 
+                return [];
 
         } catch (error) {
             logger.error("[DB] Error in database.", error);
