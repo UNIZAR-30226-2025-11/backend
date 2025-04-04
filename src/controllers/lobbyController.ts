@@ -15,57 +15,9 @@ import { LobbyRepository } from "../repositories/lobbyRepository.js";
 import { SocketManager } from "../managers/socketManager.js";
 import logger from "../config/logger.js";
 import { FrontendCreateLobbyJSONSchema, FrontendJoinLobbyJSONSchema, FrontendStartLobbyJSONSchema } from "../schemas/socketAPI.js";
+import eventBus from "../events/eventBus.js";
+import { GameEvents } from "../events/gameEvents.js";
 
-
-export async function notifyNewPlayers(lobbyId: string): Promise<void> {
-    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
-
-    const msg: BackendLobbyStateUpdateJSON = {
-        error: false,
-        errorMsg: "",
-        players: playersInLobby.map(player => { return { name: player.username, isLeader: player.isLeader } }),
-        disband: false,
-        lobbyId: lobbyId
-    }
-
-    playersInLobby.forEach(player => {
-        const socket: Socket | undefined = SocketManager.getSocket(player.username);
-
-        if(socket === undefined) {
-            logger.error("Socket not found!");
-            return;
-        }
-
-        logger.debug(`Sending "lobby-state" message to ${player.username}:\t%j`, msg);
-
-        socket.emit("lobby-state", msg);
-    });
-}
-
-export async function notifyLobbyDisband(lobbyId: string): Promise<void> {
-    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
-
-    const msg: BackendLobbyStateUpdateJSON = {
-        error: false,
-        errorMsg: "",
-        players: [],
-        disband: true,
-        lobbyId: lobbyId
-    }
-
-    playersInLobby.forEach(player => {
-        const socket: Socket | undefined = SocketManager.getSocket(player.username);
-
-        if(socket === undefined) {
-            logger.warn("Socket not found!");
-            return;
-        }
-
-        logger.debug(`Sending "lobby-state" message to ${player.username}:\t%j`, msg);
-
-        socket.emit("lobby-state", msg);
-    });
-}
 
 
 export const setupLobbyHandlers = (socket: Socket) => {
@@ -301,3 +253,53 @@ export const setupLobbyHandlers = (socket: Socket) => {
     });
 
 };
+
+eventBus.on(GameEvents.LOBBY_DISBAND, async (lobbyId: string) => {
+    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
+
+    const msg: BackendLobbyStateUpdateJSON = {
+        error: false,
+        errorMsg: "",
+        players: [],
+        disband: true,
+        lobbyId: lobbyId
+    }
+
+    playersInLobby.forEach(player => {
+        const socket: Socket | undefined = SocketManager.getSocket(player.username);
+
+        if(socket === undefined) {
+            logger.warn("Socket not found!");
+            return;
+        }
+
+        logger.debug(`Sending "lobby-state" message to ${player.username}:\t%j`, msg);
+
+        socket.emit("lobby-state", msg);
+    });
+});
+
+eventBus.on(GameEvents.NEW_PLAYERS_LOBBY, async (lobbyId: string) => {
+    const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
+
+    const msg: BackendLobbyStateUpdateJSON = {
+        error: false,
+        errorMsg: "",
+        players: playersInLobby.map(player => { return { name: player.username, isLeader: player.isLeader } }),
+        disband: false,
+        lobbyId: lobbyId
+    }
+
+    playersInLobby.forEach(player => {
+        const socket: Socket | undefined = SocketManager.getSocket(player.username);
+
+        if(socket === undefined) {
+            logger.error("Socket not found!");
+            return;
+        }
+
+        logger.debug(`Sending "lobby-state" message to ${player.username}:\t%j`, msg);
+
+        socket.emit("lobby-state", msg);
+    });
+});

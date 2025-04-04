@@ -8,6 +8,8 @@ import { CardArray } from "./CardArray.js";
 import logger from "../config/logger.js";
 import { PausableTimeout } from "./PausableTimeout.js";
 import { Message } from "./Message.js";
+import eventBus from "../events/eventBus.js";
+import { GameEvents } from "../events/gameEvents.js";
 
 export class GameObject {
     lobbyId: string;
@@ -60,7 +62,7 @@ export class GameObject {
             this.players.push(Player.createStandarPlayer(i, playersUsernames[i], this.deck));
         }
 
-        this.deck.addBombs(numberOfPlayers-1);
+        this.deck.addBombs(numberOfPlayers+1000);
 
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
@@ -159,7 +161,7 @@ export class GameObject {
             this.turnTimeout.clear();
         } 
         
-        logger.debug(`[GAME] Starting turn timer for player ${this.turn}`);
+        logger.debug(`[GAME] Starting turn timer for player ${this.players[this.turn].username}`);
         this.turnTimeout.start();
     }
 
@@ -475,6 +477,7 @@ export class GameObject {
 
         this.stopTurnTimer();
 
+        eventBus.emit(GameEvents.WINNER_SET, winner.username, this.numberOfPlayers*100, this.lobbyId);
     }
 
     getWinner(): Player | undefined {
@@ -531,7 +534,6 @@ export class GameObject {
                 // If the player does not have a nope card
                 logger.verbose(`[GAME] Player ${players[playerToNope].username} does not have a nope card`);
                 
-                await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 3000));
                 // The nope chain is resolved
                 resolved = true;
             }
@@ -596,8 +598,7 @@ export class GameObject {
 
     async playCards(playedCards: CardArray, player:Player): Promise<boolean>
     {  
-        const card: Card = playedCards.values[0];;
-        logger.info(`[GAME] Player ${player.username} is playing cards`);
+        const card: Card = playedCards.values[0];
         logger.debug(`[GAME] Cards played: ${playedCards}`);
 
         if (card.type == CardType.SeeFuture){

@@ -68,14 +68,6 @@ export type BackendWinnerJSON = {
     lobbyId: string;
 }
 
-export type FrontendWinnerResponseJSON = {
-    error: boolean;
-    errorMsg: string;
-    winnerUsername: string;
-    coinsEarned: number;
-    lobbyId: string;
-}
-
 // -----------------------------------------------------------
 // Message to send a petition to select a player of the game
 // Started by: The backend

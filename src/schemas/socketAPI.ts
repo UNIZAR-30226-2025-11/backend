@@ -17,15 +17,6 @@ export const FrontendGamePlayedCardsJSONSchema = z.object({
     lobbyId: LobbyIdSchema,
 });
 
-// FrontendWinnerResponseJSON
-export const FrontendWinnerResponseJSONSchema = z.object({
-    error: z.boolean(),
-    errorMsg: z.string(),
-    winnerUsername: z.string(),
-    coinsEarned: z.number(),
-    lobbyId: LobbyIdSchema,
-});
-
 // FrontendGameSelectPlayerResponseJSON
 export const FrontendGameSelectPlayerResponseJSONSchema = z.object({
     error: z.boolean(),
