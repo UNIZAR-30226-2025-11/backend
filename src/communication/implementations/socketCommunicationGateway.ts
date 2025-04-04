@@ -28,6 +28,7 @@ import { CardArray } from "../../models/CardArray.js";
 import { Player } from "../../models/Player.js";
 import logger from "../../config/logger.js";
 import { Message } from "../../models/Message.js";
+import { FrontendGameSelectCardResponseJSONSchema, FrontendGameSelectCardTypeResponseJSONSchema, FrontendGameSelectNopeResponseJSONSchema, FrontendGameSelectPlayerResponseJSONSchema } from "../../schemas/socketAPI.js";
 
 export class socketCommunicationGateway implements CommunicationGateway {
 
@@ -52,7 +53,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             errorMsg: "",
             messages: messagesJSON,
             lobbyId: this.lobbyId
-        }
+        };
 
         this.broadcastMsg(msg, "get-messages")
     }
@@ -98,6 +99,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 targetUser: "",
                 action: ActionType[ActionType.AskingCardType]
             },
+            FrontendGameSelectCardTypeResponseJSONSchema,
             TIMEOUT_RESPONSE
         );
 
@@ -142,6 +144,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 targetUser: "",
                 action: ActionType[ActionType.AskingPlayer]
             },
+            FrontendGameSelectPlayerResponseJSONSchema,
             TIMEOUT_RESPONSE
         );
 
@@ -185,6 +188,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 targetUser: "",
                 action: ActionType[ActionType.AskingCard]
             },
+            FrontendGameSelectCardResponseJSONSchema,
             TIMEOUT_RESPONSE
         );
 
@@ -228,6 +232,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 targetUser: "",
                 action: ActionType[ActionType.AskingNope]
             },
+            FrontendGameSelectNopeResponseJSONSchema,
             TIMEOUT_RESPONSE
         );
 

@@ -23,6 +23,5 @@ export const PGHOST: string = process.env.PGHOST || "localhost";
 export const PGPORT: number = Number(process.env.PGPORT) || 5432;
 
 export const FRONTEND_URL: string[] | string = process.env.FRONTEND_URL?.split(",") || "*";
-console.log(FRONTEND_URL);
 
 export const JWT_SECRET: string = process.env.JWT_SECRET;

@@ -18,7 +18,7 @@ export const setupGameHandlers = (socket: Socket) => {
         const username: string = socket.data.user.username;
 
         logger.info(`User "${username}" sent "game-played-cards" message`);
-        logger.debug(`Received "game-played-cards":\t%j`, data);
+        logger.debug(`Received "game-played-cards":\n%j`, data);
 
         const parsed = FrontendGamePlayedCardsJSONSchema.safeParse(data);
 
@@ -67,7 +67,7 @@ export const setupGameHandlers = (socket: Socket) => {
         const username: string = socket.data.user.username;
 
         logger.info(`Post message request received from user "${username}"`);
-        logger.debug(`Received "post-message":\t%j`, data);
+        logger.debug(`Received "post-message":\n%j`, data);
 
         const parsed = FrontendPostMsgJSONSchema.safeParse(data);
 
@@ -87,7 +87,7 @@ export const setupGameHandlers = (socket: Socket) => {
         const username: string = socket.data.user.username;
         
         logger.info(`User "${username}" sent "winner" message`);
-        logger.debug(`Received "winner":\t%j`, data);
+        logger.debug(`Received "winner":\n%j`, data);
 
         const parsed = FrontendWinnerResponseJSONSchema.safeParse(data);
 

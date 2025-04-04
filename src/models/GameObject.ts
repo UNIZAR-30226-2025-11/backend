@@ -73,7 +73,12 @@ export class GameObject {
                     logger.error(`[GAME] Player ${this.turn} not found`);
                     return;
                 }
-                this.handlePlayerLost(player);
+
+                logger.info(`[GAME] Player ${player.username} has timed out. By default, he draws a card`);
+                const newCard: Card = this.deck.drawLast();
+
+                this.handleNewCard(newCard, player);
+                this.communicateNewState();
             },
             TURN_TIME_LIMIT
         );
@@ -223,7 +228,7 @@ export class GameObject {
         const defaultType: CardType = CardType.Deactivate;
 
         const cardType: CardType = await this.handleRequestInfo<CardType>(
-            this.callSystem.getACardType,
+            this.callSystem.getACardType.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultType
@@ -240,7 +245,7 @@ export class GameObject {
         const {defaultCard: defaultCard, cardIndex: defaultIndex} = this.randomCard(requesterPlayer);
         
         const cardToSteal: Card = await this.handleRequestInfo<Card>(
-            this.callSystem.getACard,
+            this.callSystem.getACard.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultCard
@@ -265,7 +270,7 @@ export class GameObject {
         const defaultPlayer: Player = this.randomAtackablePlayer(requesterPlayer);
 
         const playerUsername: string = await this.handleRequestInfo<string>(
-            this.callSystem.getAPlayerUsername,
+            this.callSystem.getAPlayerUsername.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultPlayer.username
@@ -423,9 +428,7 @@ export class GameObject {
     setNextTurn(): void {
         if(this.numberOfTurnsLeft > 1)
         {
-            logger.verbose(`[GAME] Player ${this.turn} has ${this.numberOfTurnsLeft} turns left`);
-            this.numberOfTurnsLeft--;
-
+            logger.verbose(`[GAME] Player ${this.turn} has ${--this.numberOfTurnsLeft} turns left`);
         } else {
             logger.verbose(`[GAME] Setting next turn from ${this.players[this.turn].username}`);
             this.turn = this.nextActivePlayer();
