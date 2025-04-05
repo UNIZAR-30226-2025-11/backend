@@ -85,12 +85,6 @@ shopRouter
             // Obtain the coins
             const coins = await shopRepository.obtainCoinsProduct(productName, categoryName);
 
-            // is valid the buy
-            const hasEnoughCoins = await UserRepository.isEnoughCoins(coins, username);
-            if (!hasEnoughCoins) {
-                logger.warn(`[SHOP] The user do not have the necessary coins`)
-                res.status(400).json({ error: "Not enough coins" });
-            }
 
             // update coins
             await UserRepository.removeCoins(coins, username);

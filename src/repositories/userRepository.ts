@@ -199,38 +199,6 @@ export class UserRepository {
     }
 
     /**
-     * Check if the player has more coins than 'coins'
-     * @param coins: coins necessary
-     * @param username: number id of the user
-     * @returns True if the user has enough coins, else False
-     */
-    static async isEnoughCoins(
-        coins: number,
-        username: string
-    ) :Promise<boolean> {
-        try {
-            const res = await db.query(
-                `
-                SELECT coins 
-                FROM users
-                WHERE username=$1
-                `, [username]);
-            if (res.rows.length > 0) {
-                if(res.rows[0].coins - coins > 0){
-                    return true;
-                } else{
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch (error) {
-            logger.error("[DB] Error in database.", error);
-            throw new Error("Error in database");
-        }
-    }
-
-    /**
      * Reduce the coins of a user
      * @param coins: coins necessary
      * @param username: number id of the user
@@ -249,6 +217,7 @@ export class UserRepository {
 
             if (res.rows.length > 0) {
                 const futureCoins = res.rows[0].coins - coins
+
                 if( futureCoins > 0){
                     await db.query(
                         `
@@ -259,6 +228,10 @@ export class UserRepository {
                         [coins, username]
                     );
                 } 
+                else{
+                    logger.error("[DB] The user do not have enough coins to buy this product");
+                    throw new Error("Error in database");
+                }
             }
         } catch (error) {
             logger.error("[DB] Error in database.", error);

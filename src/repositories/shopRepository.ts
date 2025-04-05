@@ -4,36 +4,6 @@ import logger from "../config/logger.js";
 
 
 export class shopRepository {
-    /**
-     * Initializes the products in the database if they do not already exist.
-     * This function checks if there are any existing products in the 'products' table. 
-     * If no products are found, it inserts a set of default products into the table.
-     *
-     * @returns {Promise<void>} A promise that resolves when the product initialization process is complete.
-     *                          It does not return any value but logs the status of the operation.
-     *                          In case of an error during the initialization, the error is logged.
-     */
-    static async initProducts () {
-        try {
-            // Verifica si ya existen productos en la base de datos
-            const result = await db.query("SELECT COUNT(*) FROM shop_products");
-            const productCount = parseInt(result.rows[0].count);
-    
-            if (productCount === 0) {
-                // Si no hay productos, insertamos los productos iniciales
-                await db.query(`
-                    INSERT INTO shop_products (product_id,name, category, price) VALUES
-                    (0,'HairyCat', 'Avatar', 500),
-                    (1,'PotatoCat', 'Avatar', 1000),
-                    (2, 'BeardCat', 'Avatar', 1500),
-                    (3, 'Blue', 'Background', 300),
-                    (4, 'Yellow', 'Background', 600)
-                `);
-            } 
-        } catch (error) {
-            console.error("Error initializing products:", error);
-        }
-    };
 
      /**
      * Retrieves the price of a product based on its name and category.
