@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     games_won integer NOT NULL CHECK (games_won >= 0) DEFAULT 0,
 
     -- Currency available
-    coins integer NOT NULL CHECK (coins >= 0) DEFAULT 20000
+    coins integer NOT NULL CHECK (coins >= 0) DEFAULT 0
 );
 
 -- Create the lobbies table
