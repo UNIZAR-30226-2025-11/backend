@@ -200,7 +200,7 @@ export class GameObject {
         const defaultAnswer: boolean = false;
 
         const answer: boolean = await this.handleRequestInfo<boolean>(
-            this.callSystem.getNopeUsage,
+            this.callSystem.getNopeUsage.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultAnswer
