@@ -8,6 +8,8 @@ import { usersRouter } from "./routes/users.js";
 import { setupSocket } from "./socketSetup.js";
 import { FRONTEND_URL } from "./config.js";
 import { protectSocket } from "./middleware/socket.js";
+import { shopRouter } from "./routes/shop.js";
+import { friendRouter } from "./routes/friends.js";
 
 export const app = express();
 export const server = createServer(app);
@@ -41,6 +43,8 @@ app.use(cookieParser()); // Parse cookies, store them in req.cookies
 // Set up the routes
 app.use(authRouter);
 app.use(usersRouter);
+app.use(shopRouter);
+app.use(friendRouter);
 
 //app.use(handleErrors); // This runs if an exception is not handled earlier
 io.use(protectSocket);
