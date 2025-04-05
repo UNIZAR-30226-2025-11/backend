@@ -21,11 +21,11 @@ shopRouter
             
             const JSONResponse: { categories: CategoryJSON[] } = { categories: [] };
 
-            const username = req.body.username;
+            const username : string = req.body.username;
 
-            const categories = await shopRepository.obtainAllCategories();
+            const categories : string[] = await shopRepository.obtainAllCategories();
 
-            let isBought=false;
+            let isBought : boolean = false;
            
             for (const category of categories){
 
@@ -33,7 +33,11 @@ shopRouter
                     name: category,
                     products: []
                 };
-                const products = await shopRepository.obtainProducts(category);
+                const products : {
+                    name: string;
+                    price: number;
+                    productId: number;
+                }[] = await shopRepository.obtainProducts(category);
                 for(const product of products){
 
                     isBought = await shopRepository.isBought(product.productId, username);
@@ -60,7 +64,7 @@ shopRouter
     // Buy a new product
     .post(async (req, res) => {
         try {
-            const username = req.body.username;
+            const username : string = req.body.username;
             const { categoryName, productName } = req.body.resp;
     
             if (!categoryName || !productName) {
@@ -69,13 +73,13 @@ shopRouter
             }
 
             // Exist the product
-            const productExists = await shopRepository.existProduct(productName, categoryName);
+            const productExists : boolean = await shopRepository.existProduct(productName, categoryName);
             if (!productExists) {
                 logger.warn(`[SHOP] ${categoryName} and ${productName} not exist`);
                 res.status(404).json({ error: "Product not found" });
             }
 
-            const productId = await shopRepository.obtainId(productName, categoryName);
+            const productId : number = await shopRepository.obtainId(productName, categoryName);
             
             if(await shopRepository.isBought(productId, username)){
                 logger.warn(`[SHOP] ${categoryName} and ${productName} just buy for the user`)
@@ -83,7 +87,7 @@ shopRouter
             }
 
             // Obtain the coins
-            const coins = await shopRepository.obtainCoinsProduct(productName, categoryName);
+            const coins : number = await shopRepository.obtainCoinsProduct(productName, categoryName);
 
 
             // update coins
