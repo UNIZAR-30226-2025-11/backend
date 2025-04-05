@@ -20,7 +20,6 @@ import {
     MsgJSON,
 } from "../../api/socketAPI.js";
 import { SocketManager } from "../../managers/socketManager.js";
-import { TIMEOUT_RESPONSE } from "../../constants/constants.js";
 import { CardType, Card } from "../../models/Card.js";
 import { handleError } from "../../constants/constants.js";
 import { ActionType } from "../../models/ActionType.js";
@@ -29,6 +28,7 @@ import { Player } from "../../models/Player.js";
 import logger from "../../config/logger.js";
 import { Message } from "../../models/Message.js";
 import { FrontendGameSelectCardResponseJSONSchema, FrontendGameSelectCardTypeResponseJSONSchema, FrontendGameSelectNopeResponseJSONSchema, FrontendGameSelectPlayerResponseJSONSchema } from "../../schemas/socketAPI.js";
+import { TIMEOUT_RESPONSE } from "../../config.js";
 
 export class socketCommunicationGateway implements CommunicationGateway {
 

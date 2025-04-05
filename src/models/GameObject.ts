@@ -1,6 +1,5 @@
 import { Player } from "./Player.js";
 import { CommunicationGateway } from "../communication/interface/communicationGateway.js";
-import { TURN_TIME_LIMIT } from "../constants/constants.js";
 import { Deck } from "./Deck.js";
 import { Play } from "./Play.js";
 import { Card, CardType } from "./Card.js";
@@ -10,6 +9,7 @@ import { PausableTimeout } from "./PausableTimeout.js";
 import { Message } from "./Message.js";
 import eventBus from "../events/eventBus.js";
 import { GameEvents } from "../events/gameEvents.js";
+import { CARD_COUNTS, EXTRA_BOMBS, EXTRA_DEACTIVATES, TURN_TIME_LIMIT } from "../config.js";
 
 export class GameObject {
     lobbyId: string;
@@ -38,22 +38,7 @@ export class GameObject {
         this.callSystem = comm;
 
         this.deck = new Deck();
-        const cardCounts: { [key in CardType]: number } = {
-            [CardType.Bomb]: 0,
-            [CardType.SeeFuture]: 5,
-            [CardType.Shuffle]: 5,
-            [CardType.Skip]: 5,
-            [CardType.Attack]: 3,
-            [CardType.Nope]: 0,
-            [CardType.Favor]: 5,
-            [CardType.Deactivate]: 6-numberOfPlayers,
-            [CardType.RainbowCat]: 5,
-            [CardType.TacoCat]: 5,
-            [CardType.HairyPotatoCat]: 5,
-            [CardType.Cattermelon]: 5,
-            [CardType.BeardCat]: 5
-        };
-        this.deck.addCards(cardCounts);
+        this.deck.addCards(CARD_COUNTS);
         this.deck.shuffle();
 
         this.players = [];
@@ -62,7 +47,8 @@ export class GameObject {
             this.players.push(Player.createStandarPlayer(i, playersUsernames[i], this.deck));
         }
 
-        this.deck.addBombs(numberOfPlayers+1000);
+        this.deck.addDeactivates(numberOfPlayers+EXTRA_DEACTIVATES);
+        this.deck.addBombs(numberOfPlayers-1+EXTRA_BOMBS);
 
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
