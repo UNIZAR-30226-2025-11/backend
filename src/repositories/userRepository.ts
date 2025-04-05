@@ -2,6 +2,7 @@ import { db } from "../db.js";
 import crypto from "node:crypto";
 import { UserEntity } from "../models/User.js";
 import logger from "../config/logger.js";
+import bcrypt from "bcrypt";
 
 
 export class UserRepository {
@@ -92,8 +93,12 @@ export class UserRepository {
         id: crypto.UUID,
         user: Partial<UserEntity>,
     ): Promise<boolean> {
+
+        if(user.password !== undefined){
+            user.password = await bcrypt.hash(user.password, 10);
+        }
+        
         const columns = Object.keys(user) as Array<keyof UserEntity>;
-    
         const setStatement = columns
             .map((key, index) => `${key}=$${index + 2}`)
             .join(", ");
