@@ -117,6 +117,6 @@ export class GameManager {
 
 }
 
-eventBus.on(GameEvents.WINNER_SET, (username: string, coinsEarned: number, lobbyId: string) => {
-    GameManager.handleWinner(username, coinsEarned, lobbyId);
+eventBus.on(GameEvents.WINNER_SET, async (username: string, coinsEarned: number, lobbyId: string) => {
+    await GameManager.handleWinner(username, coinsEarned, lobbyId);
 });
