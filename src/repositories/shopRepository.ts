@@ -18,6 +18,7 @@ export class shopRepository {
         categoryName: string
     ) : Promise<number> {
         try {
+            logger.silly(`[DB] AWAIT: Obtaining coins of the product`);
             const res = await db.query(
                 `
                 SELECT price 
@@ -25,6 +26,7 @@ export class shopRepository {
                 WHERE category=$1 and name=$2
                 `, [categoryName, productName]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Got coins`);
                 return res.rows[0].price;
             } else {
                 logger.error("[DB] Error in database.");
@@ -49,6 +51,7 @@ export class shopRepository {
         categoryName: string
     ) : Promise<number>{
         try {
+            logger.silly(`[DB] AWAIT: Getting id of the product`);
             const res = await db.query(
                 `
                 SELECT product_id 
@@ -56,6 +59,7 @@ export class shopRepository {
                 WHERE category=$1 and name=$2
                 `, [categoryName, productName]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Got id of the product`);
                 return res.rows[0].product_id;
             } else {
                 logger.error("[DB] Error in database.");
@@ -80,12 +84,14 @@ export class shopRepository {
         username: string,
     ){
         try {
+            logger.silly(`[DB] AWAIT: Adding the product to the user`);
             await db.query(
                 `
                 INSERT INTO user_products (username, id_product)
                 VALUES ($2, $1)
                 `,[productId, username]);
-
+            
+                logger.silly(`[DB] DONE: Add the product`);
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");
@@ -106,6 +112,7 @@ export class shopRepository {
     ) : Promise<boolean>{
 
         try {
+            logger.silly(`[DB] AWAIT: Getting if exist one product`);
             const res = await db.query(
                 `
                 SELECT price 
@@ -113,6 +120,7 @@ export class shopRepository {
                 WHERE category=$1 and name=$2
                 `, [categoryName, productName]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Got the product`);
                 return true;
             } else {
                 return false;
@@ -132,12 +140,15 @@ export class shopRepository {
      */
     static async obtainAllCategories() : Promise<string[]>{
         try {
+            logger.silly(`[DB] AWAIT: Obtaining all the categories`);
             const res = await db.query(
                 `
                 SELECT DISTINCT category 
                 FROM shop_products
                 `);
             if (res.rows.length > 0) {
+
+                logger.silly(`[DB] DONE: Categories has been obtained`);
                 // Usamos map para extraer solo los valores de la columna 'category'
                 return res.rows.map(row => row.category);
             } else {
@@ -162,6 +173,7 @@ export class shopRepository {
         category: string
     ) : Promise<{ name: string, price: number, productId: number }[]>{
         try {
+            logger.silly(`[DB] AWAIT: Obtaining info for the product`);
             const res = await db.query(
                 `
                 SELECT name, price, product_id
@@ -171,6 +183,7 @@ export class shopRepository {
 
             if (res.rows.length > 0) {
                
+                logger.silly(`[DB] DONE: Got info of the product`);
                 return res.rows.map(row => ({
                     name: row.name,
                     price: row.price,
@@ -198,6 +211,7 @@ export class shopRepository {
         username: string
     ) : Promise<boolean>{
         try {
+            logger.silly(`[DB] AWAIT: Getting if a product has been bought for a user`);
         const res = await db.query(
             `
             SELECT username
@@ -206,6 +220,7 @@ export class shopRepository {
             `,[productId, username]);
         
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Getting if it is bought`);
                 return true;
             } else {
                 return false; 

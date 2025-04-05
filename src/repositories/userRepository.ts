@@ -208,6 +208,7 @@ export class UserRepository {
         username: string
     ) :Promise<void> {
         try {
+            logger.silly(`[DB] AWAIT: Obtaining the coins`);
             const res = await db.query(
                 `
                 SELECT coins 
@@ -218,7 +219,10 @@ export class UserRepository {
             if (res.rows.length > 0) {
                 const futureCoins = res.rows[0].coins - coins
 
+                logger.silly(`[DB] DONE: Obtained the coins`);
+
                 if( futureCoins > 0){
+                    logger.silly(`[DB] AWAIT: Updating the coins`);
                     await db.query(
                         `
                         UPDATE users 
@@ -227,6 +231,7 @@ export class UserRepository {
                         `,
                         [coins, username]
                     );
+                    logger.silly(`[DB] DONE: Update the coins`);
                 } 
                 else{
                     logger.error("[DB] The user do not have enough coins to buy this product");
