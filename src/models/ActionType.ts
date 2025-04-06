@@ -10,6 +10,10 @@ export enum ActionType {
     FutureSeen,
     NopeUsed,
     FavorAttack,
-    TwoWildCardAttack,
-    ThreeWildCardAttack,
+    TwoWildCardAttackSuccessful,
+    ThreeWildCardAttackSuccessful,
+    AskingNope,
+    AskingPlayer,
+    AskingCard,
+    AskingCardType,
 }

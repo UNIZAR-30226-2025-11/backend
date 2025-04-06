@@ -33,7 +33,11 @@ export class Deck {
             }
         }
     }
-    
+
+    length(): number {
+        return this.cards.length();
+    }
+
     /**
      * Shuffles the deck by randomly rearranging the cards.
      * Uses the `.sort()` method with `Math.random()`.
@@ -44,11 +48,22 @@ export class Deck {
 
     /**
      * Add the cards of Boom
-     * @param numPlayers - Number of players who play
+     * @param numCards - Number of players who play
      */
-    addBombs(numPlayers: number){
-        for (let i = 0; i < numPlayers-1; i++) {
+    addBombs(numCards: number){
+        for (let i = 0; i < numCards; i++) {
             this.addNewCard(CardType.Bomb);
+        }
+        this.shuffle();
+    }
+
+    /**
+     * Add the cards of Deactivate
+     * @param numCards - Number of players who play
+     */
+    addDeactivates(numCards: number){
+        for (let i = 0; i < numCards; i++) {
+            this.addNewCard(CardType.Deactivate);
         }
         this.shuffle();
     }

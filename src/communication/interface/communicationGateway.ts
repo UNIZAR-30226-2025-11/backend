@@ -24,8 +24,8 @@ export interface CommunicationGateway {
     broadcastPlayerReconnect(playerUsername: string): void;
 
     // Individual methods to notify a player
-    notifyGameState(players: Player[], index:number, turnUsername: string, timeOut: number): void;
-    notifyDrewCard(card: Card, username: string): void;
+    notifyGameState(players: Player[], index:number, turnUsername: string, timeOut: number, cardsLeftInDeck: number): void;
+    notifyOkPlayedCardWithCardObtained(card: Card, username: string): void;
     notifyFutureCards(cards: CardArray, username: string): void;
     notifyOkPlayedCards(username: string): void;
     notifyMessages(username: string, messages: Message[]): void;

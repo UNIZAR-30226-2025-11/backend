@@ -1,6 +1,5 @@
 import { Player } from "./Player.js";
 import { CommunicationGateway } from "../communication/interface/communicationGateway.js";
-import { TURN_TIME_LIMIT } from "../constants/constants.js";
 import { Deck } from "./Deck.js";
 import { Play } from "./Play.js";
 import { Card, CardType } from "./Card.js";
@@ -8,6 +7,9 @@ import { CardArray } from "./CardArray.js";
 import logger from "../config/logger.js";
 import { PausableTimeout } from "./PausableTimeout.js";
 import { Message } from "./Message.js";
+import eventBus from "../events/eventBus.js";
+import { GameEvents } from "../events/gameEvents.js";
+import { CARD_COUNTS, EXTRA_BOMBS, EXTRA_DEACTIVATES, TURN_TIME_LIMIT } from "../config.js";
 
 export class GameObject {
     lobbyId: string;
@@ -36,22 +38,7 @@ export class GameObject {
         this.callSystem = comm;
 
         this.deck = new Deck();
-        const cardCounts: { [key in CardType]: number } = {
-            [CardType.Bomb]: 0,
-            [CardType.SeeFuture]: 5,
-            [CardType.Shuffle]: 5,
-            [CardType.Skip]: 5,
-            [CardType.Attack]: 3,
-            [CardType.Nope]: 60,
-            [CardType.Favor]: 5,
-            [CardType.Deactivate]: 6-numberOfPlayers,
-            [CardType.RainbowCat]: 5,
-            [CardType.TacoCat]: 5,
-            [CardType.HairyPotatoCat]: 5,
-            [CardType.Cattermelon]: 5,
-            [CardType.BeardCat]: 5
-        };
-        this.deck.addCards(cardCounts);
+        this.deck.addCards(CARD_COUNTS);
         this.deck.shuffle();
 
         this.players = [];
@@ -59,7 +46,9 @@ export class GameObject {
         {
             this.players.push(Player.createStandarPlayer(i, playersUsernames[i], this.deck));
         }
-        this.deck.addBombs(numberOfPlayers-1);
+
+        this.deck.addDeactivates(numberOfPlayers+EXTRA_DEACTIVATES);
+        this.deck.addBombs(numberOfPlayers-1+EXTRA_BOMBS);
 
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
@@ -72,7 +61,12 @@ export class GameObject {
                     logger.error(`[GAME] Player ${this.turn} not found`);
                     return;
                 }
-                this.handlePlayerLost(player);
+
+                logger.info(`[GAME] Player ${player.username} has timed out. By default, he draws a card`);
+                const newCard: Card = this.deck.drawLast();
+
+                this.handleNewCard(newCard, player);
+                this.communicateNewState();
             },
             TURN_TIME_LIMIT
         );
@@ -99,6 +93,7 @@ export class GameObject {
                     index,
                     this.players[this.turn].username, 
                     TURN_TIME_LIMIT, 
+                    this.deck.length()
                 )
             }
         });
@@ -140,6 +135,7 @@ export class GameObject {
         const id: number | undefined = this.getIdByUsername(username);
         return id !== undefined ? this.players[id] : undefined;
     }
+    
 
     /**
      * Start the turn timer
@@ -151,7 +147,7 @@ export class GameObject {
             this.turnTimeout.clear();
         } 
         
-        logger.debug(`[GAME] Starting turn timer for player ${this.turn}`);
+        logger.debug(`[GAME] Starting turn timer for player ${this.players[this.turn].username}`);
         this.turnTimeout.start();
     }
 
@@ -204,7 +200,7 @@ export class GameObject {
         const defaultAnswer: boolean = false;
 
         const answer: boolean = await this.handleRequestInfo<boolean>(
-            this.callSystem.getNopeUsage,
+            this.callSystem.getNopeUsage.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultAnswer
@@ -220,7 +216,7 @@ export class GameObject {
         const defaultType: CardType = CardType.Deactivate;
 
         const cardType: CardType = await this.handleRequestInfo<CardType>(
-            this.callSystem.getACardType,
+            this.callSystem.getACardType.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultType
@@ -237,7 +233,7 @@ export class GameObject {
         const {defaultCard: defaultCard, cardIndex: defaultIndex} = this.randomCard(requesterPlayer);
         
         const cardToSteal: Card = await this.handleRequestInfo<Card>(
-            this.callSystem.getACard,
+            this.callSystem.getACard.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultCard
@@ -262,7 +258,7 @@ export class GameObject {
         const defaultPlayer: Player = this.randomAtackablePlayer(requesterPlayer);
 
         const playerUsername: string = await this.handleRequestInfo<string>(
-            this.callSystem.getAPlayerUsername,
+            this.callSystem.getAPlayerUsername.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultPlayer.username
@@ -352,7 +348,7 @@ export class GameObject {
 
     reconnectPlayer(playerUsername: string): void {
         logger.info(`[GAME] Player ${playerUsername} has reconnected`);
-        
+
         const player: Player|undefined = this.getPlayerByUsername(playerUsername);
 
         if(player === undefined){
@@ -371,6 +367,7 @@ export class GameObject {
             player.id,
             this.players[this.turn].username, 
             this.turnTimeout.getRemainingTime(), 
+            this.deck.length()
         )
 
         this.callSystem.notifyMessages(
@@ -419,9 +416,7 @@ export class GameObject {
     setNextTurn(): void {
         if(this.numberOfTurnsLeft > 1)
         {
-            logger.verbose(`[GAME] Player ${this.turn} has ${this.numberOfTurnsLeft} turns left`);
-            this.numberOfTurnsLeft--;
-
+            logger.verbose(`[GAME] Player ${this.turn} has ${--this.numberOfTurnsLeft} turns left`);
         } else {
             logger.verbose(`[GAME] Setting next turn from ${this.players[this.turn].username}`);
             this.turn = this.nextActivePlayer();
@@ -468,6 +463,7 @@ export class GameObject {
 
         this.stopTurnTimer();
 
+        eventBus.emit(GameEvents.WINNER_SET, winner.username, this.numberOfPlayers*100, this.lobbyId);
     }
 
     getWinner(): Player | undefined {
@@ -523,6 +519,7 @@ export class GameObject {
             } else {
                 // If the player does not have a nope card
                 logger.verbose(`[GAME] Player ${players[playerToNope].username} does not have a nope card`);
+                
                 // The nope chain is resolved
                 resolved = true;
             }
@@ -543,11 +540,11 @@ export class GameObject {
         logger.info(`[GAME] Handling new card for player ${player.username}`);
         logger.debug(`[GAME] New card: ${newCard}`);
 
-        if (newCard.type === CardType.Bomb) {
+        if (newCard.type == CardType.Bomb) {
             // If the card is a bomb
 
             // Check if the player has a deactivate card
-            const indexDeactivate = player.hand.values.findIndex( card => card.type === CardType.Deactivate );
+            const indexDeactivate = player.hand.values.findIndex( card => card.type == CardType.Deactivate );
 
             if (indexDeactivate !== -1) {
                 // If the player has a deactivate card
@@ -582,13 +579,12 @@ export class GameObject {
             this.setNextTurn();
         }
 
-        this.callSystem.notifyDrewCard(newCard, player.username);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(newCard, player.username);
     }
 
     async playCards(playedCards: CardArray, player:Player): Promise<boolean>
     {  
-        const card: Card = playedCards.values[0];;
-        logger.info(`[GAME] Player ${player.username} is playing cards`);
+        const card: Card = playedCards.values[0];
         logger.debug(`[GAME] Cards played: ${playedCards}`);
 
         if (card.type == CardType.SeeFuture){
@@ -723,7 +719,7 @@ export class GameObject {
 
         logger.info(`[GAME] Player ${playerToSteal.username} gave a card to player ${currentPlayer.username}`);
 
-        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(cardToGive, currentPlayer.username);
 
         // Steal the card
         playerToSteal.hand.popNth(cardIndex);
@@ -781,7 +777,7 @@ export class GameObject {
         const cardToSteal: Card = playerToSteal.hand.popNth(cardId);
 
         logger.debug(`[GAME] Player ${currentPlayer.username} has stolen the card ${cardToSteal.toString()} from player ${playerToSteal.id}`);
-        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(cardToSteal, currentPlayer.username);
         
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
@@ -798,14 +794,16 @@ export class GameObject {
 
         if(cardIndex === -1){
             logger.info(`[GAME] Player does not have the card you want to steal`);
+            this.callSystem.notifyOkPlayedCards(currentPlayer.username);
             return;
         }
 
         logger.info(`[GAME] Player ${currentPlayer.username} has stolen a card of type ${CardType[cardType]} from player ${playerToSteal.id}`);
-        this.callSystem.notifyOkPlayedCards(currentPlayer.username);
 
         // Steal the card
         const cardToSteal: Card = playerToSteal.hand.popNth(cardIndex);
+        this.callSystem.notifyOkPlayedCardWithCardObtained(cardToSteal, currentPlayer.username);
+
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);

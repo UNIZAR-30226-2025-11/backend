@@ -1,5 +1,7 @@
 import { Socket } from "socket.io";
 import logger from "../config/logger.js";
+import { BackendNotifyActionJSON } from "../api/socketAPI.js";
+import { ZodTypeAny } from "zod";
 
 export class SocketManager {
 
@@ -45,6 +47,19 @@ export class SocketManager {
         return this.sockets.has(username);
     }
     
+    static broadCastEvent<TMsg>(event: string, msg: TMsg, usernames: string[]) {
+        logger.debug(`Broadcasting in event ${event} message %j`, msg);
+        usernames.forEach((username) => {
+            logger.debug(`Sending message to ${username}.`);
+            const socket: Socket | undefined = this.getSocket(username);
+            if (socket) {
+                socket.emit(event, msg);
+            } else {
+                logger.error(`Socket not found for ${username}`);
+            }
+        });
+    }
+
     /**
      * This function sends a request to the player and waits for a response via
      * the socket event. If the player does not respond within the timeOut, the
@@ -59,13 +74,23 @@ export class SocketManager {
         username: string, 
         socketEvent: string, 
         requestData: TRequest,
+        usernames: string[],
+        actionData: BackendNotifyActionJSON,
+        schema: ZodTypeAny,
         timeOut: number
     ): Promise<TResponse | undefined> {
+
         const socket: Socket | undefined = this.getSocket(username);
         if (socket === undefined) {
             logger.error(`Socket not found for ${username}`);
             return Promise.resolve(undefined);
         }
+        
+        this.broadCastEvent<BackendNotifyActionJSON>(
+            "notify-action",
+            actionData,
+            usernames
+        );
 
         return new Promise((resolve) => {
             logger.debug(`Sending request to ${username} on event ${socketEvent}:\t%j`, requestData);
@@ -78,9 +103,23 @@ export class SocketManager {
                 resolve(undefined);
             }, timeOut);
     
-            socket.once(socketEvent, (response: TResponse) => {
+            socket.once(socketEvent, (data: unknown) => {
                 clearTimeout(timeout);
-                logger.debug(`DONE: Response received from ${username} on event ${socketEvent}:\t%j`, response);
+                logger.debug(`DONE: Response received from ${username} on event ${socketEvent}:\t%j`, data);
+                
+                // Try decoding it given the parameter schema
+
+                const parsed = schema.safeParse(data);
+
+                if(!parsed.success) {
+                    logger.warn(`Invalid JSON: ${parsed.error}`);
+
+                    resolve(undefined)
+                }
+
+                const response: TResponse = parsed.data as TResponse;
+
+                
                 resolve(response);
             });
         });

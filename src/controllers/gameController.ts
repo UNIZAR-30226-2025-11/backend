@@ -3,39 +3,50 @@ import { GameManager } from "../managers/gameManager.js";
 import { 
     FrontendGamePlayedCardsJSON,
     BackendGamePlayedCardsResponseJSON,
-    FrontendWinnerResponseJSON,
     FrontendPostMsgJSON
 } from "../api/socketAPI.js";
 import { CardArray } from "../models/CardArray.js";
 import { handleError } from "../constants/constants.js";
 import logger from "../config/logger.js";
+import { FrontendGamePlayedCardsJSONSchema, FrontendPostMsgJSONSchema} from "../schemas/socketAPI.js";
+import { LobbyManager } from "../managers/lobbyManager.js";
 
 export const setupGameHandlers = (socket: Socket) => {
 
-    socket.on("game-played-cards", async (playedCardsJSON: FrontendGamePlayedCardsJSON) => {
+    socket.on("game-played-cards", async (data: unknown) => {
         
-        logger.info(`User "${socket.data.user.username}" sent "game-played-cards" message`);
-        logger.debug(`Received "game-played-cards":\t%j`, playedCardsJSON);
-
-        handleError(playedCardsJSON.error, playedCardsJSON.errorMsg);
-
-        const lobbyId: string = playedCardsJSON.lobbyId;
         const username: string = socket.data.user.username;
 
-        if (lobbyId === undefined || lobbyId === "") {
+        logger.info(`User "${username}" sent "game-played-cards" message`);
+        logger.debug(`Received "game-played-cards":\n%j`, data);
 
-            logger.warn(`Not lobby id provided!`);
+        const parsed = FrontendGamePlayedCardsJSONSchema.safeParse(data);
+
+        if (!parsed.success) {
+            logger.warn(`Invalid JSON: ${parsed.error}`);
 
             const response: BackendGamePlayedCardsResponseJSON = 
             {
                 error: true,
-                errorMsg: "Not lobby id provided!",
+                errorMsg: `Error ${parsed.error} in data sent.`,
                 cardsSeeFuture: [],
                 cardReceived: {id: -1, type: ""},
             };
-
+            
             logger.debug(`Sending response "game-played-cards":\t%j`, response);
             socket.emit("game-played-cards", response);
+            return;
+        }
+
+        const playedCardsJSON = parsed.data as FrontendGamePlayedCardsJSON;
+
+        handleError(playedCardsJSON.error, playedCardsJSON.errorMsg);
+
+        const lobbyId: string = playedCardsJSON.lobbyId;
+
+        if (!await LobbyManager.lobbyExists(lobbyId)) {
+            
+            logger.warn(`Lobby ${lobbyId} does not exist!`);
             return;
         }
 
@@ -58,39 +69,31 @@ export const setupGameHandlers = (socket: Socket) => {
     
     });
 
-    socket.on("post-message", (msg: FrontendPostMsgJSON) => {
+    socket.on("post-message", async (data: unknown) => {
 
         const username: string = socket.data.user.username;
 
-        logger.info(`Got message from player ${username}`);
+        logger.info(`Post message request received from user "${username}"`);
+        logger.debug(`Received "post-message":\n%j`, data);
 
-        const lobbyId: string = msg.lobbyId;
+        const parsed = FrontendPostMsgJSONSchema.safeParse(data);
 
-        if(lobbyId === undefined || lobbyId === ""){
-            logger.warn(`No lobby specified.`);
+        if (!parsed.success) {
+            logger.warn(`Invalid JSON: ${parsed.error}`);
             return;
         }
 
-        if(msg.msg === ""){
-            logger.warn(`No message specified.`);
+        const msg: FrontendPostMsgJSON = parsed.data as FrontendPostMsgJSON;
+
+        handleError(msg.error, msg.errorMsg);
+
+        if (!await LobbyManager.lobbyExists(msg.lobbyId)) {
+            
+            logger.warn(`Lobby ${msg.lobbyId} does not exist!`);
             return;
         }
 
         GameManager.addMessage(msg.msg, username, msg.lobbyId);
-    });
-
-
-    socket.on("winner", async (response: FrontendWinnerResponseJSON) => {
-       
-        const username: string = socket.data.user.username;
-        
-        logger.info(`User "${username}" sent "winner" message`);
-        logger.debug(`Received "winner":\t%j`, response);
-
-        handleError(response.error, response.errorMsg);
-
-        await GameManager.handleWinner(username, response.coinsEarned, response.lobbyId);
-
     });
 
 };

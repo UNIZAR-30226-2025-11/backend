@@ -2,10 +2,9 @@ import { GameObject } from "../models/GameObject.js";
 import { socketCommunicationGateway } from "../communication/implementations/socketCommunicationGateway.js"
 import { LobbyRepository } from "../repositories/lobbyRepository.js";
 import { GameManager } from "./gameManager.js";
-import { notifyNewPlayers, notifyLobbyDisband } from "../controllers/lobbyController.js";
 import logger from "../config/logger.js";
-import { Socket } from "socket.io";
-import { SocketManager } from "./socketManager.js";
+import { GameEvents } from "../events/gameEvents.js";
+import eventBus from "../events/eventBus.js";
 
 
 export class LobbyManager {
@@ -41,10 +40,10 @@ export class LobbyManager {
             logger.verbose(`Removing player ${username} from lobby ${lobbyId}.`);
             await LobbyRepository.removePlayerFromLobby(username, lobbyId);
             
-            const socket: Socket | undefined = SocketManager.getSocket(username);
-            if (socket !== undefined) {
-                SocketManager.removeSocket(username);
-            }
+            // const socket: Socket | undefined = SocketManager.getSocket(username);
+            // if (socket !== undefined) {
+            //     SocketManager.removeSocket(username);
+            // }
         }
 
         const game: GameObject | undefined = this.lobbiesGames.get(lobbyId);
@@ -83,7 +82,7 @@ export class LobbyManager {
         // Add the leader to the players in this lobby
         await LobbyRepository.addPlayer(lobbyLeaderUsername, newLobbyId)
 
-        await notifyNewPlayers(newLobbyId);
+        eventBus.emit(GameEvents.NEW_PLAYERS_LOBBY, newLobbyId);
 
         return newLobbyId;
     }
@@ -143,7 +142,7 @@ export class LobbyManager {
         }
     
         await LobbyRepository.addPlayer(username, lobbyId);
-        await notifyNewPlayers(lobbyId);
+        eventBus.emit(GameEvents.NEW_PLAYERS_LOBBY, lobbyId);
 
         return true;
     }
@@ -230,12 +229,14 @@ export class LobbyManager {
         } 
 
         if(isLeader) {
-            await notifyLobbyDisband(lobbyId);
+            // If the player is the leader, disband the lobby
+            eventBus.emit(GameEvents.LOBBY_DISBAND, lobbyId);
             await LobbyRepository.removeLobby(lobbyId);
             return;
         } else {
+            // If the player is not the leader, remove him from the lobby
             await LobbyRepository.removePlayerFromLobby(username, lobbyId);
-            await notifyNewPlayers(lobbyId);
+            eventBus.emit(GameEvents.NEW_PLAYERS_LOBBY, lobbyId);
         }
 
         return;
@@ -266,9 +267,12 @@ export class LobbyManager {
         const game: GameObject | undefined = this.lobbiesGames.get(lobbyId);
 
         if(game === undefined) {
+            logger.verbose(`Games : ${this.lobbiesGames.forEach((value, _key) => value)}`);
             logger.error(`Error getting the game object!`);
             return;
         }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         game.reconnectPlayer(username);
     
