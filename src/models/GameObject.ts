@@ -498,16 +498,17 @@ export class GameObject {
         while(!resolved){
             // While the nope chain is not resolved
 
-            // Check if the player has a nope card
-            const indexNope: number = players[playerToNope].hand.hasCardType(CardType.Nope);
-            
-            if(indexNope !== -1){
-                // If the player has a nope card
+            // Ask the player if he wants to use the nope card
+            const usedNope: boolean = await this.requestNopeUsage(players[playerToNope]);
+            if(usedNope){
+                // If the player uses the nope card
 
-                // Ask the player if he wants to use the nope card
-                const usedNope: boolean = await this.requestNopeUsage(players[playerToNope]);
-                if(usedNope){
-                    // If the player uses the nope card
+                // Check if the player has a nope card
+                const indexNope: number = players[playerToNope].hand.hasCardType(CardType.Nope);
+    
+                if(indexNope !== -1){
+                    // If the player has a nope card
+
                     // Remove the nope card from the player
                     this.lastPlayedCard = players[playerToNope].hand.popNth(indexNope);
 
@@ -519,20 +520,25 @@ export class GameObject {
 
                     this.communicateNewState();
                 } else {
-                    // If the player does not use the nope card
-                    logger.verbose(`[GAME] Player ${players[playerToNope].username} does not want to use a nope card`);
-
+                    // If the player does not have a nope card
+                    logger.warn(`[GAME] Player ${players[playerToNope].username} does not have a nope card and want to use it. By default, not use it.`);
+                    
+                    // Notify the rest of the players that the nope card has not been used
                     this.callSystem.broadcastAction(ActionType.NopeNotUsed, players[playerToNope].username, players[(playerToNope + 1) % 2].username);
+                    
                     // The nope chain is resolved
                     resolved = true;
                 }
+
             } else {
-                // If the player does not have a nope card
-                logger.verbose(`[GAME] Player ${players[playerToNope].username} does not have a nope card`);
-                
+                // If the player does not use the nope card
+                logger.verbose(`[GAME] Player ${players[playerToNope].username} does not want to use a nope card`);
+
+                this.callSystem.broadcastAction(ActionType.NopeNotUsed, players[playerToNope].username, players[(playerToNope + 1) % 2].username);
                 // The nope chain is resolved
                 resolved = true;
-            }
+            }  
+
         }
 
         logger.verbose(`[GAME] Nope chain resolved. Winner is ${players[(playerToNope + 1)%2].username}`);
