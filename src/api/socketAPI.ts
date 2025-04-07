@@ -16,6 +16,8 @@ export type BackendStateUpdateJSON = {
     timeOut: number;
     playerUsername: string;
     cardsLeftInDeck: number;
+    lastCardPlayed: CardJSON | undefined;
+    turnsLeft: number;
 }
 
 export type CardJSON = {

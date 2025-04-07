@@ -410,7 +410,9 @@ export class socketCommunicationGateway implements CommunicationGateway {
         index: number,
         turnUsername: string, 
         timeOut: number, 
-        cardsLeftInDeck: number
+        cardsLeftInDeck: number,
+        lastCardPlayed: Card | undefined,
+        turnsLeft: number
     ): void {
 
         const username: string = players[index].username;
@@ -426,7 +428,9 @@ export class socketCommunicationGateway implements CommunicationGateway {
             turnUsername: turnUsername,
             timeOut: timeOut,
             playerUsername: username,
-            cardsLeftInDeck: cardsLeftInDeck
+            cardsLeftInDeck: cardsLeftInDeck,
+            lastCardPlayed: lastCardPlayed?lastCardPlayed.toJSON():undefined,
+            turnsLeft: turnsLeft
         }
 
         const socket: Socket|undefined = SocketManager.getSocket(username);

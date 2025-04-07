@@ -24,6 +24,7 @@ export class GameObject {
     callSystem: CommunicationGateway;
     leaderUsername : string;
     messages: Message[];
+    lastPlayedCard: Card | undefined;
 
     constructor(
         lobbyId:string,
@@ -41,6 +42,7 @@ export class GameObject {
         this.deck = new Deck();
         this.deck.addCards(CARD_COUNTS);
         this.deck.shuffle();
+        this.lastPlayedCard = undefined;
 
         this.players = [];
         for(let i = 0; i < numberOfPlayers; i++)
@@ -72,7 +74,8 @@ export class GameObject {
             TURN_TIME_LIMIT
         );
         this.leaderUsername = leaderUsername;
-        this.messages = []
+        this.messages = [];
+
 
         this.callSystem.broadcastStartGame();
         this.communicateNewState();
@@ -94,7 +97,9 @@ export class GameObject {
                     index,
                     this.players[this.turn].username, 
                     TURN_TIME_LIMIT, 
-                    this.deck.length()
+                    this.deck.length(),
+                    this.lastPlayedCard,
+                    this.numberOfTurnsLeft
                 )
             }
         });
@@ -368,7 +373,9 @@ export class GameObject {
             player.id,
             this.players[this.turn].username, 
             this.turnTimeout.getRemainingTime(), 
-            this.deck.length()
+            this.deck.length(),
+            this.lastPlayedCard,
+            this.numberOfTurnsLeft
         )
 
         this.callSystem.notifyMessages(
@@ -502,7 +509,7 @@ export class GameObject {
                 if(usedNope){
                     // If the player uses the nope card
                     // Remove the nope card from the player
-                    players[playerToNope].hand.popNth(indexNope);
+                    this.lastPlayedCard = players[playerToNope].hand.popNth(indexNope);
 
                     // Notify the rest of the players that the nope card has been used
                     this.callSystem.broadcastAction(ActionType.NopeUsed, players[playerToNope].username, players[(playerToNope + 1) % 2].username);
@@ -554,7 +561,7 @@ export class GameObject {
                 logger.info(`[GAME] Player ${player.username} has defused the bomb using a deactivate card`);
 
                 // Remove the deactivate card from the player
-                player.hand.popNth(indexDeactivate); 
+                this.lastPlayedCard = player.hand.popNth(indexDeactivate); 
                 
                 // Add the bomb back to the deck
                 this.deck.addWithShuffle(newCard);
@@ -613,7 +620,7 @@ export class GameObject {
             return false;
         }
 
-        player.hand.removeCards(playedCards);
+        this.lastPlayedCard = player.hand.removeCards(playedCards);
         return true;
     }   
 

@@ -128,12 +128,13 @@ export class CardArray {
         return this.values.every(card => card.type === this.values[0].type);
     }
 
-    removeCards(cards: CardArray): void{
+    removeCards(cards: CardArray): Card{
         cards.values.forEach(card => {
             const index = this.hasCard(card);
             if(index != -1){
                 this.values.splice(index, 1);
             }
         });
+        return cards.values[0];
     }
 }
