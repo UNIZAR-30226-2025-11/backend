@@ -3,38 +3,8 @@ import logger from "../config/logger.js";
 
 
 export class shopRepository {
-    /**
-     * Initializes the products in the database if they do not already exist.
-     * This function checks if there are any existing products in the 'products' table. 
-     * If no products are found, it inserts a set of default products into the table.
-     *
-     * @returns {Promise<void>} A promise that resolves when the product initialization process is complete.
-     *                          It does not return any value but logs the status of the operation.
-     *                          In case of an error during the initialization, the error is logged.
-     */
-    static async initProducts () {
-        try {
-            // Verifica si ya existen productos en la base de datos
-            const result = await db.query("SELECT COUNT(*) FROM shop_products");
-            const productCount = parseInt(result.rows[0].count);
     
-            if (productCount === 0) {
-                // Si no hay productos, insertamos los productos iniciales
-                await db.query(`
-                    INSERT INTO shop_products (product_id,name, category, price) VALUES
-                    (0,'HairyCat', 'Avatar', 500),
-                    (1,'PotatoCat', 'Avatar', 1000),
-                    (2, 'BeardCat', 'Avatar', 1500),
-                    (3, 'Blue', 'Background', 300),
-                    (4, 'Yellow', 'Background', 600)
-                `);
-            } 
-        } catch (error) {
-            console.error("Error initializing products:", error);
-        }
-    };
-
-     /**
+    /**
      * Retrieves the price of a product based on its name and category.
      *
      * @param {string} productName - The name of the product.
@@ -47,6 +17,7 @@ export class shopRepository {
         categoryName: string
     ) : Promise<number> {
         try {
+            logger.silly(`[DB] AWAIT: Obtaining coins of the product`);
             const res = await db.query(
                 `
                 SELECT price 
@@ -54,6 +25,7 @@ export class shopRepository {
                 WHERE category=$1 and name=$2
                 `, [categoryName, productName]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Got coins`);
                 return res.rows[0].price;
             } else {
                 logger.error("[DB] Error in database.");
@@ -78,6 +50,7 @@ export class shopRepository {
         categoryName: string
     ) : Promise<number>{
         try {
+            logger.silly(`[DB] AWAIT: Getting id of the product`);
             const res = await db.query(
                 `
                 SELECT product_id 
@@ -85,6 +58,7 @@ export class shopRepository {
                 WHERE category=$1 and name=$2
                 `, [categoryName, productName]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Got id of the product`);
                 return res.rows[0].product_id;
             } else {
                 logger.error("[DB] Error in database.");
@@ -96,7 +70,7 @@ export class shopRepository {
         }
     }
 
-     /**
+    /**
      * Adds a product to a user's product list in the 'user_products' table.
      *
      * @param {number} productId - The ID of the product to be added.
@@ -109,12 +83,14 @@ export class shopRepository {
         username: string,
     ){
         try {
+            logger.silly(`[DB] AWAIT: Adding the product to the user`);
             await db.query(
                 `
                 INSERT INTO user_products (username, id_product)
                 VALUES ($2, $1)
                 `,[productId, username]);
-
+            
+                logger.silly(`[DB] DONE: Add the product`);
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");
@@ -135,6 +111,7 @@ export class shopRepository {
     ) : Promise<boolean>{
 
         try {
+            logger.silly(`[DB] AWAIT: Getting if exist one product`);
             const res = await db.query(
                 `
                 SELECT price 
@@ -142,6 +119,7 @@ export class shopRepository {
                 WHERE category=$1 and name=$2
                 `, [categoryName, productName]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Got the product`);
                 return true;
             } else {
                 return false;
@@ -152,7 +130,6 @@ export class shopRepository {
         }
 
     }
-
     /**
      * Retrieves a list of distinct categories from the database.
      *
@@ -161,12 +138,14 @@ export class shopRepository {
      */
     static async obtainAllCategories() : Promise<string[]>{
         try {
+            logger.silly(`[DB] AWAIT: Obtaining all the categories`);
             const res = await db.query(
                 `
                 SELECT DISTINCT category 
                 FROM shop_products
                 `);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Categories has been obtained`);
                 // Usamos map para extraer solo los valores de la columna 'category'
                 return res.rows.map(row => row.category);
             } else {
@@ -179,7 +158,7 @@ export class shopRepository {
 
     }
 
-     /**
+    /**
      * Retrieves all products for a given category from the database.
      *
      * @param {string} category - The name of the category for which to retrieve products.
@@ -187,10 +166,11 @@ export class shopRepository {
      * A promise that resolves to an array of product objects, each containing `name`, `price`, and `product_id`.
      * Returns an empty array if no products are found for the category.
      */
-    static async obtainProducts(
+     static async obtainProducts(
         category: string
     ) : Promise<{ name: string, price: number, productId: number }[]>{
         try {
+            logger.silly(`[DB] AWAIT: Obtaining info for the product`);
             const res = await db.query(
                 `
                 SELECT name, price, product_id
@@ -200,6 +180,7 @@ export class shopRepository {
 
             if (res.rows.length > 0) {
                
+                logger.silly(`[DB] DONE: Got info of the product`);
                 return res.rows.map(row => ({
                     name: row.name,
                     price: row.price,
@@ -227,14 +208,16 @@ export class shopRepository {
         username: string
     ) : Promise<boolean>{
         try {
-        const res = await db.query(
-            `
-            SELECT username
-            FROM user_products
-            WHERE id_product=$1 and username=$2
-            `,[productId, username]);
+            logger.silly(`[DB] AWAIT: Getting if a product has been bought for a user`);
+            const res = await db.query(
+                `
+                SELECT username
+                FROM user_products
+                WHERE id_product=$1 and username=$2
+                `,[productId, username]);
         
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Got bought status ${productId} for ${username}`);
                 return true;
             } else {
                 return false; 

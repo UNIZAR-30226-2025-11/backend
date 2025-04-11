@@ -13,6 +13,7 @@ export class friendsRepository {
      */
     static async obtainFriends (username: string): Promise<FriendsJSON[]> {
         try {
+            logger.silly(`[DB] AWAITT: Obtaining the friends of ${username}` )
             const res = await db.query(
                 `
                 SELECT u.username, u.avatar
@@ -25,11 +26,13 @@ export class friendsRepository {
                 WHERE f.isAccepted = true
                 `, [username]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Obtained the friends of ${username}` )
                 return res.rows.map(row => ({
                     username: row.username,
                     avatar: row.avatar
                 }));
             } else {
+                logger.silly(`[DB] DONE: No friends found for ${username}` )
                 return [];
             }
         } catch (error) {
@@ -44,8 +47,10 @@ export class friendsRepository {
      * @returns Array of usernames who sent pending requests
      * @throws Error if database operation fails
      */
-    static async obtainAppliedFriends (username :string):  Promise<FriendsJSON[]>{
+    static async obtainPendingFriendRequestReceived (username :string):  Promise<FriendsJSON[]>{
         try {
+
+            logger.silly(`[DB] AWAITT: Obtaining the pending friend requests received by ${username}` )
             const res = await db.query(
                 `
                 SELECT u.username, u.avatar
@@ -56,6 +61,7 @@ export class friendsRepository {
                 WHERE f.isAccepted = false
                 `, [username]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Obtained the pending friend requests received by ${username}` )
                 return res.rows.map(row => ({
                     username: row.username,
                     avatar: row.avatar
@@ -75,8 +81,9 @@ export class friendsRepository {
      * @returns Array of usernames who received pending requests
      * @throws Error if database operation fails
      */
-    static async obtainApplierFriends (username :string):  Promise<FriendsJSON[]>{
+    static async obtainPendingFriendRequestSent (username :string):  Promise<FriendsJSON[]>{
         try {
+            logger.silly(`[DB] AWAITT: Obtaining the pending friend requests sent by ${username}` )
             const res = await db.query(
                 `
                 SELECT u.username, u.avatar
@@ -87,6 +94,7 @@ export class friendsRepository {
                 WHERE f.isAccepted = false
                 `, [username]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Obtained the pending friend requests sent by ${username}` )
                 return res.rows.map(row => ({
                     username: row.username,
                     avatar: row.avatar
@@ -106,9 +114,9 @@ export class friendsRepository {
      * @returns Number of pending friend requests sent by the user
      * @throws Error if database operation fails
      */
-    static async numRequest(username:string): Promise<number>{
+    static async getPendingFriendRequestsCount(username:string): Promise<number>{
         try {
-            const friends = await friendsRepository.obtainApplierFriends(username);
+            const friends = await friendsRepository.obtainPendingFriendRequestSent(username);
             
             return friends.length;
             
@@ -126,6 +134,7 @@ export class friendsRepository {
      */
     static async searchNewFriends (username :string) :  Promise<FriendsJSON[]>{
         try {
+            logger.silly(`[DB] AWAITT: Searching new friends for ${username}` )
             const res = await db.query(
                 `
                 SELECT username, avatar
@@ -144,6 +153,7 @@ export class friendsRepository {
                 )
                 `, [username]);
             if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Found new friends for ${username}` )
                 return res.rows.map(row => ({
                     username: row.username,
                     avatar: row.avatar
@@ -166,12 +176,14 @@ export class friendsRepository {
      */
     static async addNewFriend(appliedUsername:string, applierUsername:string){
         try {
+            logger.silly(`[DB] AWAITT: Adding new friend ${appliedUsername} to ${applierUsername}` )
             await db.query(
                 `
                 INSERT INTO friends (applied_username, applier_username, isAccepted)
                 VALUES ($1, $2, false)
                 `,[appliedUsername, applierUsername]);
-
+            
+            logger.silly(`[DB] DONE: Added new friend ${appliedUsername} to ${applierUsername}` )
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");
@@ -186,13 +198,14 @@ export class friendsRepository {
      */
     static async acceptNewFriend(appliedUsername:string, applierUsername:string){
         try {
+            logger.silly(`[DB] AWAITT: Accepting new friend ${appliedUsername} to ${applierUsername}` )
             await db.query(
                 `
                 UPDATE friends
                 SET isAccepted = true
                 WHERE applied_username = $1 AND applier_username = $2
                 `,[appliedUsername, applierUsername]);
-
+            logger.silly(`[DB] DONE: Accepted new friend ${appliedUsername} to ${applierUsername}` )
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");
@@ -207,12 +220,14 @@ export class friendsRepository {
      */
     static async deleteNewFriend(appliedUsername:string, applierUsername:string){
         try {
+            logger.silly(`[DB] AWAITT: Deleting friend ${appliedUsername} to ${applierUsername}` )
             await db.query(
                 `
                 DELETE FROM friends 
                 WHERE applied_username = $1 AND applier_username = $2
                 `,[appliedUsername, applierUsername]);
-
+            
+            logger.silly(`[DB] DONE: Deleted friend ${appliedUsername} to ${applierUsername}` )
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");
