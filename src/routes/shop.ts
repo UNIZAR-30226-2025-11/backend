@@ -56,7 +56,7 @@ shopRouter
             res.json({categories: JSONResponse});
             logger.info(`[SHOP] All shop send`);
         } catch (error) {
-            console.error("Error in delete:", error);
+            logger.error(`Error in delete: ${error}`);
             res.status(400).json({ error: "You can not obtain the shop" });
         }
     })
@@ -99,7 +99,7 @@ shopRouter
             res.status(200).json({ message: "Product purchased successfully", userId: username });
         }
         catch (error) {
-            console.error("Error in purchase:", error);
+            logger.error(`Error in purchase: ${error}`);
             res.status(500).json({ error: "Error buying the new product" });
         }
     });

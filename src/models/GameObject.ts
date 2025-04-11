@@ -188,7 +188,7 @@ export class GameObject {
             }
         }
 
-        console.log(`[GAME] No player to steal from`);
+        logger.info(`[GAME] No player to steal from`);
         throw new Error(`No player to steal from!`);
     }
 
