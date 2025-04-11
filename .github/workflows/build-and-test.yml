@@ -58,7 +58,42 @@ jobs:
       run: npm run build --if-present
 
     - name: 'Start database'
-      run: 'npm run compose:up -- -d --wait database'
+      run: |
+        npm run compose:up -- -d --wait database
+        # Wait for PostgreSQL to be fully ready (wait up to 30 seconds)
+        echo "Waiting for PostgreSQL to be ready..."
+        for i in {1..30}; do
+          docker exec $(docker ps -q --filter "name=database" || echo "") pg_isready -U admin -h localhost 2>/dev/null && break
+          echo "Waiting for PostgreSQL to start... ($i/30)"
+          sleep 1
+        done
+        
+        # Show running containers for debugging
+        docker ps
+        
+        # Output PostgreSQL logs for debugging
+        echo "PostgreSQL container logs:"
+        docker logs $(docker ps -q --filter "name=database" || echo "no-container")
+
+    - name: 'Verify database connection'
+      run: |
+        # Install PostgreSQL client
+        sudo apt-get update -y && sudo apt-get install -y postgresql-client
+        
+        # Try connecting directly
+        echo "Attempting to connect to PostgreSQL..."
+        PGPASSWORD=${{ secrets.PGPASSWORD }} psql -h localhost -U admin -d katboom_testing -c "\l" || echo "Connection failed"
+        
+        # Check if database port is open
+        echo "Checking if PostgreSQL port is open..."
+        nc -zv localhost 5432 || echo "Port check failed"
 
     - name: 'Run tests'
       run: npm run test
+      env:
+        PGHOST: localhost
+        PGPORT: 5432
+        PGUSER: admin
+        PGPASSWORD: ${{ secrets.PGPASSWORD }}
+        PGDATABASE: katboom_testing
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
