@@ -4,8 +4,8 @@ import {
     protectRoute
 } from "../middleware/auth.js";
 
-import { SHOP_API , CategoryJSON, ProductJSON} from "../api/restAPI.js";
-import {UserRepository} from "../repositories/userRepository.js"
+import { SHOP_API , CategoryJSON } from "../api/restAPI.js";
+import { UserRepository } from "../repositories/userRepository.js"
 import { shopRepository } from "../repositories/shopRepository.js";
 import logger from "../config/logger.js";
 
@@ -56,7 +56,7 @@ shopRouter
             res.json({categories: JSONResponse});
             logger.info(`[SHOP] All shop send`);
         } catch (error) {
-            console.error("Error in delete:", error);
+            logger.error(`Error in delete: ${error}`);
             res.status(400).json({ error: "You can not obtain the shop" });
         }
     })
@@ -89,7 +89,6 @@ shopRouter
             // Obtain the coins
             const coins : number = await shopRepository.obtainCoinsProduct(productName, categoryName);
 
-
             // update coins
             await UserRepository.removeCoins(coins, username);
 
@@ -100,7 +99,7 @@ shopRouter
             res.status(200).json({ message: "Product purchased successfully", userId: username });
         }
         catch (error) {
-            console.error("Error in purchase:", error);
+            logger.error(`Error in purchase: ${error}`);
             res.status(500).json({ error: "Error buying the new product" });
         }
     });

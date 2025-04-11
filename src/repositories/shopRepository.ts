@@ -1,10 +1,9 @@
 import { db } from "../db.js";
-import crypto from "node:crypto";
 import logger from "../config/logger.js";
 
 
 export class shopRepository {
-
+  
      /**
      * Retrieves the price of a product based on its name and category.
      *
@@ -71,7 +70,7 @@ export class shopRepository {
         }
     }
 
-     /**
+    /**
      * Adds a product to a user's product list in the 'user_products' table.
      *
      * @param {number} productId - The ID of the product to be added.
@@ -147,7 +146,6 @@ export class shopRepository {
                 FROM shop_products
                 `);
             if (res.rows.length > 0) {
-
                 logger.silly(`[DB] DONE: Categories has been obtained`);
                 // Usamos map para extraer solo los valores de la columna 'category'
                 return res.rows.map(row => row.category);
@@ -169,7 +167,7 @@ export class shopRepository {
      * A promise that resolves to an array of product objects, each containing `name`, `price`, and `product_id`.
      * Returns an empty array if no products are found for the category.
      */
-    static async obtainProducts(
+     static async obtainProducts(
         category: string
     ) : Promise<{ name: string, price: number, productId: number }[]>{
         try {
@@ -212,15 +210,15 @@ export class shopRepository {
     ) : Promise<boolean>{
         try {
             logger.silly(`[DB] AWAIT: Getting if a product has been bought for a user`);
-        const res = await db.query(
-            `
-            SELECT username
-            FROM user_products
-            WHERE id_product=$1 and username=$2
-            `,[productId, username]);
+            const res = await db.query(
+                `
+                SELECT username
+                FROM user_products
+                WHERE id_product=$1 and username=$2
+                `,[productId, username]);
         
             if (res.rows.length > 0) {
-                logger.silly(`[DB] DONE: Getting if it is bought`);
+                logger.silly(`[DB] DONE: Got bought status ${productId} for ${username}`);
                 return true;
             } else {
                 return false; 

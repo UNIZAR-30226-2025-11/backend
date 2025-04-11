@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     id uuid UNIQUE PRIMARY KEY,
     username varchar(128) UNIQUE NOT NULL,
     password varchar(128) NOT NULL,
+    avatar TEXT NOT NULL DEFAULT 'NormalCat',
 
     -- Statistics
     games_played integer NOT NULL CHECK (games_played >= 0) DEFAULT 0,
