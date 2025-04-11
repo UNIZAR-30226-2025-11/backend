@@ -27,36 +27,29 @@ jobs:
         cache: 'npm'
 
     - name: Make backend .env
-      uses: SpicyPizza/create-envfile@v2.0
-      with:
-        envkey_PORT: 8000
-        envkey_PGHOST: localhost
-        envkey_PGPORT: 5432
-        envkey_PGUSER: admin
-        envkey_PGPASSWORD: ${{ secrets.PGPASSWORD }}
-        envkey_PGDATABASE: "katboom"
-        envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        file_name: .env
-
+      run: |
+          cat > .env << EOF
+          PORT=8000
+          PGHOST=localhost
+          PGPORT=5432
+          PGUSER=admin
+          PGPASSWORD=${{ secrets.PGPASSWORD }}
+          PGDATABASE=katboom
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          EOF
+      
     - name: Make backend .env.test
-      uses: SpicyPizza/create-envfile@v2.0
-      with:
-        envkey_PORT: 8000
-        envkey_PGHOST: localhost
-        envkey_PGPORT: 5432
-        envkey_PGUSER: admin
-        envkey_PGPASSWORD: ${{ secrets.PGPASSWORD }}
-        envkey_PGDATABASE: "katboom_testing"
-        envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        file_name: .env.test
-
-    - name: Make database envfile
-      uses: SpicyPizza/create-envfile@v2.0
-      with:
-        envkey_PGUSER: admin
-        envkey_PGPASSWORD: ${{ secrets.PGPASSWORD }}
-        envkey_PGDATABASE: "katboom"
-        file_name: .env.database
+      run: |
+          cat > .env.test << EOF
+          PORT=8000
+          PGHOST=localhost
+          PGPORT=5432
+          PGUSER=admin
+          PGPASSWORD=${{ secrets.PGPASSWORD }}
+          PGDATABASE=katboom_testing
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          EOF
+      
 
     - name: 'Install packages'
       run: npm ci

@@ -1,28 +1,25 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 
-import {
-  createNewUser,
-  getPublicUser,
-  UserRepository,
-} from "../src/users/model";
 import { app as server } from "../src/app.js";
+import { createNewUser, getPublicUser } from "../src/models/User.js";
+import { UserRepository } from "../src/repositories/userRepository.js";
 
 describe("User routes", async () => {
   // Use an agent to keep session (i.e. cookies)
-  let agent = request.agent(server);
+  const agent = request.agent(server);
 
-  let users = [
+  const users = [
     await createNewUser("test-subject-1", "safe-password-1"),
     await createNewUser("test-subject-2", "safe-password-2"),
     await createNewUser("test-subject-3", "safe-password-3"),
   ];
 
-  let publicUsers = users.map((user) => getPublicUser(user));
+  const publicUsers = users.map((user) => getPublicUser(user));
 
   // Create new test users and log in
   beforeAll(async () => {
-    for (let user of users) {
+    for (const user of users) {
       await UserRepository.create(user);
     }
 
@@ -38,7 +35,7 @@ describe("User routes", async () => {
 
   // Remove all test users and log out
   afterAll(async () => {
-    for (let user of users) {
+    for (const user of users) {
       await UserRepository.delete(user.id);
     }
 
@@ -75,7 +72,7 @@ describe("User routes", async () => {
     it("Returns 200 OK and user if modified", async () => {
       const response = await agent
         .put("/users/test-subject-1")
-        .send({ username: "cool-test-subject-1", games_won: 999 });
+        .send({ username: "cool-test-subject-1", gamesWon: 999 });
 
       expect(response.status).toBe(200);
       expect(response.body.username).toBe("cool-test-subject-1");

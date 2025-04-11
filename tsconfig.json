@@ -11,6 +11,8 @@
         "removeComments": true
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "test/**/*",
+        "vitest.config.ts",
     ]
 }
