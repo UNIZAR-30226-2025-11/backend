@@ -4,9 +4,10 @@ import { LobbyManager } from "./lobbyManager.js";
 import { Play } from "../models/Play.js";
 import { CardArray } from "../models/CardArray.js";
 import logger from "../config/logger.js";
+import eventBus from "../events/eventBus.js";
+import { GameEvents } from "../events/gameEvents.js";
 
 export class GameManager {
-
 
     static addMessage(msg: string, username: string, lobbyId: string): void {
 
@@ -36,7 +37,6 @@ export class GameManager {
     static async handlePlay(cards: CardArray, lobbyId: string, username: string): Promise<boolean>{
 
         logger.info(`Handling play of ${username} in lobby ${lobbyId}`);
-        logger.debug(`Cards played: ${cards.toString()}`,);
 
         const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
 
@@ -116,3 +116,7 @@ export class GameManager {
     }
 
 }
+
+eventBus.on(GameEvents.WINNER_SET, async (username: string, coinsEarned: number, lobbyId: string) => {
+    await GameManager.handleWinner(username, coinsEarned, lobbyId);
+});

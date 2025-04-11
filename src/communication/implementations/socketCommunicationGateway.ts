@@ -11,16 +11,15 @@ import {
     BackendGameSelectCardTypeJSON,
     BackendGameSelectPlayerJSON,
     BackendGameSelectCardJSON,
-    BackendNotifyActionJSON,
     BackendStartGameResponseJSON,
     BackendPlayerStatusJSON,
     BackendGameSelectNopeJSON,
     FrontendGameSelectNopeResponseJSON,
     BackendGetMessagesJSON,
     MsgJSON,
+    BackendNotifyActionJSON,
 } from "../../api/socketAPI.js";
 import { SocketManager } from "../../managers/socketManager.js";
-import { TIMEOUT_RESPONSE } from "../../constants/constants.js";
 import { CardType, Card } from "../../models/Card.js";
 import { handleError } from "../../constants/constants.js";
 import { ActionType } from "../../models/ActionType.js";
@@ -28,6 +27,8 @@ import { CardArray } from "../../models/CardArray.js";
 import { Player } from "../../models/Player.js";
 import logger from "../../config/logger.js";
 import { Message } from "../../models/Message.js";
+import { FrontendGameSelectCardResponseJSONSchema, FrontendGameSelectCardTypeResponseJSONSchema, FrontendGameSelectNopeResponseJSONSchema, FrontendGameSelectPlayerResponseJSONSchema } from "../../schemas/socketAPI.js";
+import { TIMEOUT_RESPONSE } from "../../config.js";
 
 export class socketCommunicationGateway implements CommunicationGateway {
 
@@ -52,7 +53,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             errorMsg: "",
             messages: messagesJSON,
             lobbyId: this.lobbyId
-        }
+        };
 
         this.broadcastMsg(msg, "get-messages")
     }
@@ -98,6 +99,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 targetUser: "",
                 action: ActionType[ActionType.AskingCardType]
             },
+            FrontendGameSelectCardTypeResponseJSONSchema,
             TIMEOUT_RESPONSE
         );
 
@@ -142,6 +144,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 targetUser: "",
                 action: ActionType[ActionType.AskingPlayer]
             },
+            FrontendGameSelectPlayerResponseJSONSchema,
             TIMEOUT_RESPONSE
         );
 
@@ -185,6 +188,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 targetUser: "",
                 action: ActionType[ActionType.AskingCard]
             },
+            FrontendGameSelectCardResponseJSONSchema,
             TIMEOUT_RESPONSE
         );
 
@@ -228,6 +232,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 targetUser: "",
                 action: ActionType[ActionType.AskingNope]
             },
+            FrontendGameSelectNopeResponseJSONSchema,
             TIMEOUT_RESPONSE
         );
 
@@ -252,147 +257,6 @@ export class socketCommunicationGateway implements CommunicationGateway {
             errorMsg: ""
         };
         this.broadcastMsg<BackendStartGameResponseJSON>(response, "start-game");
-    }
-
-    broadcastBombDefusedAction(triggerUser: string): void {
-
-        logger.info(`Notifying all players that the bomb was defused by ${triggerUser}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: "",
-            action: ActionType[ActionType.BombDefused]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-    broadcastDrawCardAction(triggerUser: string): void {
-
-        logger.info(`Notifying all players that player ${triggerUser} drew a card`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: "",
-            action: ActionType[ActionType.DrawCard]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-    broadcastPlayerLostAction(triggerUser: string): void {
-
-        logger.info(`Notifying all players that player ${triggerUser} lost`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: "",
-            action: ActionType[ActionType.BombExploded]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-    broadcastShuffleDeckAction(triggerUser: string): void {
-
-        logger.info(`Notifying all players that the deck was shuffled by ${triggerUser}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: "",
-            action: ActionType[ActionType.ShuffleDeck]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-    broadcastSkipTurnAction(triggerUser: string, targetUser: string): void {
-
-        logger.info(`Notifying all players that player ${triggerUser} skipped their turn`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: targetUser,
-            action: ActionType[ActionType.SkipTurn]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-    broadcastFutureAction(triggerUser: string): void {
-
-        logger.info(`Notifying all players that player ${triggerUser} saw the future`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: "",
-            action: ActionType[ActionType.FutureSeen]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-
-    broadcastAttackAction(triggerUser: string, targetUser: string): void {
-        
-        logger.info(`Notifying all players that player ${triggerUser} attacked player ${targetUser}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: targetUser,
-            action: ActionType[ActionType.Attack]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-    broadcastStealFailedAction(triggerUser: string, targetUser: string): void {
-
-        logger.info(`Notifying all players that player ${triggerUser} failed to steal from player ${targetUser}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: targetUser,
-            action: ActionType[ActionType.AttackFailed]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-    broadcastFavorAction(triggerUser: string, targetUser: string): void {
-        logger.info(`Notifying all players that player ${triggerUser} favored player ${targetUser}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: targetUser,
-            action: ActionType[ActionType.FavorAttack]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-    broadcastNopeAction(triggerUser: string, targetUser: string): void {
-        logger.info(`Notifying all players that player ${triggerUser} used Nope on player ${targetUser}`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: targetUser,
-            action: ActionType[ActionType.NopeUsed]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
-    }
-
-    broadcastWildCardAction(triggerUser: string, targetUser: string, cardsNumber: number): void {
-        logger.info(`Notifying all players that player ${triggerUser} attacked player ${targetUser} with ${cardsNumber} wild cards`);
-        const msg: BackendNotifyActionJSON = {
-            error: false,
-            errorMsg: "",
-            triggerUser: triggerUser,
-            targetUser: targetUser,
-            action: cardsNumber == 2 ? ActionType[ActionType.TwoWildCardAttackSuccessful] : ActionType[ActionType.ThreeWildCardAttackSuccessful]
-        }
-        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
     }
 
     broadcastWinnerNotification(winnerUsername: string, coinsEarned: number): void {
@@ -441,6 +305,21 @@ export class socketCommunicationGateway implements CommunicationGateway {
             connected: true
         }
         this.broadcastMsg<BackendPlayerStatusJSON>(msg, "player-status");
+    }
+
+    broadcastAction(action: ActionType, triggerUser: string, targetUser?: string): void {
+        
+        logger.info(`Notifying all players that player ${triggerUser} performed action ${action}`);
+        
+        const msg: BackendNotifyActionJSON = {
+            error: false,
+            errorMsg: "",
+            triggerUser: triggerUser,
+            targetUser: targetUser?targetUser:"",
+            action: ActionType[action],
+        }
+
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
     }
 
     notifyOkPlayedCardWithCardObtained(card: Card, username: string): void {
@@ -531,7 +410,9 @@ export class socketCommunicationGateway implements CommunicationGateway {
         index: number,
         turnUsername: string, 
         timeOut: number, 
-        cardsLeftInDeck: number
+        cardsLeftInDeck: number,
+        lastCardPlayed: Card | undefined,
+        turnsLeft: number
     ): void {
 
         const username: string = players[index].username;
@@ -547,7 +428,9 @@ export class socketCommunicationGateway implements CommunicationGateway {
             turnUsername: turnUsername,
             timeOut: timeOut,
             playerUsername: username,
-            cardsLeftInDeck: cardsLeftInDeck
+            cardsLeftInDeck: cardsLeftInDeck,
+            lastCardPlayed: lastCardPlayed?lastCardPlayed.toJSON():undefined,
+            turnsLeft: turnsLeft
         }
 
         const socket: Socket|undefined = SocketManager.getSocket(username);

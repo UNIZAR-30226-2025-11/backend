@@ -16,6 +16,8 @@ export type BackendStateUpdateJSON = {
     timeOut: number;
     playerUsername: string;
     cardsLeftInDeck: number;
+    lastCardPlayed: CardJSON | undefined;
+    turnsLeft: number;
 }
 
 export type CardJSON = {
@@ -61,14 +63,6 @@ export type BackendGamePlayedCardsResponseJSON = {
 // -----------------------------------------------------------
 
 export type BackendWinnerJSON = {
-    error: boolean;
-    errorMsg: string;
-    winnerUsername: string;
-    coinsEarned: number;
-    lobbyId: string;
-}
-
-export type FrontendWinnerResponseJSON = {
     error: boolean;
     errorMsg: string;
     winnerUsername: string;

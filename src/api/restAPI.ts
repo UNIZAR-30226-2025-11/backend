@@ -25,3 +25,4 @@ export type FriendsJSON = {
     username: string;
     avatar: string;
 }
+

@@ -1,10 +1,11 @@
 import { db } from "../db.js";
+import crypto from "node:crypto";
 import logger from "../config/logger.js";
 
 
 export class shopRepository {
-    
-    /**
+  
+     /**
      * Retrieves the price of a product based on its name and category.
      *
      * @param {string} productName - The name of the product.
@@ -130,6 +131,7 @@ export class shopRepository {
         }
 
     }
+
     /**
      * Retrieves a list of distinct categories from the database.
      *
@@ -158,7 +160,7 @@ export class shopRepository {
 
     }
 
-    /**
+     /**
      * Retrieves all products for a given category from the database.
      *
      * @param {string} category - The name of the category for which to retrieve products.

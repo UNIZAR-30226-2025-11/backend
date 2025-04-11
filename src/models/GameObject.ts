@@ -1,6 +1,5 @@
 import { Player } from "./Player.js";
 import { CommunicationGateway } from "../communication/interface/communicationGateway.js";
-import { TURN_TIME_LIMIT } from "../constants/constants.js";
 import { Deck } from "./Deck.js";
 import { Play } from "./Play.js";
 import { Card, CardType } from "./Card.js";
@@ -8,6 +7,10 @@ import { CardArray } from "./CardArray.js";
 import logger from "../config/logger.js";
 import { PausableTimeout } from "./PausableTimeout.js";
 import { Message } from "./Message.js";
+import eventBus from "../events/eventBus.js";
+import { GameEvents } from "../events/gameEvents.js";
+import { CARD_COUNTS, EXTRA_BOMBS, EXTRA_DEACTIVATES, TURN_TIME_LIMIT } from "../config.js";
+import { ActionType } from "./ActionType.js";
 
 export class GameObject {
     lobbyId: string;
@@ -21,6 +24,7 @@ export class GameObject {
     callSystem: CommunicationGateway;
     leaderUsername : string;
     messages: Message[];
+    lastPlayedCard: Card | undefined;
 
     constructor(
         lobbyId:string,
@@ -36,23 +40,9 @@ export class GameObject {
         this.callSystem = comm;
 
         this.deck = new Deck();
-        const cardCounts: { [key in CardType]: number } = {
-            [CardType.Bomb]: 0,
-            [CardType.SeeFuture]: 5,
-            [CardType.Shuffle]: 5,
-            [CardType.Skip]: 5,
-            [CardType.Attack]: 3,
-            [CardType.Nope]: 0,
-            [CardType.Favor]: 5,
-            [CardType.Deactivate]: 6-numberOfPlayers,
-            [CardType.RainbowCat]: 5,
-            [CardType.TacoCat]: 5,
-            [CardType.HairyPotatoCat]: 5,
-            [CardType.Cattermelon]: 5,
-            [CardType.BeardCat]: 5
-        };
-        this.deck.addCards(cardCounts);
+        this.deck.addCards(CARD_COUNTS);
         this.deck.shuffle();
+        this.lastPlayedCard = undefined;
 
         this.players = [];
         for(let i = 0; i < numberOfPlayers; i++)
@@ -60,7 +50,8 @@ export class GameObject {
             this.players.push(Player.createStandarPlayer(i, playersUsernames[i], this.deck));
         }
 
-        this.deck.addBombs(numberOfPlayers-1);
+        this.deck.addDeactivates(numberOfPlayers+EXTRA_DEACTIVATES);
+        this.deck.addBombs(numberOfPlayers-1+EXTRA_BOMBS);
 
         this.numberOfPlayers = numberOfPlayers;
         this.turn = 0;
@@ -73,12 +64,18 @@ export class GameObject {
                     logger.error(`[GAME] Player ${this.turn} not found`);
                     return;
                 }
-                this.handlePlayerLost(player);
+
+                logger.info(`[GAME] Player ${player.username} has timed out. By default, he draws a card`);
+                const newCard: Card = this.deck.drawLast();
+
+                this.handleNewCard(newCard, player);
+                this.communicateNewState();
             },
             TURN_TIME_LIMIT
         );
         this.leaderUsername = leaderUsername;
-        this.messages = []
+        this.messages = [];
+
 
         this.callSystem.broadcastStartGame();
         this.communicateNewState();
@@ -100,7 +97,9 @@ export class GameObject {
                     index,
                     this.players[this.turn].username, 
                     TURN_TIME_LIMIT, 
-                    this.deck.length()
+                    this.deck.length(),
+                    this.lastPlayedCard,
+                    this.numberOfTurnsLeft
                 )
             }
         });
@@ -154,7 +153,7 @@ export class GameObject {
             this.turnTimeout.clear();
         } 
         
-        logger.debug(`[GAME] Starting turn timer for player ${this.turn}`);
+        logger.debug(`[GAME] Starting turn timer for player ${this.players[this.turn].username}`);
         this.turnTimeout.start();
     }
 
@@ -207,7 +206,7 @@ export class GameObject {
         const defaultAnswer: boolean = false;
 
         const answer: boolean = await this.handleRequestInfo<boolean>(
-            this.callSystem.getNopeUsage,
+            this.callSystem.getNopeUsage.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultAnswer
@@ -223,7 +222,7 @@ export class GameObject {
         const defaultType: CardType = CardType.Deactivate;
 
         const cardType: CardType = await this.handleRequestInfo<CardType>(
-            this.callSystem.getACardType,
+            this.callSystem.getACardType.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultType
@@ -240,7 +239,7 @@ export class GameObject {
         const {defaultCard: defaultCard, cardIndex: defaultIndex} = this.randomCard(requesterPlayer);
         
         const cardToSteal: Card = await this.handleRequestInfo<Card>(
-            this.callSystem.getACard,
+            this.callSystem.getACard.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultCard
@@ -265,7 +264,7 @@ export class GameObject {
         const defaultPlayer: Player = this.randomAtackablePlayer(requesterPlayer);
 
         const playerUsername: string = await this.handleRequestInfo<string>(
-            this.callSystem.getAPlayerUsername,
+            this.callSystem.getAPlayerUsername.bind(this.callSystem),
             requesterPlayer.username, 
             this.lobbyId,
             defaultPlayer.username
@@ -374,7 +373,9 @@ export class GameObject {
             player.id,
             this.players[this.turn].username, 
             this.turnTimeout.getRemainingTime(), 
-            this.deck.length()
+            this.deck.length(),
+            this.lastPlayedCard,
+            this.numberOfTurnsLeft
         )
 
         this.callSystem.notifyMessages(
@@ -423,9 +424,7 @@ export class GameObject {
     setNextTurn(): void {
         if(this.numberOfTurnsLeft > 1)
         {
-            logger.verbose(`[GAME] Player ${this.turn} has ${this.numberOfTurnsLeft} turns left`);
-            this.numberOfTurnsLeft--;
-
+            logger.verbose(`[GAME] Player ${this.turn} has ${--this.numberOfTurnsLeft} turns left`);
         } else {
             logger.verbose(`[GAME] Setting next turn from ${this.players[this.turn].username}`);
             this.turn = this.nextActivePlayer();
@@ -448,7 +447,7 @@ export class GameObject {
         
         logger.info(`[GAME] Player ${player.username} has lost`);
         player.active = false;
-        this.callSystem.broadcastPlayerLostAction(player.username);
+        this.callSystem.broadcastAction(ActionType.BombExploded, player.username);
 
 
         const winner: Player | undefined = this.getWinner();
@@ -472,6 +471,7 @@ export class GameObject {
 
         this.stopTurnTimer();
 
+        eventBus.emit(GameEvents.WINNER_SET, winner.username, this.numberOfPlayers*100, this.lobbyId);
     }
 
     getWinner(): Player | undefined {
@@ -492,44 +492,53 @@ export class GameObject {
             
         logger.info(`[GAME] Resolving nope chain`);
         let resolved: boolean = false;
-        const players = [currentPlayer, attackedPlayer];
-        let playerToNope = 1;
+        const players: Player[] = [currentPlayer, attackedPlayer];
+        let playerToNope: number = 1;
 
         while(!resolved){
             // While the nope chain is not resolved
 
-            // Check if the player has a nope card
-            const indexNope: number = players[playerToNope].hand.hasCardType(CardType.Nope);
-            
-            if(indexNope !== -1){
-                // If the player has a nope card
+            // Ask the player if he wants to use the nope card
+            const usedNope: boolean = await this.requestNopeUsage(players[playerToNope]);
+            if(usedNope){
+                // If the player uses the nope card
 
-                // Ask the player if he wants to use the nope card
-                const usedNope: boolean = await this.requestNopeUsage(players[playerToNope]);
-                if(usedNope){
-                    // If the player uses the nope card
+                // Check if the player has a nope card
+                const indexNope: number = players[playerToNope].hand.hasCardType(CardType.Nope);
+    
+                if(indexNope !== -1){
+                    // If the player has a nope card
+
                     // Remove the nope card from the player
-                    players[playerToNope].hand.popNth(indexNope);
+                    this.lastPlayedCard = players[playerToNope].hand.popNth(indexNope);
 
                     // Notify the rest of the players that the nope card has been used
-                    this.callSystem.broadcastNopeAction(players[playerToNope].username, players[(playerToNope + 1) % 2].username);
+                    this.callSystem.broadcastAction(ActionType.NopeUsed, players[playerToNope].username, players[(playerToNope + 1) % 2].username);
                     logger.verbose(`[GAME] Player ${players[playerToNope].username} has used a nope card`);
                     // Switch the player to nope
                     playerToNope = (playerToNope + 1) % 2;
 
                     this.communicateNewState();
                 } else {
-                    // If the player does not use the nope card
-                    logger.verbose(`[GAME] Player ${players[playerToNope].username} does not want to use a nope card`);
+                    // If the player does not have a nope card
+                    logger.warn(`[GAME] Player ${players[playerToNope].username} does not have a nope card and want to use it. By default, not use it.`);
+                    
+                    // Notify the rest of the players that the nope card has not been used
+                    this.callSystem.broadcastAction(ActionType.NopeNotUsed, players[playerToNope].username, players[(playerToNope + 1) % 2].username);
+                    
                     // The nope chain is resolved
                     resolved = true;
                 }
+
             } else {
-                // If the player does not have a nope card
-                logger.verbose(`[GAME] Player ${players[playerToNope].username} does not have a nope card`);
+                // If the player does not use the nope card
+                logger.verbose(`[GAME] Player ${players[playerToNope].username} does not want to use a nope card`);
+
+                this.callSystem.broadcastAction(ActionType.NopeNotUsed, players[playerToNope].username, players[(playerToNope + 1) % 2].username);
                 // The nope chain is resolved
                 resolved = true;
-            }
+            }  
+
         }
 
         logger.verbose(`[GAME] Nope chain resolved. Winner is ${players[(playerToNope + 1)%2].username}`);
@@ -558,12 +567,12 @@ export class GameObject {
                 logger.info(`[GAME] Player ${player.username} has defused the bomb using a deactivate card`);
 
                 // Remove the deactivate card from the player
-                player.hand.popNth(indexDeactivate); 
+                this.lastPlayedCard = player.hand.popNth(indexDeactivate); 
                 
                 // Add the bomb back to the deck
                 this.deck.addWithShuffle(newCard);
 
-                this.callSystem.broadcastBombDefusedAction(player.username)
+                this.callSystem.broadcastAction(ActionType.BombDefused, player.username)
 
                 this.setNextTurn();
 
@@ -580,7 +589,7 @@ export class GameObject {
             player.hand.push(newCard);
 
             // Notify the player that he has gotten a new card
-            this.callSystem.broadcastDrawCardAction(player.username)
+            this.callSystem.broadcastAction(ActionType.CardReceived, player.username)
 
             // Set the next turn
             this.setNextTurn();
@@ -591,8 +600,7 @@ export class GameObject {
 
     async playCards(playedCards: CardArray, player:Player): Promise<boolean>
     {  
-        const card: Card = playedCards.values[0];;
-        logger.info(`[GAME] Player ${player.username} is playing cards`);
+        const card: Card = playedCards.values[0];
         logger.debug(`[GAME] Cards played: ${playedCards}`);
 
         if (card.type == CardType.SeeFuture){
@@ -618,7 +626,7 @@ export class GameObject {
             return false;
         }
 
-        player.hand.removeCards(playedCards);
+        this.lastPlayedCard = player.hand.removeCards(playedCards);
         return true;
     }   
 
@@ -635,7 +643,7 @@ export class GameObject {
 
         // Randomly shuffle the deck
         this.deck.shuffle();
-        this.callSystem.broadcastShuffleDeckAction(currentPlayer.username);
+        this.callSystem.broadcastAction(ActionType.ShuffleDeck, currentPlayer.username);
     }
 
     /**
@@ -649,15 +657,18 @@ export class GameObject {
         const followingPlayer = this.players[this.nextActivePlayer()];
 
         // Notify the player he had skipped the turn
-        this.callSystem.broadcastSkipTurnAction(currentPlayer.username, followingPlayer.username);
+        this.callSystem.broadcastAction(ActionType.SkipTurn, currentPlayer.username, followingPlayer.username);
 
         if(!await this.resolveNopeChain(currentPlayer, followingPlayer))
         {
+            this.callSystem.broadcastAction(ActionType.SkipTurnFailed, currentPlayer.username, followingPlayer.username);
+            logger.info(`[GAME] Player ${currentPlayer.username} has been noped. Skip failed`);
             return;
         }
 
         logger.info(`[GAME] Player ${currentPlayer.username} has skipped the turn`);
         this.callSystem.notifyOkPlayedCards(currentPlayer.username);
+        this.callSystem.broadcastAction(ActionType.SkipTurnSuccessful, currentPlayer.username, followingPlayer.username);
         
         // If the skip is not noped, change the turn
         this.setNextTurn();
@@ -673,7 +684,7 @@ export class GameObject {
         const nextCards: CardArray = this.deck.peekN(3);
 
         logger.info(`[GAME] Player ${currentPlayer.username} is seeing the future`);
-        this.callSystem.broadcastFutureAction(currentPlayer.username);
+        this.callSystem.broadcastAction(ActionType.FutureSeen, currentPlayer.username);
 
         this.callSystem.notifyFutureCards(nextCards, currentPlayer.username);
 
@@ -689,13 +700,18 @@ export class GameObject {
         
         // Get the attacked player
         const attackedPlayer:Player = this.players[this.nextActivePlayer()];
-        this.callSystem.broadcastAttackAction(currentPlayer.username, attackedPlayer.username);
+        this.callSystem.broadcastAction(ActionType.Attack, currentPlayer.username, attackedPlayer.username);
 
         if(!await this.resolveNopeChain(currentPlayer, attackedPlayer)){
+            
+            this.callSystem.broadcastAction(ActionType.AttackFailed, currentPlayer.username, attackedPlayer.username);
+            logger.info(`[GAME] Player ${currentPlayer.username} has been noped. Attack failed`);
             return;
         }
 
         logger.info(`[GAME] Player ${currentPlayer.username} has attacked player ${attackedPlayer.id}`);
+
+        this.callSystem.broadcastAction(ActionType.AttackSuccessful, currentPlayer.username, attackedPlayer.username);
 
         // If the attack is a success, give two turn to the next one
         this.forceNewTurn(2);
@@ -715,10 +731,12 @@ export class GameObject {
         // Get the player to steal from
 
         const playerToSteal: Player = await this.requestPlayer(currentPlayer);
-        this.callSystem.broadcastFavorAction(currentPlayer.username, playerToSteal.username);
+        this.callSystem.broadcastAction(ActionType.FavorAttack, currentPlayer.username, playerToSteal.username);
 
         if(!await this.resolveNopeChain(currentPlayer, playerToSteal)){
             // If the player is noped dont do anything
+            this.callSystem.broadcastAction(ActionType.FavorAttackFailed, currentPlayer.username, playerToSteal.username);
+            
             logger.info(`[GAME] Player has won the nope chain, favor canceled`);
             return;
         }
@@ -736,7 +754,7 @@ export class GameObject {
         currentPlayer.hand.push(cardToGive);
 
         // Notify the attack
-        this.callSystem.broadcastAttackAction(currentPlayer.username, playerToSteal.username);
+        this.callSystem.broadcastAction(ActionType.FavorAttackSuccessful, currentPlayer.username, playerToSteal.username);
 
         return;
     }
@@ -747,10 +765,13 @@ export class GameObject {
 
         const playerToSteal: Player = await this.requestPlayer(currentPlayer);
 
-        this.callSystem.broadcastWildCardAction(currentPlayer.username, playerToSteal.username, numberOfPlayedCards);
+        this.callSystem.broadcastAction(ActionType.TwoWildCardAttack, currentPlayer.username, playerToSteal.username);
 
         if(!await this.resolveNopeChain(currentPlayer, playerToSteal)){
             // If the player is noped notify attack failed
+            this.callSystem.broadcastAction(ActionType.TwoWildCardAttackFailed, currentPlayer.username, playerToSteal.username);
+
+            logger.info(`[GAME] Player has won the nope chain. Two wild cards attack canceled`);
             return;
         }
 
@@ -787,6 +808,9 @@ export class GameObject {
         logger.debug(`[GAME] Player ${currentPlayer.username} has stolen the card ${cardToSteal.toString()} from player ${playerToSteal.id}`);
         this.callSystem.notifyOkPlayedCardWithCardObtained(cardToSteal, currentPlayer.username);
         
+        // Notify the attack
+        this.callSystem.broadcastAction(ActionType.TwoWildCardAttackSuccessful, currentPlayer.username, playerToSteal.username);
+        
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);
     }
@@ -811,7 +835,9 @@ export class GameObject {
         // Steal the card
         const cardToSteal: Card = playerToSteal.hand.popNth(cardIndex);
         this.callSystem.notifyOkPlayedCardWithCardObtained(cardToSteal, currentPlayer.username);
-
+        
+        // Notify the attack
+        this.callSystem.broadcastAction(ActionType.ThreeWildCardAttackSuccessful, currentPlayer.username, playerToSteal.username);
 
         // Add the card to the current player
         currentPlayer.hand.push(cardToSteal);

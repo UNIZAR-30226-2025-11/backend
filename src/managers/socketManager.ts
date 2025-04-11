@@ -1,6 +1,7 @@
 import { Socket } from "socket.io";
 import logger from "../config/logger.js";
 import { BackendNotifyActionJSON } from "../api/socketAPI.js";
+import { ZodTypeAny } from "zod";
 
 export class SocketManager {
 
@@ -75,6 +76,7 @@ export class SocketManager {
         requestData: TRequest,
         usernames: string[],
         actionData: BackendNotifyActionJSON,
+        schema: ZodTypeAny,
         timeOut: number
     ): Promise<TResponse | undefined> {
 
@@ -101,9 +103,23 @@ export class SocketManager {
                 resolve(undefined);
             }, timeOut);
     
-            socket.once(socketEvent, (response: TResponse) => {
+            socket.once(socketEvent, (data: unknown) => {
                 clearTimeout(timeout);
-                logger.debug(`DONE: Response received from ${username} on event ${socketEvent}:\t%j`, response);
+                logger.debug(`DONE: Response received from ${username} on event ${socketEvent}:\t%j`, data);
+                
+                // Try decoding it given the parameter schema
+
+                const parsed = schema.safeParse(data);
+
+                if(!parsed.success) {
+                    logger.warn(`Invalid JSON: ${parsed.error}`);
+
+                    resolve(undefined)
+                }
+
+                const response: TResponse = parsed.data as TResponse;
+
+                
                 resolve(response);
             });
         });

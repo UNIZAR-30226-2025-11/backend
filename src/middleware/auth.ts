@@ -36,34 +36,3 @@ export function protectRoute(req: Request, res: Response, next: NextFunction) {
     next();
 }
 
-/**
- * Prevent other users to modify user profiles that are not theirs
- */
-export function protectUsersFromModification(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-) {
-    logger.verbose(`[USERS] Checking user modification permissions`);
-    const { username, uuid } = req.params;
-
-    const decoded = req.body;
-
-    try {
-        if (
-            (username && decoded.user !== username) ||
-            (uuid && decoded.id !== uuid)
-        ) {
-            logger.warn(`[USERS] User ${decoded.username} cannot modify other users data`);
-            logger.silly(`[USERS] User ${decoded.username} cannot modify user ${username}`);
-            res.status(403).send({ message: "Cannot modify other users data" });
-            return;
-        }
-    } catch {
-        logger.warn(`[USERS] Invalid token`);
-        res.status(401).send({ message: "Invalid token" });
-        return;
-    }
-
-    next();
-}
