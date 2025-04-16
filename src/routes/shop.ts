@@ -4,7 +4,7 @@ import {
     protectRoute
 } from "../middleware/auth.js";
 
-import { SHOP_API , CategoryJSON } from "../api/restAPI.js";
+import { SHOP_API , CategoryJSON, RawProduct, ProductJSON } from "../api/restAPI.js";
 import { UserRepository } from "../repositories/userRepository.js"
 import { shopRepository } from "../repositories/shopRepository.js";
 import logger from "../config/logger.js";
@@ -18,40 +18,37 @@ shopRouter
     // Obtain all the shops products for the user
     .get(async (req, res) => {
         try {
-            
-            const JSONResponse: { categories: CategoryJSON[] } = { categories: [] };
+
+            logger.info(`[SHOP] Getting all shop products`);
 
             const username : string = req.body.username;
 
-            const categories : string[] = await shopRepository.obtainAllCategories();
+            logger.debug(`[SHOP] User ${username} is trying to obtain the shop`);
 
-            let isBought : boolean = false;
-           
-            for (const category of categories){
+            const products : RawProduct[] = await shopRepository.getAllRawProducts();
 
-                const categoryJSON: CategoryJSON = {
-                    name: category,
-                    products: []
-                };
-                const products : {
-                    name: string;
-                    price: number;
-                    productId: number;
-                }[] = await shopRepository.obtainProducts(category);
-                for(const product of products){
+            const getBoughtProducts: Map<number, boolean> = await shopRepository.getBoughProducts(username);
 
-                    isBought = await shopRepository.isBought(product.productId, username);
-                    
-                    categoryJSON.products.push({
-                        name: product.name,
-                        price: product.price,
-                        isBought: isBought
-                    });
-                    
+            const JSONResponse : CategoryJSON[] = products.reduce((acc: CategoryJSON[], product: RawProduct) => {
+                const { categoryName, categoryUrl, productName, productUrl, id, price } = product;
+                const isBought : boolean = getBoughtProducts.get(id) || false;
+
+                // Check if the category already exists in the accumulator
+                let category = acc.find((cat) => cat.name === categoryName);
+                if (!category) {
+                    // If not, create a new category and add it to the accumulator
+                    category = { name: categoryName, url: categoryUrl, products: [] };
+                    acc.push(category);
                 }
 
-                JSONResponse.categories.push(categoryJSON);
-            }
+                // Add the product to the corresponding category
+                const newProduct : ProductJSON = { name: productName, url: productUrl, price: price, isBought: isBought };
+                category.products.push(newProduct);
+
+                return acc;
+            }, []);
+
+            console.log(JSONResponse);
            
             res.json({categories: JSONResponse});
             logger.info(`[SHOP] All shop send`);
@@ -72,35 +69,44 @@ shopRouter
                 res.status(400).json({ error: "category_name and product_name are required" });
             }
 
-            // Exist the product
-            const productExists : boolean = await shopRepository.existProduct(productName, categoryName);
-            if (!productExists) {
+            // Get the product id
+            const product : {id: number, coins: number} | undefined = await shopRepository.getProductIdAndCoins(productName, categoryName);
+            if (product === undefined) {
                 logger.warn(`[SHOP] ${categoryName} and ${productName} not exist`);
                 res.status(404).json({ error: "Product not found" });
+                return;
             }
-
-            const productId : number = await shopRepository.obtainId(productName, categoryName);
             
-            if(await shopRepository.isBought(productId, username)){
-                logger.warn(`[SHOP] ${categoryName} and ${productName} just buy for the user`)
-                res.status(400).json({ error: "You have just buy this product" });
+            if (await shopRepository.isBought(product.id, username)) {
+                logger.warn(`[SHOP] ${username} already bought the product ${categoryName} and ${productName}`);
+                res.status(404).json({ error: "Product already bought" });
+                return;
             }
 
-            // Obtain the coins
-            const coins : number = await shopRepository.obtainCoinsProduct(productName, categoryName);
+            const currentCoins: number = await UserRepository.getCoins(username);
+            if (currentCoins < product.coins) {
+                logger.warn(`[SHOP] ${username} does not have enough coins`);
+                res.status(404).json({ error: "Not enough coins" });
+                return;
+            }
 
-            // update coins
-            await UserRepository.removeCoins(coins, username);
+            
+            if (!await UserRepository.updateCoins(username, currentCoins - product.coins))
+            {
+                logger.warn(`[SHOP] Error updating coins for ${username}`);
+                res.status(404).json({ error: "User not found" });
+                return;
+            }
 
             // add product to the table
-            await shopRepository.addProduct(productId, username);
+            await shopRepository.addProduct(product.id, username);
 
             logger.info(`[SHOP] The product ${categoryName} and ${productName} has been bought`)
             res.status(200).json({ message: "Product purchased successfully", userId: username });
         }
         catch (error) {
             logger.error(`Error in purchase: ${error}`);
-            res.status(500).json({ error: "Error buying the new product" });
+            res.status(404).json({ error: "Error buying the new product" });
         }
     });
 

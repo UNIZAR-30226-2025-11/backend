@@ -40,16 +40,19 @@ CREATE TABLE IF NOT EXISTS users_in_lobby (
     PRIMARY KEY(username, lobby_id)
 );
 
+
 CREATE TABLE IF NOT EXISTS shop_products (
-    product_id INT PRIMARY KEY NOT NULL,
-    name TEXT NOT NULL,
-    category TEXT NOT NULL,
-    price INT NOT NULL
+    id INT PRIMARY KEY NOT NULL,
+    price INT NOT NULL,
+    product_name TEXT NOT NULL,
+    product_url TEXT NOT NULL,
+    category_url TEXT NOT NULL,
+    category_name TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_products (
     username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
-    id_product INT NOT NULL REFERENCES shop_products(product_id) ON DELETE CASCADE
+    id_product INT NOT NULL REFERENCES shop_products(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS friends (
@@ -58,12 +61,13 @@ CREATE TABLE IF NOT EXISTS friends (
     isAccepted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-INSERT INTO shop_products (product_id,name, category, price) VALUES
-                    (0,'HairyCat', 'Avatar', 500),
-                    (1,'PotatoCat', 'Avatar', 1000),
-                    (2, 'BeardCat', 'Avatar', 1500),
-                    (3, 'Blue', 'Background', 300),
-                    (4, 'Yellow', 'Background', 600);
+INSERT INTO shop_products (id, product_url, product_name, category_url, category_name, price) VALUES
+                    (0,'default', 'Default', 'avatar', 'Avatar', 0),
+                    (1,'scared_cat', 'Scared Cat', 'avatar', 'Avatar', 500),
+                    (2, 'angry_cat', 'Angry Cat', 'avatar', 'Avatar', 1000),
+                    (3, 'mad_cat', 'Mad Cat', 'avatar', 'Avatar', 1500),
+                    (4, 'rainbow', 'Rainbow Background', 'background', 'Background', 300),
+                    (5, 'star', 'Stars Background', 'background', 'Background', 600);
 
 
 -- DO THIS AT THE END, CREATE A TESTING DB THAT IS A COPY OF THE ACTUAL ONE

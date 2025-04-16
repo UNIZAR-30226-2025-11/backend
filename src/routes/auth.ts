@@ -12,6 +12,7 @@ import {
 import { UserRepository } from "../repositories/userRepository.js";
 import { LOGIN_API, LOGOUT_API, REGISTER_API } from "../api/restAPI.js";
 import logger from "../config/logger.js";
+import { shopRepository } from "../repositories/shopRepository.js";
 
 const authRouter = Router();
 
@@ -28,6 +29,8 @@ authRouter.route(REGISTER_API).post(async (req, res) => {
 
         const newUser = await createNewUser(username, password);
         await UserRepository.create(newUser);
+
+        await shopRepository.addProduct(0, username); // Add the default icon to the user.
 
         logger.info(`[AUTH] User ${username} registered`);
         res.status(201).send({ id: newUser.id });

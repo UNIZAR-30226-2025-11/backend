@@ -10,13 +10,26 @@ export const USER_API: string = "/user";
 export const ID_API: string = "/id";
 
 
+export type RawProduct = {
+    productName: string;
+    productUrl: string;
+    categoryName: string;
+    categoryUrl: string;
+
+    id: number;
+    price: number;
+};
+
+
 export type CategoryJSON = {
     name: string;
+    url: string;
     products: ProductJSON[];
 }
 
 export type ProductJSON = {
     name: string;
+    url: string;
     price: number;
     isBought: boolean;
 }

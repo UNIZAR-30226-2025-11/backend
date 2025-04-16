@@ -170,7 +170,6 @@ export class UserRepository {
                 WHERE username=$1
                 `, [username]);
             if (res.rows.length > 0) {
-                console.log(res.rows[0]);
                 const row = camelcaseKeys(res.rows[0], { deep: true });
                 const user = row as UserEntity;
                 return user;
@@ -208,47 +207,44 @@ export class UserRepository {
         }
     }
 
-    /**
-     * Reduce the coins of a user
-     * @param coins: coins necessary
-     * @param username: number id of the user
-     */
-    static async removeCoins(
-        coins: number,
-        username: string
-    ) :Promise<void> {
+    static async getCoins(username: string): Promise<number> {
         try {
-            logger.silly(`[DB] AWAIT: Obtaining the coins`);
+            logger.silly(`[DB] AWAIT: Getting coins for ${username}`);
             const res = await db.query(
                 `
                 SELECT coins 
-                FROM users
+                FROM users 
                 WHERE username=$1
                 `, [username]);
-
             if (res.rows.length > 0) {
-                const futureCoins = res.rows[0].coins - coins
-
-                logger.silly(`[DB] DONE: Obtained the coins`);
-
-                if(futureCoins > 0){
-                    logger.silly(`[DB] AWAIT: Updating the coins`);
-                    await db.query(
-                        `
-                        UPDATE users 
-                        SET coins = $1
-                        WHERE username = $2;
-                        `,
-                        [coins, username]
-                    );
-                    logger.silly(`[DB] DONE: Update the coins`);
-                } 
-                else{
-                    logger.error("[DB] The user do not have enough coins to buy this product");
-                    throw new Error("Error in database");
-                }
+                logger.silly(`[DB] DONE: Got coins for ${username}`);
+                return res.rows[0].coins;
+            } else {
+                return 0;
             }
         } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
+    static async updateCoins(username: string, coins: number): Promise<boolean> {
+        try {
+            logger.silly(`[DB] AWAIT: Setting coins for ${username}`);
+            const res = await db.query(
+                `
+                UPDATE users 
+                SET coins=$1 
+                WHERE username=$2
+                `, [coins, username]);
+            if (res.rowCount !== 0) {
+                logger.silly(`[DB] DONE: Set coins for ${username}`);
+                return true;
+            } else {
+                return false;
+            }
+        }
+        catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");
         }
