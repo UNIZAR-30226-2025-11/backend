@@ -3,13 +3,25 @@ CREATE TABLE IF NOT EXISTS users (
     id uuid UNIQUE PRIMARY KEY,
     username varchar(128) UNIQUE NOT NULL,
     password varchar(128) NOT NULL,
+    avatar TEXT NOT NULL DEFAULT 'default',
 
     -- Statistics
     games_played integer NOT NULL CHECK (games_played >= 0) DEFAULT 0,
     games_won integer NOT NULL CHECK (games_won >= 0) DEFAULT 0,
-
+    current_streak integer NOT NULL CHECK (current_streak >= 0) DEFAULT 0,
+    max_streak integer NOT NULL CHECK (max_streak >= 0) DEFAULT 0,
+    total_time_played integer NOT NULL CHECK (total_time_played >= 0) DEFAULT 0,
+    total_turns_played integer NOT NULL CHECK (total_turns_played >= 0) DEFAULT 0,
     -- Currency available
     coins integer NOT NULL CHECK (coins >= 0) DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS game_history (
+    player TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+    lobby_id TEXT NOT NULL,
+    win BOOLEAN NOT NULL,
+    game_date TIMESTAMP NOT NULL,
+    PRIMARY KEY(player, lobby_id)
 );
 
 -- Create the lobbies table

@@ -17,3 +17,36 @@ export type ProductJSON = {
     price: number;
     isBought: boolean;
 }
+
+export type FriendsJSON = {
+    username: string;
+    avatar: string;
+}
+
+
+export type UserJSON = {
+    username: string;
+    coins: number;
+    statistics: StatisticsJSON;
+    userPersonalizeData: UserPersonalizeDataJSON;
+}
+
+export type StatisticsJSON = {
+    gamesPlayed: number;
+    gamesWon: number;
+    currentStreak: number;
+    bestStreak: number;
+    totalTimePlayed: number;
+    totalTurnsPlayed: number;
+    lastFiveGames: RecordJSON[];
+}
+
+export type UserPersonalizeDataJSON = {
+    avatar: string;
+}
+
+export type RecordJSON = {
+    gameDate: Date;
+    isWinner: boolean;
+    lobbyId: string;
+}

@@ -282,23 +282,31 @@ eventBus.on(GameEvents.LOBBY_DISBAND, async (lobbyId: string) => {
 eventBus.on(GameEvents.NEW_PLAYERS_LOBBY, async (lobbyId: string) => {
     const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
 
-    const msg: BackendLobbyStateUpdateJSON = {
-        error: false,
-        errorMsg: "",
-        players: playersInLobby.map(player => { return { name: player.username, isLeader: player.isLeader } }),
-        disband: false,
-        lobbyId: lobbyId
-    }
+    playersInLobby.forEach(playerInLobby => {
+        const socket: Socket | undefined = SocketManager.getSocket(playerInLobby.username);
 
-    playersInLobby.forEach(player => {
-        const socket: Socket | undefined = SocketManager.getSocket(player.username);
+        const msg: BackendLobbyStateUpdateJSON = {
+            error: false,
+            errorMsg: "",
+            players: playersInLobby.map(
+                player => { 
+                    return { 
+                        name: player.username, 
+                        isLeader: player.isLeader, 
+                        isYou: player.username === playerInLobby.username  
+                    } 
+                }
+            ),
+            disband: false,
+            lobbyId: lobbyId
+        }
 
         if(socket === undefined) {
             logger.error("Socket not found!");
             return;
         }
 
-        logger.debug(`Sending "lobby-state" message to ${player.username}:\t%j`, msg);
+        logger.debug(`Sending "lobby-state" message to ${playerInLobby.username}:\t%j`, msg);
 
         socket.emit("lobby-state", msg);
     });

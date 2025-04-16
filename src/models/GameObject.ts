@@ -11,6 +11,7 @@ import eventBus from "../events/eventBus.js";
 import { GameEvents } from "../events/gameEvents.js";
 import { CARD_COUNTS, EXTRA_BOMBS, EXTRA_DEACTIVATES, TURN_TIME_LIMIT } from "../config.js";
 import { ActionType } from "./ActionType.js";
+import { PlayerHistory } from "./PlayerHistory.js";
 
 export class GameObject {
     lobbyId: string;
@@ -25,6 +26,10 @@ export class GameObject {
     leaderUsername : string;
     messages: Message[];
     lastPlayedCard: Card | undefined;
+
+    gameDate: Date;
+    turnsPlayed: number;
+    gameEndDate: Date | undefined;
 
     constructor(
         lobbyId:string,
@@ -76,6 +81,10 @@ export class GameObject {
         this.leaderUsername = leaderUsername;
         this.messages = [];
 
+
+        this.gameDate = new Date();
+        this.gameEndDate = undefined;
+        this.turnsPlayed = 0;
 
         this.callSystem.broadcastStartGame();
         this.communicateNewState();
@@ -140,6 +149,27 @@ export class GameObject {
     getPlayerByUsername(username: string): Player | undefined {
         const id: number | undefined = this.getIdByUsername(username);
         return id !== undefined ? this.players[id] : undefined;
+    }
+
+    getPlayersHistory(): PlayerHistory[] {
+
+        if(this.winnerUsername === undefined || this.gameEndDate === undefined){
+            logger.error(`[GAME] No winner yet`);
+            return [];
+        }
+
+        const elapsedSeconds: number = Number((this.gameEndDate.getTime() - this.gameDate.getTime()) / 1000);
+
+        return this.players.map(player => {
+            return new PlayerHistory(
+                player.username,
+                this.lobbyId,
+                this.winnerUsername === player.username,
+                this.gameDate,
+                elapsedSeconds,
+                this.turnsPlayed
+            );
+        });
     }
     
 
@@ -432,6 +462,7 @@ export class GameObject {
             logger.verbose(`[GAME] Next turn is ${this.players[this.turn].username}`);
         }
         this.startTurnTimer();
+        this.turnsPlayed++;
         return;
     }
 
@@ -468,6 +499,8 @@ export class GameObject {
         );
 
         this.winnerUsername = winner.username;
+
+        this.gameEndDate = new Date();
 
         this.stopTurnTimer();
 

@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
+import { UserRepository } from "../repositories/userRepository.js";
+import { RecordJSON, UserJSON } from "../api/restAPI.js";
 
 export interface UserEntity {
   id: crypto.UUID;
@@ -8,17 +10,26 @@ export interface UserEntity {
 
   gamesPlayed: number;
   gamesWon: number;
+  currentStreak: number;
+  maxStreak: number;
+  totalTimePlayed: number;
+  totalTurnsPlayed: number;
 
   coins: number;
-  
+  avatar: string;
 }
-
 
 export class User implements UserEntity {
     id = crypto.randomUUID();
     gamesPlayed = 0;
     gamesWon = 0;
     coins = 0;
+    currentStreak = 0;
+    maxStreak = 0;
+    totalTimePlayed = 0;
+    totalTurnsPlayed = 0;
+
+    avatar = "default";
   
     /** Create a brand-new user */
     constructor(
@@ -46,6 +57,11 @@ export async function createNewUser(
         gamesPlayed: 0,
         gamesWon: 0,
         coins: 0,
+        currentStreak: 0,
+        maxStreak: 0,
+        totalTimePlayed: 0,
+        totalTurnsPlayed: 0,
+        avatar: "default",
     };
 }
   
@@ -54,3 +70,30 @@ export function getPublicUser(user: UserEntity) {
     const { password: _, ...publicUser } = user;
     return publicUser;
 }
+  
+export async function getUserData(username: string) : Promise<UserJSON | undefined> {
+  const user = await UserRepository.findByUsername(username);
+  if (!user) {
+    return undefined;
+  }
+
+  const lastFiveGames: RecordJSON[] = await UserRepository.getLastFiveGames(username);
+  const userData: UserJSON = {
+    username: user.username,
+    coins: user.coins,
+    statistics: {
+      gamesPlayed: user.gamesPlayed,
+      gamesWon: user.gamesWon,
+      currentStreak: user.currentStreak,
+      bestStreak: user.maxStreak,
+      totalTimePlayed: user.totalTimePlayed,
+      totalTurnsPlayed: user.totalTurnsPlayed,
+      lastFiveGames: lastFiveGames,
+    },
+    userPersonalizeData: {
+      avatar: user.avatar,
+    },
+  };
+
+  return userData;
+} 

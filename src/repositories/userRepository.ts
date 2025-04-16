@@ -3,6 +3,8 @@ import crypto from "node:crypto";
 import { UserEntity } from "../models/User.js";
 import logger from "../config/logger.js";
 import bcrypt from "bcrypt";
+import { RecordJSON } from "../api/restAPI.js";
+import camelcaseKeys from "camelcase-keys";
 
 
 export class UserRepository {
@@ -168,7 +170,10 @@ export class UserRepository {
                 WHERE username=$1
                 `, [username]);
             if (res.rows.length > 0) {
-                return res.rows[0] as UserEntity;
+                console.log(res.rows[0]);
+                const row = camelcaseKeys(res.rows[0], { deep: true });
+                const user = row as UserEntity;
+                return user;
             } else {
                 return undefined;
             }
@@ -177,7 +182,7 @@ export class UserRepository {
             throw new Error("Error in database");
         }
     }
-    
+
     /**
      * Find all users
      * @returns All users
@@ -226,7 +231,7 @@ export class UserRepository {
 
                 logger.silly(`[DB] DONE: Obtained the coins`);
 
-                if( futureCoins > 0){
+                if(futureCoins > 0){
                     logger.silly(`[DB] AWAIT: Updating the coins`);
                     await db.query(
                         `
@@ -248,7 +253,27 @@ export class UserRepository {
             throw new Error("Error in database");
         }
     }
-  }
+
+    static async getLastFiveGames(username: string): Promise<RecordJSON[]> {
+        try {
+            logger.silly(`[DB] AWAIT: Getting last five games for ${username}`);
+            const res = await db.query(
+                `
+                SELECT lobby_id, win, game_date 
+                FROM game_history 
+                WHERE player=$1
+                ORDER BY game_date DESC
+                LIMIT 5
+                `, [username]);
+            logger.silly(`[DB] DONE: Got last five games for ${username}`);
+            return res.rows as RecordJSON[];
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
+}
 
 
   

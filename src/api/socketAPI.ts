@@ -219,6 +219,7 @@ export type BackendLobbyStateUpdateJSON = {
 export type PlayerLobbyJSON = {
     name: string;
     isLeader: boolean;
+    isYou: boolean;
 }
 
 // -----------------------------------------------------------

@@ -401,8 +401,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
             return;
         }
 
-        logger.debug(`Sending "game-played-cards" message to ${username}: %j`, msg);
-        socket.emit("game-played-cards", msg);        
+        logger.debug(`Sending "get-messages" message to ${username}: %j`, msg);
+        socket.emit("get-messages", msg);      
     }
 
     notifyGameState(

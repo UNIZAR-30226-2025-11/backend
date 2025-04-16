@@ -6,6 +6,7 @@ import { CardArray } from "../models/CardArray.js";
 import logger from "../config/logger.js";
 import eventBus from "../events/eventBus.js";
 import { GameEvents } from "../events/gameEvents.js";
+import { PlayerHistory } from "../models/PlayerHistory.js";
 
 export class GameManager {
 
@@ -106,9 +107,25 @@ export class GameManager {
             return;
         }
 
+        const allPlayersHistory: PlayerHistory[] = currentGame.getPlayersHistory();
+
         await GameRepository.addCoinsToPlayer(username, coinsEarned);
         await GameRepository.addWinToPlayer(username);
         await GameRepository.addGamePlayedToLobby(lobbyId);
+
+        const streak: number = await GameRepository.addStreakWinToPlayer(username);
+        const maxStreak: number = await GameRepository.getMaxStreakWin(username);
+        if (streak > maxStreak) {
+            await GameRepository.setMaxStreakWin(username, streak);
+        }
+
+        allPlayersHistory.forEach(async (player) => {
+            if (player.username !== username)
+                await GameRepository.removeStreakWinToPlayer(player.username);
+            await GameRepository.addHistoryToPlayer(player.username, player.lobbyId, player.isWinner, player.gameDate);
+            await GameRepository.addTimePlayedToPlayer(player.username, player.timePlayed);
+            await GameRepository.addTurnsPlayedToPlayer(player.username, player.turnsPlayed);
+        });
 
         await LobbyManager.deleteLobby(lobbyId);
 
