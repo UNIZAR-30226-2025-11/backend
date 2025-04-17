@@ -17,6 +17,7 @@ export interface UserEntity {
 
   coins: number;
   avatar: string;
+  background: string;
 }
 
 export class User implements UserEntity {
@@ -30,6 +31,7 @@ export class User implements UserEntity {
     totalTurnsPlayed = 0;
 
     avatar = "default";
+    background = "default";
   
     /** Create a brand-new user */
     constructor(
@@ -62,6 +64,7 @@ export async function createNewUser(
         totalTimePlayed: 0,
         totalTurnsPlayed: 0,
         avatar: "default",
+        background: "default",
     };
 }
   
@@ -92,6 +95,7 @@ export async function getUserData(username: string) : Promise<UserJSON | undefin
     },
     userPersonalizeData: {
       avatar: user.avatar,
+      background: user.background,
     },
   };
 

@@ -44,19 +44,19 @@ export class shopRepository {
     static async getProductIdAndCoins(
         productName: string,
         categoryName: string
-    ) : Promise<{id: number, coins: number} | undefined>{
+    ) : Promise<{id: number, price: number} | undefined>{
 
         try {
-            logger.silly(`[DB] AWAIT: Getting if exist one product`);
+            logger.silly(`[DB] AWAIT: Getting product id and price for ${categoryName}-${productName}`);
             const res = await db.query(
                 `
-                SELECT id, coins
+                SELECT id, price
                 FROM shop_products
                 WHERE category_url=$1 and product_url=$2
                 `, [categoryName, productName]);
             if (res.rows.length > 0) {
                 logger.silly(`[DB] DONE: Got the product`);
-                return {id: res.rows[0].id, coins: res.rows[0].coins};
+                return {id: res.rows[0].id, price: res.rows[0].price};
             } else {
                 return undefined;
             }

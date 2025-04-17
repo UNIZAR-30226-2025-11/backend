@@ -31,6 +31,7 @@ authRouter.route(REGISTER_API).post(async (req, res) => {
         await UserRepository.create(newUser);
 
         await shopRepository.addProduct(0, username); // Add the default icon to the user.
+        await shopRepository.addProduct(4, username); // Add the default background to the user.
 
         logger.info(`[AUTH] User ${username} registered`);
         res.status(201).send({ id: newUser.id });

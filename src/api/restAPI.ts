@@ -58,6 +58,7 @@ export type StatisticsJSON = {
 
 export type UserPersonalizeDataJSON = {
     avatar: string;
+    background: string;
 }
 
 export type RecordJSON = {

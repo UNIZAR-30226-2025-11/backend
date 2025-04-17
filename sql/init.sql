@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
     username varchar(128) UNIQUE NOT NULL,
     password varchar(128) NOT NULL,
     avatar TEXT NOT NULL DEFAULT 'default',
+    background TEXT NOT NULL DEFAULT 'default',
 
     -- Statistics
     games_played integer NOT NULL CHECK (games_played >= 0) DEFAULT 0,
@@ -66,9 +67,10 @@ INSERT INTO shop_products (id, product_url, product_name, category_url, category
                     (1,'scared_cat', 'Scared Cat', 'avatar', 'Avatar', 500),
                     (2, 'angry_cat', 'Angry Cat', 'avatar', 'Avatar', 1000),
                     (3, 'mad_cat', 'Mad Cat', 'avatar', 'Avatar', 1500),
-                    (4, 'rainbow', 'Rainbow Background', 'background', 'Background', 300),
-                    (5, 'star', 'Stars Background', 'background', 'Background', 600);
-
+                    (4, 'default', 'Default', 'background', 'Background', 0),
+                    (5, 'blue', 'Blue', 'background', 'Background', 100),
+                    (6, 'green', 'Green', 'background', 'Background', 100),
+                    (8, 'rainbow', 'Rainbow', 'background', 'Background', 300);
 
 -- DO THIS AT THE END, CREATE A TESTING DB THAT IS A COPY OF THE ACTUAL ONE
 DROP DATABASE IF EXISTS katboom_testing;

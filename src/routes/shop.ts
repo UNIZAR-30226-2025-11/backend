@@ -70,7 +70,7 @@ shopRouter
             }
 
             // Get the product id
-            const product : {id: number, coins: number} | undefined = await shopRepository.getProductIdAndCoins(productName, categoryName);
+            const product : {id: number, price: number} | undefined = await shopRepository.getProductIdAndCoins(productName, categoryName);
             if (product === undefined) {
                 logger.warn(`[SHOP] ${categoryName} and ${productName} not exist`);
                 res.status(404).json({ error: "Product not found" });
@@ -84,14 +84,14 @@ shopRouter
             }
 
             const currentCoins: number = await UserRepository.getCoins(username);
-            if (currentCoins < product.coins) {
+            if (currentCoins < product.price) {
                 logger.warn(`[SHOP] ${username} does not have enough coins`);
                 res.status(404).json({ error: "Not enough coins" });
                 return;
             }
 
             
-            if (!await UserRepository.updateCoins(username, currentCoins - product.coins))
+            if (!await UserRepository.updateCoins(username, currentCoins - product.price))
             {
                 logger.warn(`[SHOP] Error updating coins for ${username}`);
                 res.status(404).json({ error: "User not found" });
