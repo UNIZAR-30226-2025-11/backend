@@ -3,7 +3,7 @@ import logger from "../config/logger.js";
 import { FriendsJSON } from "../api/restAPI.js";
 
 
-export class friendsRepository {
+export class FriendsRepository {
 
     /**
      * Retrieves all accepted friends of a given user
@@ -116,7 +116,7 @@ export class friendsRepository {
      */
     static async getPendingFriendRequestsCount(username:string): Promise<number>{
         try {
-            const friends = await friendsRepository.obtainPendingFriendRequestSent(username);
+            const friends = await FriendsRepository.obtainPendingFriendRequestSent(username);
             
             return friends.length;
             

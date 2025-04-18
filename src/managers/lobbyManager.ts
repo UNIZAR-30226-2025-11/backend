@@ -31,6 +31,10 @@ export class LobbyManager {
         await this.removePlayerFromLobby(username, lobbyId);        
     }
 
+    static async getLobbyWithPlayer(username: string): Promise<string | undefined> {
+        return await LobbyRepository.getLobbyWithPlayer(username);
+    }
+
     static async deleteLobby(lobbyId: string): Promise<void> {
 
         logger.info(`Deleting lobby ${lobbyId}.`);
@@ -170,10 +174,12 @@ export class LobbyManager {
             return undefined;
         }
 
-        const lobbyPlayers: { username: string, isLeader: boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
-
-        const lobbyPlayersUsernames: string[] = lobbyPlayers.map(player => player.username);
-        const numPlayers: number = lobbyPlayers.length;
+        const lobbyPlayers: { username: string, isLeader: boolean, avatar: string}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
+        const lobbyPlayersUsernames: 
+            {username:string, avatar:string}[] = 
+            lobbyPlayers.map(player => ({username: player.username, avatar: player.avatar}));
+        
+            const numPlayers: number = lobbyPlayers.length;
 
         if(numPlayers < 2) {
             logger.warn(`Lobby ${lobbyId} has less than 2 players!`);
@@ -183,8 +189,8 @@ export class LobbyManager {
         const comm:socketCommunicationGateway = new socketCommunicationGateway(lobbyId);
 
         for(let i = 0; i < numPlayers; i++) {
-            comm.registerPlayer(lobbyPlayersUsernames[i]);
-            await LobbyRepository.setPlayerIdInGame(lobbyPlayersUsernames[i], i);
+            comm.registerPlayer(lobbyPlayersUsernames[i].username);
+            await LobbyRepository.setPlayerIdInGame(lobbyPlayersUsernames[i].username, i);
         }
 
         const game:GameObject = new GameObject(

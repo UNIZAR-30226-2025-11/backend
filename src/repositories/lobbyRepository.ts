@@ -190,21 +190,25 @@ export class LobbyRepository {
     
     }
 
-    static async getPlayersInLobbyBeforeStart(lobbyId: string): Promise<{ username: string, isLeader: boolean}[]>{
+    static async getPlayersInLobbyBeforeStart(lobbyId: string): Promise<{ username: string, isLeader: boolean, avatar: string}[]>{
         try {
             logger.silly(`[DB] AWAIT: Getting players in lobby ${lobbyId}`);
             const res = await db.query(
                 `
                 SELECT 
                     users_in_lobby.username AS username, 
-                    (lobbies.leader = users_in_lobby.username) AS is_leader
+                    (lobbies.leader = users_in_lobby.username) AS is_leader,
+                    (users.avatar) AS avatar
                 FROM users_in_lobby
                 INNER JOIN lobbies ON users_in_lobby.lobby_id = lobbies.id
+                INNER JOIN users ON users_in_lobby.username = users.username
                 WHERE users_in_lobby.lobby_id = $1
                 AND users_in_lobby.id_in_game IS NULL;
                 `, [lobbyId]);
                 
-            const result = res.rows.map((row: { username: string, is_leader: boolean}) => ({ username: row.username, isLeader: row.is_leader}));
+            const result = res.rows.map(
+                (row: { username: string, is_leader: boolean, avatar: string}) =>
+                     ({ username: row.username, isLeader: row.is_leader, avatar: row.avatar}));
             logger.silly(`[DB] DONE: Got players in lobby ${lobbyId}: %j`, result);
             return result;
         }

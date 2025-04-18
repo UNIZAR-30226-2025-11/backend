@@ -27,8 +27,10 @@ export type CardJSON = {
 
 export type PlayerJSON = {
     playerUsername: string;
+    playerAvatar: string;
     numCards: number;
     active: boolean;
+    disconnected: boolean;
 }
 
 // -----------------------------------------------------------
@@ -322,4 +324,78 @@ export type MsgJSON = {
     msg: string;
     username: string;
     date: string;
+}
+
+// -----------------------------------------------------------
+// Message to get the connected friends
+// Started by: The frontend
+// Listened by: The backend
+// Ack: Yes, with the BackendSendConnectedFriendsJSON
+// Socket-event: "get-friends-connected"
+export type FrontendRequestConnectedFriendsJSON = {
+    error: boolean;
+    errorMsg: string;
+    lobbyId: string;
+}
+
+export type BackendSendConnectedFriendsJSON = {
+    error: boolean;
+    errorMsg: string;
+    connectedFriends: FriendSocketJSON[];
+}
+
+export type FriendSocketJSON = {
+    username: string;
+    avatar: string;
+    connected: boolean;
+    isInGame: boolean;
+    isAlreadyInThisLobby: boolean;
+}
+
+// -----------------------------------------------------------
+// Message to send a friend request to join a lobby
+// Started by: The frontend
+// Listened by: The backend
+// Ack: Yes, with the BackendResponseFriendRequestEnterLobbyJSON
+// Socket-event: "send-friend-join-lobby-request"
+// -----------------------------------------------------------
+
+export type FrontendSendFriendRequestEnterLobbyJSON = {
+    error: boolean;
+    errorMsg: string;
+    lobbyId: string;
+    friendUsername: string;
+}
+
+export type BackendResponseFriendRequestEnterLobbyJSON = {
+    error: boolean;
+    errorMsg: string;
+    lobbyId: string;
+    friendUsername: string;
+    accept: boolean;
+}
+
+
+// -----------------------------------------------------------
+// Message to send a friend request to join a lobby
+// Started by: The backend
+// Listened by: The friend that is going to receive the request
+// Ack: Yes, with the FrontendResponseFriendRequestEnterLobbyJSON
+// Socket-event: "receive-friend-lobby-request"
+// -----------------------------------------------------------
+
+export type BackendSendFriendRequestEnterLobbyJSON = {
+    error: boolean;
+    errorMsg: string;
+    lobbyId: string;
+    friendSendingRequest: string;
+    friendSendingRequestAvatar: string;
+}
+
+export type FrontendResponseFriendRequestEnterLobbyJSON = {
+    error: boolean;
+    errorMsg: string;
+    lobbyId: string;
+    accept: boolean;
+    friendSendingRequest: string;
 }

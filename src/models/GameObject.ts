@@ -34,7 +34,7 @@ export class GameObject {
     constructor(
         lobbyId:string,
         numberOfPlayers: number,
-        playersUsernames: string[],
+        playersInfo: {username: string, avatar: string}[],
         leaderUsername: string, 
         comm: CommunicationGateway
     ) {
@@ -52,7 +52,7 @@ export class GameObject {
         this.players = [];
         for(let i = 0; i < numberOfPlayers; i++)
         {
-            this.players.push(Player.createStandarPlayer(i, playersUsernames[i], this.deck));
+            this.players.push(Player.createStandarPlayer(i, playersInfo[i].username, playersInfo[i].avatar, this.deck));
         }
 
         this.deck.addDeactivates(numberOfPlayers+EXTRA_DEACTIVATES);

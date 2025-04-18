@@ -5,6 +5,7 @@ import { SocketManager } from "./managers/socketManager.js"
 import { setupDisconnectionHandlers } from "./controllers/disconnectionController.js";
 import logger from "./config/logger.js";
 import { setupReconnection } from "./controllers/reconnectionController.js";
+import { setupFriendHandlers } from "./controllers/friendController.js";
 
 export const setupSocket = (io: Server) => {
     io.on("connection", (socket: Socket) => {
@@ -26,5 +27,7 @@ export const setupSocket = (io: Server) => {
         setupDisconnectionHandlers(socket);
 
         setupReconnection(socket);
+        
+        setupFriendHandlers(socket);
     });
 };

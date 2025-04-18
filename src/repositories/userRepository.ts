@@ -228,6 +228,28 @@ export class UserRepository {
         }
     }
 
+    static async getAvatar(username: string): Promise<string> {
+        try {
+            logger.silly(`[DB] AWAIT: Getting avatar for ${username}`);
+            const res = await db.query(
+                `
+                SELECT avatar 
+                FROM users 
+                WHERE username=$1
+                `, [username]);
+            if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Got avatar for ${username}`);
+                return res.rows[0].avatar;
+            } else {
+                return "";
+            }
+        }
+        catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
     static async updateCoins(username: string, coins: number): Promise<boolean> {
         try {
             logger.silly(`[DB] AWAIT: Setting coins for ${username}`);

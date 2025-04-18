@@ -5,7 +5,7 @@ import {
 } from "../middleware/auth.js";
 
 import { FRIENDS_API,ALL_USERS, FRIENDS_REQ, FriendsJSON} from "../api/restAPI.js";
-import { friendsRepository } from "../repositories/friendsRepository.js";
+import { FriendsRepository } from "../repositories/friendsRepository.js";
 import logger from "../config/logger.js";
 
 const friendRouter = Router();
@@ -20,8 +20,8 @@ friendRouter
 
             logger.info(`[FRIENDS] Obtaining all friends`)
             const userUsername: string = req.body.username;
-            const friends: FriendsJSON[] = await friendsRepository.obtainFriends(userUsername);
-            const numReq: number = await friendsRepository.getPendingFriendRequestsCount(userUsername);
+            const friends: FriendsJSON[] = await FriendsRepository.obtainFriends(userUsername);
+            const numReq: number = await FriendsRepository.getPendingFriendRequestsCount(userUsername);
             
             logger.debug(`[FRIENDS] Friends: ${JSON.stringify(friends)}`);
             
@@ -54,7 +54,7 @@ friendRouter
                 res.status(400).json({ error: "username is required" });
             }
 
-            await friendsRepository.addNewFriend(friendUsername, username);
+            await FriendsRepository.addNewFriend(friendUsername, username);
             
             logger.info(`[FRIENDS] The friend ${friendUsername} has been added`);
             
@@ -79,7 +79,7 @@ friendRouter
                 res.status(400).json({ error: "username is required" });
             }
 
-            await friendsRepository.deleteNewFriend(friendUsername, username);
+            await FriendsRepository.deleteNewFriend(friendUsername, username);
 
             logger.info(`[FRIENDS] The friend ${friendUsername} has been eliminated`);
             
@@ -99,7 +99,7 @@ friendRouter
         try {
             logger.info(`[FRIENDS] Obtaining all users that can be friends with the user`);
             const username: string = req.body.username;
-            const friends: FriendsJSON[] = await friendsRepository.searchNewFriends(username);
+            const friends: FriendsJSON[] = await FriendsRepository.searchNewFriends(username);
             
             logger.debug(`[FRIENDS] Users: ${JSON.stringify(friends)}`);
             
@@ -121,7 +121,7 @@ friendRouter
 
             logger.info(`[FRIENDS] Obtaining all friend requests`);
             const username: string = req.body.username;
-            const friends: FriendsJSON[] = await friendsRepository.obtainPendingFriendRequestReceived(username);
+            const friends: FriendsJSON[] = await FriendsRepository.obtainPendingFriendRequestReceived(username);
             
             logger.debug(`[FRIENDS] Users: ${JSON.stringify(friends)}`);
 
@@ -148,10 +148,10 @@ friendRouter
             }
 
             if(accept){
-                await friendsRepository.acceptNewFriend(username, friendRequest);
+                await FriendsRepository.acceptNewFriend(username, friendRequest);
                 logger.info(`[FRIENDS] Friend request accepted`);
             } else{
-                await friendsRepository.deleteNewFriend(username, friendRequest);
+                await FriendsRepository.deleteNewFriend(username, friendRequest);
                 logger.info(`[FRIENDS] Friend request refused`);
             }
 

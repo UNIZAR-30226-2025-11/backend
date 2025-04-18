@@ -77,3 +77,26 @@ export const FrontendPostMsgJSONSchema = z.object({
     msg: z.string().min(1, "Message must be at least 1 character long"),
     lobbyId: LobbyIdSchema,
 });
+
+
+export const FrontendSendFriendRequestEnterLobbyJSONSchema = z.object({
+    error: z.boolean(),
+    errorMsg: z.string(),
+    lobbyId: LobbyIdSchema,
+    friendUsername: z.string(),
+});
+
+
+export const FrontendResponseFriendRequestEnterLobbyJSONSchema = z.object({
+    error: z.boolean(),
+    errorMsg: z.string(),
+    lobbyId: LobbyIdSchema,
+    accept: z.boolean(),
+    friendSendingRequest: z.string(),
+});
+
+export const FrontendRequestConnectedFriendsJSONSchema = z.object({
+    error: z.boolean(),
+    errorMsg: z.string(),
+    lobbyId: LobbyIdSchema,
+});
