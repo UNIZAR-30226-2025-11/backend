@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS user_products (
 CREATE TABLE IF NOT EXISTS friends (
     applier_username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
     applied_username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
-    isAccepted BOOLEAN NOT NULL DEFAULT FALSE
+    is_accepted BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY(applier_username, applied_username)
 );
 
 INSERT INTO shop_products (id, product_url, product_name, category_url, category_name, price) VALUES

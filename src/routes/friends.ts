@@ -4,7 +4,7 @@ import {
     protectRoute
 } from "../middleware/auth.js";
 
-import { FRIENDS_API,ALL_USERS, FRIENDS_REQ, FriendsJSON} from "../api/restAPI.js";
+import { FRIENDS_API,ALL_USERS, FRIENDS_REQ, FriendsJSON, UserAvatarJSON} from "../api/restAPI.js";
 import { FriendsRepository } from "../repositories/friendsRepository.js";
 import logger from "../config/logger.js";
 
@@ -54,11 +54,39 @@ friendRouter
                 res.status(400).json({ error: "username is required" });
             }
 
+            // Check if the user is already friends with the friendUsername
+            const areFriends: boolean = await FriendsRepository.areFriends(username, friendUsername);
+            if (areFriends) {
+                logger.warn(`[FRIENDS] ${friendUsername} is already a friend`);
+                res.status(400).json({ error: "User is already a friend" });
+            }
+
+            const haveAlreadySentRequest: boolean = await FriendsRepository.haveAlreadySentRequest(username, friendUsername);
+            if (haveAlreadySentRequest) {
+                logger.warn(`[FRIENDS] ${friendUsername} has already sent a request`);
+                res.status(400).json({ error: "Friend request already sent" });
+            }
+
+            // Check if the user is trying to add themselves as a friend
+            if (username === friendUsername) {
+                logger.warn(`[FRIENDS] ${friendUsername} is trying to add himself`);
+                res.status(400).json({ error: "User cannot add themselves as a friend" });
+            }
+
+            // Check if the friend has already sent a request
+            const friendAlreadySentRequest: boolean = await FriendsRepository.haveAlreadySentRequest(friendUsername, username);
+            if (friendAlreadySentRequest) {
+                logger.warn(`[FRIENDS] ${friendUsername} has already sent a request. Making them friends`);
+                await FriendsRepository.acceptNewFriend(friendUsername, username);
+                res.status(200).json({ message: "Friend request accepted", userId: username });
+                return;
+            }
+
             await FriendsRepository.addNewFriend(friendUsername, username);
             
             logger.info(`[FRIENDS] The friend ${friendUsername} has been added`);
             
-            res.status(200).json({ message: "New friend add successfully", userId: username });
+            res.status(200).json({ message: "New friend request added successfully", userId: username });
         }
         catch (error) {
             logger.error(`Error adding a new friend: ${error}`);
@@ -99,7 +127,7 @@ friendRouter
         try {
             logger.info(`[FRIENDS] Obtaining all users that can be friends with the user`);
             const username: string = req.body.username;
-            const friends: FriendsJSON[] = await FriendsRepository.searchNewFriends(username);
+            const friends: UserAvatarJSON[] = await FriendsRepository.searchNewFriends(username);
             
             logger.debug(`[FRIENDS] Users: ${JSON.stringify(friends)}`);
             
@@ -121,11 +149,15 @@ friendRouter
 
             logger.info(`[FRIENDS] Obtaining all friend requests`);
             const username: string = req.body.username;
-            const friends: FriendsJSON[] = await FriendsRepository.obtainPendingFriendRequestReceived(username);
+            const friends: UserAvatarJSON[] = await FriendsRepository.obtainPendingFriendRequestReceived(username);
             
-            logger.debug(`[FRIENDS] Users: ${JSON.stringify(friends)}`);
+            const msg = {
+                users: friends,
+            }
 
-            res.json(friends);
+            logger.debug(`[FRIENDS] Friend pettitions: %j`, msg);
+
+            res.json(msg);
 
             logger.info(`[FRIENDS] All friend pending requests sent correctly.`);
         } catch (error) {

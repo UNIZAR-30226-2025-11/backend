@@ -37,7 +37,14 @@ export type ProductJSON = {
 export type FriendsJSON = {
     username: string;
     avatar: string;
+    isAccepted: boolean;
 }
+
+export type UserAvatarJSON = {
+    username: string;
+    avatar: string;
+}
+
 
 export type UserJSON = {
     username: string;
