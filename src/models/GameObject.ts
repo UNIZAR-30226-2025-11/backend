@@ -396,6 +396,10 @@ export class GameObject {
 
         this.callSystem.broadcastPlayerReconnect(playerUsername);
 
+        this.callSystem.notifyPlayerCanReconnect(playerUsername);
+
+        this.communicateNewState();
+
         logger.info(`[GAME] Comunicating state to connected player.`);
         
         this.callSystem.notifyGameState(
@@ -430,6 +434,8 @@ export class GameObject {
         player.disconnected = true;
 
         this.callSystem.broadcastPlayerDisconnect(playerUsername);
+
+        this.communicateNewState();
 
     }
     

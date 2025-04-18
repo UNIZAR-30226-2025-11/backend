@@ -25,6 +25,7 @@ export interface CommunicationGateway {
         turnsLeft: number
     ): void;
 
+    notifyPlayerCanReconnect(username: string): void;
     notifyOkPlayedCardWithCardObtained(card: Card, username: string): void;
     notifyFutureCards(cards: CardArray, username: string): void;
     notifyOkPlayedCards(username: string): void;

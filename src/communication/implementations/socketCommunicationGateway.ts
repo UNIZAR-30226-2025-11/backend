@@ -12,7 +12,7 @@ import {
     BackendGameSelectPlayerJSON,
     BackendGameSelectCardJSON,
     BackendStartGameResponseJSON,
-    BackendPlayerStatusJSON,
+    BackendPlayerCanReconnectJSON,
     BackendGameSelectNopeJSON,
     FrontendGameSelectNopeResponseJSON,
     BackendGetMessagesJSON,
@@ -285,26 +285,29 @@ export class socketCommunicationGateway implements CommunicationGateway {
     broadcastPlayerDisconnect(playerUsername: string): void {
 
         logger.info(`Notifying all players that player ${playerUsername} disconnected`);
-        const msg: BackendPlayerStatusJSON = {
+        const msg: BackendNotifyActionJSON = {
             error: false,
             errorMsg: "",
-            playerUsername: playerUsername,
-            connected: false
+            triggerUser: playerUsername,
+            targetUser: "",
+            action: ActionType[ActionType.Disconnection],
         }
         
-        this.broadcastMsg<BackendPlayerStatusJSON>(msg, "player-status");
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
     }
 
     broadcastPlayerReconnect(playerUsername: string): void {
             
         logger.info(`Notifying all players that player ${playerUsername} reconnected`);
-        const msg: BackendPlayerStatusJSON = {
+        const msg: BackendNotifyActionJSON = {
             error: false,
             errorMsg: "",
-            playerUsername: playerUsername,
-            connected: true
+            triggerUser: playerUsername,
+            targetUser: "",
+            action: ActionType[ActionType.Reconnection],
         }
-        this.broadcastMsg<BackendPlayerStatusJSON>(msg, "player-status");
+        
+        this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
     }
 
     broadcastAction(action: ActionType, triggerUser: string, targetUser?: string): void {
@@ -320,6 +323,25 @@ export class socketCommunicationGateway implements CommunicationGateway {
         }
 
         this.broadcastMsg<BackendNotifyActionJSON>(msg, "notify-action");
+    }
+
+
+    notifyPlayerCanReconnect(username: string): void {
+        logger.info(`Notifying player ${username} that they can reconnect`);
+        const msg: BackendPlayerCanReconnectJSON = {
+            error: false,
+            errorMsg: "",
+            lobbyId: this.lobbyId,
+        };
+        const socket: Socket|undefined = SocketManager.getSocket(username);
+
+        if(socket === undefined) {
+            logger.error("Socket not found!");
+            return;
+        }
+
+        logger.debug(`Sending "player-reconnect" message to ${username}: %j`, msg);
+        socket.emit("player-reconnect", msg);
     }
 
     notifyOkPlayedCardWithCardObtained(card: Card, username: string): void {

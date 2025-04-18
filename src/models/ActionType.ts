@@ -50,4 +50,8 @@ export enum ActionType {
     AskingPlayer,
     AskingCard,
     AskingCardType,
+
+    // Reconnecting
+    Reconnection,
+    Disconnection,
 }

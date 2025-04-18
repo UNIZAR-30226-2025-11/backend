@@ -276,14 +276,13 @@ export type BackendNotifyActionJSON = {
 // Started by: The backend
 // Listened by: The frontend
 // Ack: None
-// Socket-event: "player-status"
+// Socket-event: "player-reconnect"
 // -----------------------------------------------------------
 
-export type BackendPlayerStatusJSON = {
+export type BackendPlayerCanReconnectJSON = {
     error: boolean;
     errorMsg: string;
-    playerUsername: string;
-    connected: boolean;
+    lobbyId: string;
 }
 // -----------------------------------------------------------
 
