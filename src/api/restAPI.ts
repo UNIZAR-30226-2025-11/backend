@@ -3,12 +3,26 @@ export const REGISTER_API: string = "/register";
 export const LOGOUT_API: string = "/logout";
 export const USERS_API: string = "/users";
 export const SHOP_API: string = "/shop";
+export const SHOP_OWNED_API: string = "/shop/owned";
 export const FRIENDS_API: string = "/friends";
-export const ALL_USERS: string = "/users";
 export const FRIENDS_REQ: string = "/friends/request";
 export const USER_API: string = "/user";
 export const ID_API: string = "/id";
 
+
+export type AllUsersData = {
+    username: string;
+    avatar: string;
+    gamesPlayed: number;
+    status: "friend" | "pending" | "none";
+}
+
+export type ProductOwned = {
+    productName: string;
+    productUrl: string;
+    categoryName: string;
+    categoryUrl: string;
+}
 
 export type RawProduct = {
     productName: string;
@@ -37,7 +51,6 @@ export type ProductJSON = {
 export type FriendsJSON = {
     username: string;
     avatar: string;
-    isAccepted: boolean;
 }
 
 export type UserAvatarJSON = {

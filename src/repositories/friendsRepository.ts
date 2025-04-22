@@ -16,12 +16,15 @@ export class FriendsRepository {
             logger.silly(`[DB] AWAITT: Obtaining the friends of ${username}` )
             const res = await db.query(
                 `
-                SELECT u.username, u.avatar, f.is_accepted
+                SELECT u.username, u.avatar
                 FROM friends f
                 JOIN users u ON (
+                    (
                     (f.applier_username = u.username AND f.applied_username = $1)
                     OR
                     (f.applied_username = u.username AND f.applier_username = $1)
+                    )
+                    AND f.is_accepted = true
                 )
                 `, [username]);
             if (res.rows.length > 0) {
@@ -29,7 +32,6 @@ export class FriendsRepository {
                 return res.rows.map(row => ({
                     username: row.username,
                     avatar: row.avatar,
-                    isAccepted: row.is_accepted
                 }));
             } else {
                 logger.silly(`[DB] DONE: No friends found for ${username}` )

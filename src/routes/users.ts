@@ -6,7 +6,7 @@ import {
 import { UserRepository } from "../repositories/userRepository.js";
 import { getPublicUser, getUserData, UserEntity } from "../models/User.js";
 import { filterNonModifiableUserData } from "../middleware/users.js";
-import { USERS_API, USER_API, UserJSON } from "../api/restAPI.js";
+import { AllUsersData, USERS_API, USER_API, UserJSON } from "../api/restAPI.js";
 import logger from "../config/logger.js";
 
 const usersRouter = Router();
@@ -55,7 +55,7 @@ usersRouter
                 res.status(200).send(getPublicUser({ ...user, ...data }));
             } catch (err: unknown) {
                 logger.error(`[USERS] Error updating user ${username}`);
-                res.status(400).send({ message: (err as Error).message });
+                res.status(404).send({ message: (err as Error).message });
             }
         },
     )
@@ -79,19 +79,20 @@ usersRouter
             return;
         } catch (err: unknown) {
             logger.error(`[USERS] Error deleting user ${username}`);
-            res.status(400).send({ message: (err as Error).message });
+            res.status(404).send({ message: (err as Error).message });
         }
     });
 
 usersRouter
     .route(USERS_API)
-    .get(async (_req, res) => {
+    .get(async (req, res) => {
+
         logger.info(`[USERS] Getting all users`);
-        res
-            .status(200)
-            .send(
-                (await UserRepository.findAll()).map((user) => getPublicUser(user)),
-            );
+
+        const username: string = req.body.username;
+
+        const response: AllUsersData[] = await UserRepository.getAllUsersData(username);
+        res.status(200).json(response);
     })
     .post((_req, res) => {
         res.status(501).send();

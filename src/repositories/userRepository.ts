@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { UserEntity } from "../models/User.js";
 import logger from "../config/logger.js";
 import bcrypt from "bcrypt";
-import { RecordJSON } from "../api/restAPI.js";
+import { AllUsersData, RecordJSON } from "../api/restAPI.js";
 import camelcaseKeys from "camelcase-keys";
 
 
@@ -285,6 +285,41 @@ export class UserRepository {
                 `, [username]);
             logger.silly(`[DB] DONE: Got last five games for ${username}`);
             return res.rows as RecordJSON[];
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
+
+    static async getAllUsersData(username: string): Promise<AllUsersData[]> {
+        try {
+            logger.silly(`[DB] AWAIT: Getting all users data`);
+            const res = await db.query(
+                `
+                    SELECT 
+                        u.username, 
+                        u.avatar, 
+                        u.games_played,
+                        CASE 
+                            WHEN f1.is_accepted = true OR f2.is_accepted = true THEN 'friend'
+                            WHEN f1.is_accepted = false THEN 'pending'
+                            ELSE 'none'
+                        END as status
+                    FROM users u
+                    LEFT JOIN friends f1 
+                        ON f1.applier_username = $1 AND f1.applied_username = u.username
+                    LEFT JOIN friends f2 
+                        ON f2.applier_username = u.username AND f2.applied_username = $1
+                    WHERE u.username != $1;
+                `, [username]);
+            logger.silly(`[DB] DONE: Got all users data`);
+            return res.rows.map((row) => ({
+                username: row.username,
+                avatar: row.avatar,
+                gamesPlayed: row.games_played,
+                status: row.status as "friend" | "pending" | "none"
+            }));
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");

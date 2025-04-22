@@ -380,7 +380,7 @@ export type BackendResponseFriendRequestEnterLobbyJSON = {
 // Started by: The backend
 // Listened by: The friend that is going to receive the request
 // Ack: Yes, with the FrontendResponseFriendRequestEnterLobbyJSON
-// Socket-event: "receive-friend-lobby-request"
+// Socket-event: "receive-friend-join-lobby-request"
 // -----------------------------------------------------------
 
 export type BackendSendFriendRequestEnterLobbyJSON = {

@@ -1,6 +1,6 @@
 import { db } from "../db.js";
 import logger from "../config/logger.js";
-import { RawProduct } from "../api/restAPI.js";
+import { ProductOwned, RawProduct } from "../api/restAPI.js";
 import camelcaseKeys from "camelcase-keys";
 
 
@@ -155,6 +155,79 @@ export class shopRepository {
             throw new Error("Error in database");
         }
     }
+
+    static async getOwnedProducts(username: string): Promise<ProductOwned[]> {
+        try {
+            logger.silly(`[DB] AWAIT: Obtaining owned products for ${username}`);
+            const res = await db.query(
+                `
+                SELECT product_name, product_url, category_name, category_url
+                FROM shop_products 
+                WHERE id IN (
+                    SELECT id_product 
+                    FROM user_products 
+                    WHERE username = $1
+                )
+                `,[username]);
+            if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Products has been obtained`);
+                return camelcaseKeys(res.rows, {deep: true}) as ProductOwned[];
+            } else {
+                logger.warn(`[DB] No products found`);
+                return []; // Return an empty array if no products are found 
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
+    static async getCategoryProductName(category: string, username: string): Promise<string> {	
+        try {
+            if (category !== "avatar" && category !== "background") {
+                logger.warn(`[DB] ${category} is not a valid category`);
+                throw new Error("Invalid category");
+            }
+            logger.silly(`[DB] AWAIT: Obtaining the product name in category ${category}`);
+            const res = await db.query(
+                `
+                SELECT ${category} as product_name
+                FROM users
+                WHERE username = $1
+                `,[username]);
+            if (res.rows.length > 0) {
+                logger.silly(`[DB] DONE: Product name has been obtained`);
+                return res.rows[0].product_name;
+            } else {
+                logger.warn(`[DB] No products found`);
+                return ""; // Return an empty string if no products are found 
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
+    static async updateCategoryProductName(category: string, username: string, productName: string): Promise<void> {
+        try {
+            if (category !== "avatar" && category !== "background") {
+                logger.warn(`[DB] ${category} is not a valid category`);
+                throw new Error("Invalid category");
+            }
+            logger.silly(`[DB] AWAIT: Updating the product name in category ${category}`);
+            await db.query(
+                `
+                UPDATE users
+                SET ${category} = $1
+                WHERE username = $2
+                `,[productName, username]);
+            logger.silly(`[DB] DONE: Product name has been updated`);
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
 }
 
 
