@@ -158,7 +158,7 @@ export class GameObject {
             return [];
         }
 
-        const elapsedSeconds: number = Number((this.gameEndDate.getTime() - this.gameDate.getTime()) / 1000);
+        const elapsedSeconds: number = Math.floor((this.gameEndDate.getTime() - this.gameDate.getTime()) / 1000);
 
         return this.players.map(player => {
             return new PlayerHistory(
