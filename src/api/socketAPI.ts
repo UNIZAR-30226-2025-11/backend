@@ -70,6 +70,10 @@ export type BackendWinnerJSON = {
     winnerUsername: string;
     coinsEarned: number;
     lobbyId: string;
+    isWinner: boolean;
+    gameDate: Date;
+    timePlayed: number;
+    turnsPlayed: number;
 }
 
 // -----------------------------------------------------------

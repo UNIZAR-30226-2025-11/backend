@@ -29,6 +29,7 @@ import logger from "../../config/logger.js";
 import { Message } from "../../models/Message.js";
 import { FrontendGameSelectCardResponseJSONSchema, FrontendGameSelectCardTypeResponseJSONSchema, FrontendGameSelectNopeResponseJSONSchema, FrontendGameSelectPlayerResponseJSONSchema } from "../../schemas/socketAPI.js";
 import { TIMEOUT_RESPONSE } from "../../config.js";
+import { PlayerHistory } from "../../models/PlayerHistory.js";
 
 export class socketCommunicationGateway implements CommunicationGateway {
 
@@ -259,25 +260,29 @@ export class socketCommunicationGateway implements CommunicationGateway {
         this.broadcastMsg<BackendStartGameResponseJSON>(response, "start-game");
     }
 
-    broadcastWinnerNotification(winnerUsername: string, coinsEarned: number): void {
+    broadcastWinnerNotification(winnerUsername: string, playersHistory: PlayerHistory[], coinsEarned: number): void {
         
         logger.info(`Notifying all players that player ${winnerUsername} won`);
-        this.playersUsernamesInLobby.forEach((username) => {
+        playersHistory.forEach((player) => {
             const msg: BackendWinnerJSON = {
                 error: false,
                 errorMsg: "",
                 winnerUsername: winnerUsername,
-                coinsEarned:username==winnerUsername?coinsEarned:0,
-                lobbyId: this.lobbyId
+                coinsEarned:player.isWinner?coinsEarned:50,
+                lobbyId: this.lobbyId,
+                isWinner: player.isWinner,
+                gameDate: player.gameDate,
+                timePlayed: player.timePlayed,
+                turnsPlayed: player.turnsPlayed,
             }
 
-            const socket: Socket|undefined = SocketManager.getSocket(username);
+            const socket: Socket|undefined = SocketManager.getSocket(player.username);
 
             if(socket === undefined) {
                 logger.error("Socket not found!");
                 return;
             }
-            logger.debug(`Sending "winner" message to ${username}: %j`, msg);
+            logger.debug(`Sending "winner" message to ${player.username}: %j`, msg);
             socket.emit("winner", msg);
         });
     }

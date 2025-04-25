@@ -499,16 +499,20 @@ export class GameObject {
         }
 
         logger.info(`[GAME] Winner is ${winner.username}`);
-        this.callSystem.broadcastWinnerNotification(
-            winner.username, 
-            this.numberOfPlayers*100
-        );
 
         this.winnerUsername = winner.username;
 
         this.gameEndDate = new Date();
 
         this.stopTurnTimer();
+
+        const allPlayersHistory: PlayerHistory[] = this.getPlayersHistory();
+
+        this.callSystem.broadcastWinnerNotification(
+            winner.username, 
+            allPlayersHistory,
+            this.numberOfPlayers*100
+        );
 
         eventBus.emit(GameEvents.WINNER_SET, winner.username, this.numberOfPlayers*100, this.lobbyId);
     }

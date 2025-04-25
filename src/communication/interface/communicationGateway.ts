@@ -3,6 +3,7 @@ import { Player } from "../../models/Player.js";
 import { CardArray } from "../../models/CardArray.js";
 import { Message } from "../../models/Message.js";
 import { ActionType } from "../../models/ActionType.js";
+import { PlayerHistory } from "../../models/PlayerHistory.js";
 
 export interface CommunicationGateway {
 
@@ -10,7 +11,7 @@ export interface CommunicationGateway {
     broadcastStartGame(): void;
     broadcastNewMessages(messages: Message[]): void;
     broadcastAction(action: ActionType, triggerUser: string, targetUser?: string): void;
-    broadcastWinnerNotification(winnerUsername: string, coinsEarned: number): void;
+    broadcastWinnerNotification(winnerUsername: string, playersHistory: PlayerHistory[], coinsEarned: number): void;
     broadcastPlayerDisconnect(playerUsername: string): void;
     broadcastPlayerReconnect(playerUsername: string): void;
 
