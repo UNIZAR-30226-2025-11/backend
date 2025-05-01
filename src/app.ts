@@ -14,7 +14,7 @@ import { friendRouter } from "./routes/friends.js";
 export const app = express();
 export const server = createServer(app);
 export const io = new Server(server, {
-    cors: { origin: FRONTEND_URL, credentials: true },
+  cors: { origin: FRONTEND_URL, credentials: true },
 });
 
 /** Handle uncaught errors gracefully and return an ISE */
@@ -32,13 +32,15 @@ export const io = new Server(server, {
 
 // Allow Cross-Origin requests by parsing OPTION requests
 app.use(
-    cors({
-        origin: FRONTEND_URL,
-        credentials: true,
-     }),
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+  }),
 );
 app.use(express.json()); // Parse JSON
 app.use(cookieParser()); // Parse cookies, store them in req.cookies
+
+app.set("trust proxy", 1); // Allow being behind a reverse proxy
 
 // Set up the routes
 app.use(authRouter);
