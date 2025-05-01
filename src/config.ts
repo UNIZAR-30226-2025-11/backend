@@ -37,7 +37,7 @@ export const INITIAL_HAND_SIZE: number = parseInt(process.env.INITIAL_HAND_SIZE 
 
 // console.log(`Using initial hand size: ${INITIAL_HAND_SIZE}`);
 
-export const TURN_TIME_LIMIT: number = parseInt(process.env.TURN_TIME_LIMIT || "10000", 10); 
+export const TURN_TIME_LIMIT: number = parseInt(process.env.TURN_TIME_LIMIT || "60000", 10); 
 export const TIMEOUT_RESPONSE: number = parseInt(process.env.TIMEOUT_RESPONSE || "10000", 10);
 
 // console.log(`Using turn time limit: ${TURN_TIME_LIMIT}ms`);
@@ -50,16 +50,16 @@ export const CARD_COUNTS: { [key in CardType]: number } = {
 
     // Base cards. These are cards that are always present in the game.
     [CardType.SeeFuture]: parseInt(process.env.CARD_SEE_FUTURE || "5", 10),
-    [CardType.Shuffle]: parseInt(process.env.CARD_SHUFFLE || "5", 10),
-    [CardType.Skip]: parseInt(process.env.CARD_SKIP || "5", 10),
-    [CardType.Attack]: parseInt(process.env.CARD_ATTACK || "3", 10),
+    [CardType.Shuffle]: parseInt(process.env.CARD_SHUFFLE || "4", 10),
+    [CardType.Skip]: parseInt(process.env.CARD_SKIP || "4", 10),
+    [CardType.Attack]: parseInt(process.env.CARD_ATTACK || "4", 10),
     [CardType.Nope]: parseInt(process.env.CARD_NOPE || "5", 10),
-    [CardType.Favor]: parseInt(process.env.CARD_FAVOR || "5", 10),
-    [CardType.RainbowCat]: parseInt(process.env.CARD_RAINBOW_CAT || "5", 10),
-    [CardType.TacoCat]: parseInt(process.env.CARD_TACO_CAT || "5", 10),
-    [CardType.HairyPotatoCat]: parseInt(process.env.CARD_HAIRY_POTATO_CAT || "5", 10),
-    [CardType.Cattermelon]: parseInt(process.env.CARD_CATTERMELON || "5", 10),
-    [CardType.BeardCat]: parseInt(process.env.CARD_BEARD_CAT || "5", 10),
+    [CardType.Favor]: parseInt(process.env.CARD_FAVOR || "4", 10),
+    [CardType.RainbowCat]: parseInt(process.env.CARD_RAINBOW_CAT || "4", 10),
+    [CardType.TacoCat]: parseInt(process.env.CARD_TACO_CAT || "4", 10),
+    [CardType.HairyPotatoCat]: parseInt(process.env.CARD_HAIRY_POTATO_CAT || "4", 10),
+    [CardType.Cattermelon]: parseInt(process.env.CARD_CATTERMELON || "4", 10),
+    [CardType.BeardCat]: parseInt(process.env.CARD_BEARD_CAT || "4", 10),
 };
 
 // console.log("Using card counts: ", CARD_COUNTS);
