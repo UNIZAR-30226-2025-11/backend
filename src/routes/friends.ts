@@ -37,7 +37,7 @@ friendRouter
         }
     })
 
-    // Make a new friend
+    // Create a friends request
     .post(async (req, res) => {
         try {
 
@@ -88,7 +88,7 @@ friendRouter
                 return;
             }
 
-            await FriendsRepository.addNewFriend(friendUsername, username);
+            await FriendsRepository.createNewFriendsRequest(username, friendUsername);
             
             logger.info(`[FRIENDS] The friend ${friendUsername} has been added`);
             
@@ -113,7 +113,7 @@ friendRouter
                 res.status(400).json({ error: "username is required" });
             }
 
-            await FriendsRepository.deleteNewFriend(friendUsername, username);
+            await FriendsRepository.deleteFriendship(friendUsername, username);
 
             logger.info(`[FRIENDS] The friend ${friendUsername} has been eliminated`);
             
@@ -124,27 +124,6 @@ friendRouter
             res.status(404).json({ error: "Error deleting a new friend" });
         }
     });
-
-// friendRouter
-//     .route(ALL_USERS)
-
-//     // Obtain all users
-//     .get(async (req, res) => {
-//         try {
-//             logger.info(`[FRIENDS] Obtaining all users that can be friends with the user`);
-//             const username: string = req.body.username;
-//             const friends: UserAvatarJSON[] = await FriendsRepository.searchNewFriends(username);
-            
-//             logger.debug(`[FRIENDS] Users: ${JSON.stringify(friends)}`);
-            
-//             res.json({users: friends});
-
-//             logger.info(`[FRIENDS] All friends sent correctly`);
-//         } catch (error) {
-//             logger.error(`Error getting all possible friends: ${error}`);
-//             res.status(400).json({ error: "Not posible to access to all the users..." });
-//         }
-//     });
 
 friendRouter
     .route(FRIENDS_REQ)
@@ -186,10 +165,10 @@ friendRouter
             }
 
             if(accept){
-                await FriendsRepository.acceptNewFriend(username, friendRequest);
+                await FriendsRepository.acceptNewFriend(friendRequest, username);
                 logger.info(`[FRIENDS] Friend request accepted`);
             } else{
-                await FriendsRepository.deleteNewFriend(username, friendRequest);
+                await FriendsRepository.declineRelationshipRequest(friendRequest, username);
                 logger.info(`[FRIENDS] Friend request refused`);
             }
 
