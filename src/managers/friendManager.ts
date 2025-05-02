@@ -10,7 +10,6 @@ export class FriendManager {
     static async getConnectedFriends(username: string, lobbyId: string): Promise<FriendSocketJSON[]> {
         const allFriends: FriendsJSON[] = await FriendsRepository.obtainFriends(username);
         const connectedFriends: FriendSocketJSON[] = await Promise.all(allFriends.map(async friend => {
-            console.log(friend.username);
             const lobbyInGame: string | undefined = await LobbyManager.getLobbyWithPlayer(friend.username);
             const connected: boolean = SocketManager.hasSocket(friend.username);
             const isAlreadyInThisLobby: boolean = lobbyInGame === lobbyId;

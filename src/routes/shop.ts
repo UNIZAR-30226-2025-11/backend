@@ -47,8 +47,6 @@ shopRouter
 
                 return acc;
             }, []);
-
-            console.log(JSONResponse);
            
             res.json({categories: JSONResponse});
             logger.info(`[SHOP] All shop send`);
