@@ -165,6 +165,7 @@ export class GameObject {
                 player.username,
                 this.lobbyId,
                 this.winnerUsername === player.username,
+                this.winnerUsername === player.username? 100*this.numberOfPlayers : 50,
                 this.gameDate,
                 elapsedSeconds,
                 this.turnsPlayed
@@ -511,10 +512,9 @@ export class GameObject {
         this.callSystem.broadcastWinnerNotification(
             winner.username, 
             allPlayersHistory,
-            this.numberOfPlayers*100
         );
 
-        eventBus.emit(GameEvents.WINNER_SET, winner.username, this.numberOfPlayers*100, this.lobbyId);
+        eventBus.emit(GameEvents.WINNER_SET, this.lobbyId);
     }
 
     getWinner(): Player | undefined {

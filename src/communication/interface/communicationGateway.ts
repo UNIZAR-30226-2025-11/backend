@@ -11,7 +11,7 @@ export interface CommunicationGateway {
     broadcastStartGame(): void;
     broadcastNewMessages(messages: Message[]): void;
     broadcastAction(action: ActionType, triggerUser: string, targetUser?: string): void;
-    broadcastWinnerNotification(winnerUsername: string, playersHistory: PlayerHistory[], coinsEarned: number): void;
+    broadcastWinnerNotification(winnerUsername: string, playersHistory: PlayerHistory[]): void;
     broadcastPlayerDisconnect(playerUsername: string): void;
     broadcastPlayerReconnect(playerUsername: string): void;
 

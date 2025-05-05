@@ -260,7 +260,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
         this.broadcastMsg<BackendStartGameResponseJSON>(response, "start-game");
     }
 
-    broadcastWinnerNotification(winnerUsername: string, playersHistory: PlayerHistory[], coinsEarned: number): void {
+    broadcastWinnerNotification(winnerUsername: string, playersHistory: PlayerHistory[]): void {
         
         logger.info(`Notifying all players that player ${winnerUsername} won`);
         playersHistory.forEach((player) => {
@@ -268,7 +268,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
                 error: false,
                 errorMsg: "",
                 winnerUsername: winnerUsername,
-                coinsEarned:player.isWinner?coinsEarned:50,
+                coinsEarned:player.coinsEarned,
                 lobbyId: this.lobbyId,
                 isWinner: player.isWinner,
                 gameDate: player.gameDate,

@@ -84,9 +84,9 @@ export class GameManager {
      * @param lobbyId The id of the lobby where the game ended
      * @returns 
      */
-    static async handleWinner(username: string, coinsEarned: number, lobbyId: string): Promise<void>{
+    static async handleWinner(lobbyId: string): Promise<void>{
 
-        logger.info(`Handling winner ${username} in lobby ${lobbyId}`);
+        logger.info(`Handling winner in lobby ${lobbyId}`);
 
         const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
 
@@ -102,26 +102,24 @@ export class GameManager {
             return;
         }
 
-        if (username !== winnerUsername){
-            logger.warn(`Player ${username} is not the winner of the game!`);
-            return;
-        }
-
         const allPlayersHistory: PlayerHistory[] = currentGame.getPlayersHistory();
 
-        await GameRepository.addCoinsToPlayer(username, coinsEarned);
-        await GameRepository.addWinToPlayer(username);
+        // Add game played to all players in the lobby
         await GameRepository.addGamePlayedToLobby(lobbyId);
-
-        const streak: number = await GameRepository.addStreakWinToPlayer(username);
-        const maxStreak: number = await GameRepository.getMaxStreakWin(username);
-        if (streak > maxStreak) {
-            await GameRepository.setMaxStreakWin(username, streak);
-        }
-
+        
         allPlayersHistory.forEach(async (player) => {
-            if (player.username !== username)
+            
+            await GameRepository.addCoinsToPlayer(player.username, player.coinsEarned);
+            if (player.isWinner) {
+                await GameRepository.addWinToPlayer(player.username);
+                const streak: number = await GameRepository.addStreakWinToPlayer(player.username);
+                const maxStreak: number = await GameRepository.getMaxStreakWin(player.username);
+                if (streak > maxStreak) {
+                    await GameRepository.setMaxStreakWin(player.username, streak);
+                }
+            } else {
                 await GameRepository.removeStreakWinToPlayer(player.username);
+            }
             await GameRepository.addHistoryToPlayer(player.username, player.lobbyId, player.isWinner, player.gameDate);
             await GameRepository.addTimePlayedToPlayer(player.username, player.timePlayed);
             await GameRepository.addTurnsPlayedToPlayer(player.username, player.turnsPlayed);
@@ -134,6 +132,6 @@ export class GameManager {
 
 }
 
-eventBus.on(GameEvents.WINNER_SET, async (username: string, coinsEarned: number, lobbyId: string) => {
-    await GameManager.handleWinner(username, coinsEarned, lobbyId);
+eventBus.on(GameEvents.WINNER_SET, async (lobbyId: string) => {
+    await GameManager.handleWinner(lobbyId);
 });
