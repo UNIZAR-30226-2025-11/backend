@@ -91,7 +91,7 @@ export class FriendsRepository {
                 SELECT u.username, u.avatar
                 FROM friends f
                 JOIN users u ON (
-                    (f.applied_username = u.username AND f.applier_username = $1)
+                    (f.applier_username = u.username AND f.applied_username = $1)
                 )
                 WHERE f.is_accepted = false
                 `, [username]);
@@ -164,20 +164,20 @@ export class FriendsRepository {
         }
     }
 
-    static async areFriends (appliedUsername:string, applierUsername:string): Promise<boolean> {
+    static async areFriends (user1:string, user2:string): Promise<boolean> {
         try {
-            logger.silly(`[DB] AWAITT: Checking if ${appliedUsername} and ${applierUsername} are friends` )
+            logger.silly(`[DB] AWAITT: Checking if ${user2} and ${user1} are friends` )
             const res = await db.query(
                 `
                 SELECT * FROM friends
                 WHERE ((applied_username = $1 AND applier_username = $2) OR (applied_username = $2 AND applier_username = $1))
                 AND is_accepted = true
-                `, [appliedUsername, applierUsername]);
+                `, [user2, user1]);
             if (res.rows.length > 0) {
-                logger.silly(`[DB] DONE: ${appliedUsername} and ${applierUsername} are friends` )
+                logger.silly(`[DB] DONE: ${user2} and ${user1} are friends` )
                 return true;
             } else {
-                logger.silly(`[DB] DONE: ${appliedUsername} and ${applierUsername} are not friends` )
+                logger.silly(`[DB] DONE: ${user2} and ${user1} are not friends` )
                 return false;
             }
         }
@@ -188,7 +188,7 @@ export class FriendsRepository {
         }
     }
 
-    static async haveAlreadySentRequest (appliedUsername:string, applierUsername:string): Promise<boolean> {
+    static async haveAlreadySentRequest (applierUsername:string, appliedUsername:string): Promise<boolean> {
         try {
             logger.silly(`[DB] AWAITT: Checking if ${appliedUsername} has sent a request to ${applierUsername}` )
             const res = await db.query(
@@ -212,21 +212,25 @@ export class FriendsRepository {
     }
 
     /**
-     * Updates a friend request to accepted status
-     * @param appliedUsername - The recipient of the friend request
+     * Creates a new friend request relationship.
      * @param applierUsername - The sender of the friend request
-     * @throws Error if database operation fails
+     * @param appliedUsername - The recipient of the friend request
      */
-    static async addNewFriend(appliedUsername:string, applierUsername:string){
+    static async createNewFriendsRequest(applierUsername:string, appliedUsername:string){
         try {
             logger.silly(`[DB] AWAITT: Adding new friend ${appliedUsername} to ${applierUsername}` )
-            await db.query(
+            const res = await db.query(
                 `
                 INSERT INTO friends (applied_username, applier_username, is_accepted)
                 VALUES ($1, $2, false)
+                RETURNING *
                 `,[appliedUsername, applierUsername]);
             
-            logger.silly(`[DB] DONE: Added new friend ${appliedUsername} to ${applierUsername}` )
+            if (res.rowCount === 0) {
+                logger.warn(`[DB] WARN: No friend request inserted from ${applierUsername} to ${appliedUsername}`)
+            } else {
+                logger.silly(`[DB] DONE: Added new friend ${appliedUsername} to ${applierUsername}` )
+            }
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");
@@ -239,16 +243,23 @@ export class FriendsRepository {
      * @param applierUsername - The sender of the friend request
      * @throws Error if database operation fails
      */
-    static async acceptNewFriend(appliedUsername:string, applierUsername:string){
+    static async acceptNewFriend(applierUsername:string, appliedUsername:string){
         try {
             logger.silly(`[DB] AWAITT: Accepting new friend ${appliedUsername} to ${applierUsername}` )
-            await db.query(
+            const res = await db.query(
                 `
                 UPDATE friends
                 SET is_accepted = true
                 WHERE applied_username = $1 AND applier_username = $2
-                `,[appliedUsername, applierUsername]);
-            logger.silly(`[DB] DONE: Accepted new friend ${appliedUsername} to ${applierUsername}` )
+                RETURNING *
+                `, [appliedUsername, applierUsername]);
+            
+            if (res.rowCount === 0) {
+                logger.warn(`[DB] WARN: No matching friend request found from ${applierUsername} to ${appliedUsername}`)
+            }
+            else {
+                logger.silly(`[DB] DONE: Accepted new friend ${appliedUsername} to ${applierUsername}` )
+            }
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");
@@ -256,21 +267,48 @@ export class FriendsRepository {
     }
 
     /**
-     * Deletes a friend relationship
+     * Declines a friend request relationship.
      * @param appliedUsername - One user in the relationship
      * @param applierUsername - The other user in the relationship
      * @throws Error if database operation fails
      */
-    static async deleteNewFriend(appliedUsername:string, applierUsername:string){
+    static async declineRelationshipRequest(applierUsername: string, appliedUsername: string) {
         try {
-            logger.silly(`[DB] AWAITT: Deleting friend ${appliedUsername} to ${applierUsername}` )
-            await db.query(
+            logger.silly(`[DB] AWAITT: Deleting friend request from ${applierUsername} to ${appliedUsername}`)
+            const res = await db.query(
                 `
                 DELETE FROM friends 
-                WHERE applied_username = $1 AND applier_username = $2
-                `,[appliedUsername, applierUsername]);
+                WHERE applied_username = $1 AND applier_username = $2 AND is_accepted = false
+                RETURNING *
+                `, [appliedUsername, applierUsername]);
             
-            logger.silly(`[DB] DONE: Deleted friend ${appliedUsername} to ${applierUsername}` )
+            if (res.rowCount === 0) {
+                logger.warn(`[DB] WARN: No matching friend request found from ${applierUsername} to ${appliedUsername}`)
+            } else {
+                logger.silly(`[DB] DONE: Deleted friend request from ${applierUsername} to ${appliedUsername}`)
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database.", error);
+            throw new Error("Error in database");
+        }
+    }
+
+    static async deleteFriendship(user1:string, user2:string){
+        try {
+            logger.silly(`[DB] AWAITT: Deleting friendship between ${user1} and ${user2}` )
+            const res = await db.query(
+                `
+                DELETE FROM friends 
+                WHERE (applied_username = $1 AND applier_username = $2) OR (applied_username = $2 AND applier_username = $1)
+                RETURNING *
+                `,[user1, user2]);
+            
+            if(res.rowCount === 0) {
+                logger.warn(`[DB] WARN: No matching friendship found between ${user1} and ${user2}`)
+            }
+            else {
+                logger.silly(`[DB] DONE: Deleted friendship between ${user1} and ${user2}` )
+            }
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");

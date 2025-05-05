@@ -9,8 +9,8 @@ import logger from "../config/logger.js";
  */
 export function protectRoute(req: Request, res: Response, next: NextFunction) {
     
-    logger.verbose(`[USERS] Checking access token`);
     const token = req.cookies.access_token;
+    logger.verbose(`[USERS] Checking access token`);
 
     if (!token) {
         logger.warn(`[USERS] No access token provided`);

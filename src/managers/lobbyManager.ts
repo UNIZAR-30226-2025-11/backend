@@ -273,7 +273,6 @@ export class LobbyManager {
         const game: GameObject | undefined = this.lobbiesGames.get(lobbyId);
 
         if(game === undefined) {
-            logger.verbose(`Games : ${this.lobbiesGames.forEach((value, _key) => value)}`);
             logger.error(`Error getting the game object!`);
             return;
         }

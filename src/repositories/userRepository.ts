@@ -277,14 +277,15 @@ export class UserRepository {
             logger.silly(`[DB] AWAIT: Getting last five games for ${username}`);
             const res = await db.query(
                 `
-                SELECT lobby_id, win, game_date 
+                SELECT lobby_id, win as is_winner, game_date 
                 FROM game_history 
                 WHERE player=$1
                 ORDER BY game_date DESC
                 LIMIT 5
                 `, [username]);
             logger.silly(`[DB] DONE: Got last five games for ${username}`);
-            return res.rows as RecordJSON[];
+            const row = camelcaseKeys(res.rows, { deep: true });
+            return row as RecordJSON[];
         } catch (error) {
             logger.error("[DB] Error in database.", error);
             throw new Error("Error in database");
