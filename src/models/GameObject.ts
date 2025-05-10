@@ -10,7 +10,7 @@ import { Message } from "./Message.js";
 import eventBus from "../events/eventBus.js";
 import { GameEvents } from "../events/gameEvents.js";
 import { CARD_COUNTS, EXTRA_BOMBS, EXTRA_DEACTIVATES, TURN_TIME_LIMIT } from "../config.js";
-import { ActionType } from "./ActionType.js";
+import { ActionType, NopeType } from "./ActionType.js";
 import { PlayerHistory } from "./PlayerHistory.js";
 
 export class GameObject {
@@ -231,16 +231,19 @@ export class GameObject {
     // Request Methods
 
     async requestNopeUsage(
-        requesterPlayer: Player
+        requesterPlayer: Player,
+        nopeAction: NopeType
     ) : Promise<boolean> {
 
         const defaultAnswer: boolean = false;
-
+        const getNopeUsageAux = (username: string, lobbyId: string) => {
+            return this.callSystem.getNopeUsage(username, lobbyId, nopeAction);
+        };
         const answer: boolean = await this.handleRequestInfo<boolean>(
-            this.callSystem.getNopeUsage.bind(this.callSystem),
+            getNopeUsageAux.bind(this),
             requesterPlayer.username, 
             this.lobbyId,
-            defaultAnswer
+            defaultAnswer,
         );
 
         return answer;
@@ -531,7 +534,7 @@ export class GameObject {
      * @param typeAttack - Type of attack that is being played
      * @returns True if the attack is successful, false otherwise
      */
-    async resolveNopeChain(currentPlayer:Player, attackedPlayer:Player): Promise<boolean> {
+    async resolveNopeChain(currentPlayer:Player, attackedPlayer:Player, nopeAction:NopeType): Promise<boolean> {
             
         logger.info(`[GAME] Resolving nope chain`);
         let resolved: boolean = false;
@@ -542,7 +545,7 @@ export class GameObject {
             // While the nope chain is not resolved
 
             // Ask the player if he wants to use the nope card
-            const usedNope: boolean = await this.requestNopeUsage(players[playerToNope]);
+            const usedNope: boolean = await this.requestNopeUsage(players[playerToNope], nopeAction);
             if(usedNope){
                 // If the player uses the nope card
 
@@ -581,6 +584,8 @@ export class GameObject {
                 // The nope chain is resolved
                 resolved = true;
             }  
+
+            nopeAction = NopeType.Nope;
 
         }
 
@@ -702,7 +707,7 @@ export class GameObject {
         // Notify the player he had skipped the turn
         this.callSystem.broadcastAction(ActionType.SkipTurn, currentPlayer.username, followingPlayer.username);
 
-        if(!await this.resolveNopeChain(currentPlayer, followingPlayer))
+        if(!await this.resolveNopeChain(currentPlayer, followingPlayer, NopeType.SkipTurn))
         {
             this.callSystem.broadcastAction(ActionType.SkipTurnFailed, currentPlayer.username, followingPlayer.username);
             logger.info(`[GAME] Player ${currentPlayer.username} has been noped. Skip failed`);
@@ -745,7 +750,8 @@ export class GameObject {
         const attackedPlayer:Player = this.players[this.nextActivePlayer()];
         this.callSystem.broadcastAction(ActionType.Attack, currentPlayer.username, attackedPlayer.username);
 
-        if(!await this.resolveNopeChain(currentPlayer, attackedPlayer)){
+        if(!await this.resolveNopeChain(currentPlayer, attackedPlayer, NopeType.Attack))
+        {
             
             this.callSystem.broadcastAction(ActionType.AttackFailed, currentPlayer.username, attackedPlayer.username);
             logger.info(`[GAME] Player ${currentPlayer.username} has been noped. Attack failed`);
@@ -776,7 +782,8 @@ export class GameObject {
         const playerToSteal: Player = await this.requestPlayer(currentPlayer);
         this.callSystem.broadcastAction(ActionType.FavorAttack, currentPlayer.username, playerToSteal.username);
 
-        if(!await this.resolveNopeChain(currentPlayer, playerToSteal)){
+        if(!await this.resolveNopeChain(currentPlayer, playerToSteal, NopeType.FavorAttack))
+        {
             // If the player is noped dont do anything
             this.callSystem.broadcastAction(ActionType.FavorAttackFailed, currentPlayer.username, playerToSteal.username);
             
@@ -808,16 +815,6 @@ export class GameObject {
 
         const playerToSteal: Player = await this.requestPlayer(currentPlayer);
 
-        this.callSystem.broadcastAction(ActionType.TwoWildCardAttack, currentPlayer.username, playerToSteal.username);
-
-        if(!await this.resolveNopeChain(currentPlayer, playerToSteal)){
-            // If the player is noped notify attack failed
-            this.callSystem.broadcastAction(ActionType.TwoWildCardAttackFailed, currentPlayer.username, playerToSteal.username);
-
-            logger.info(`[GAME] Player has won the nope chain. Two wild cards attack canceled`);
-            return;
-        }
-
         logger.info(`[GAME] Player ${currentPlayer.username} is playing a wild card`);
 
         if (numberOfPlayedCards <= 1 || numberOfPlayedCards > 3){
@@ -825,6 +822,19 @@ export class GameObject {
             logger.error(`[GAME] Cannot play this number of wild cards.`);
             return;
         } 
+
+        const actionType: ActionType = numberOfPlayedCards === 2 ? ActionType.TwoWildCardAttack : ActionType.ThreeWildCardAttack;
+        const nopeAction: NopeType = numberOfPlayedCards === 2 ? NopeType.TwoWildCard : NopeType.ThreeWildCard;
+
+        this.callSystem.broadcastAction(actionType, currentPlayer.username, playerToSteal.username);
+
+        if(!await this.resolveNopeChain(currentPlayer, playerToSteal, nopeAction)){
+            // If the player is noped notify attack failed
+            this.callSystem.broadcastAction(actionType, currentPlayer.username, playerToSteal.username);
+
+            logger.info(`[GAME] Player has won the nope chain. Two wild cards attack canceled`);
+            return;
+        }
         
         if (numberOfPlayedCards === 2 ){
             // If the player plays two wild cards, steal a random card from the player

@@ -55,3 +55,12 @@ export enum ActionType {
     Reconnection,
     Disconnection,
 }
+
+export enum NopeType {
+    TwoWildCard,
+    ThreeWildCard,
+    SkipTurn,
+    Attack,
+    FavorAttack,
+    Nope
+}

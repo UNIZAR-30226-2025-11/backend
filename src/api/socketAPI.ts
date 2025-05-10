@@ -155,6 +155,7 @@ export type BackendGameSelectNopeJSON = {
     errorMsg: string;
     lobbyId: string;
     timeOut: number;
+    nopeAction: string;
 }
 
 

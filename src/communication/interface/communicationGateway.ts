@@ -2,7 +2,7 @@ import { CardType, Card } from "../../models/Card.js";
 import { Player } from "../../models/Player.js";
 import { CardArray } from "../../models/CardArray.js";
 import { Message } from "../../models/Message.js";
-import { ActionType } from "../../models/ActionType.js";
+import { ActionType, NopeType } from "../../models/ActionType.js";
 import { PlayerHistory } from "../../models/PlayerHistory.js";
 
 export interface CommunicationGateway {
@@ -36,5 +36,5 @@ export interface CommunicationGateway {
     getACardType(username: string, lobbyId: string): Promise<CardType|undefined>;
     getAPlayerUsername(username: string, lobbyId: string): Promise<string|undefined>;
     getACard(username: string, lobbyId: string): Promise<Card|undefined>;
-    getNopeUsage(username: string, lobbyId: string): Promise<boolean|undefined>;
+    getNopeUsage(username: string, lobbyId: string, nopeAction: NopeType): Promise<boolean|undefined>;
 }

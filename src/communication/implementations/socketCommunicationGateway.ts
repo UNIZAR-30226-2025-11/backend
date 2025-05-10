@@ -22,7 +22,7 @@ import {
 import { SocketManager } from "../../managers/socketManager.js";
 import { CardType, Card } from "../../models/Card.js";
 import { handleError } from "../../constants/constants.js";
-import { ActionType } from "../../models/ActionType.js";
+import { ActionType, NopeType } from "../../models/ActionType.js";
 import { CardArray } from "../../models/CardArray.js";
 import { Player } from "../../models/Player.js";
 import logger from "../../config/logger.js";
@@ -206,14 +206,15 @@ export class socketCommunicationGateway implements CommunicationGateway {
         return Card.fromJSON(response.card);
     }
 
-    async getNopeUsage(username: string, lobbyId: string): Promise<boolean|undefined> {
+    async getNopeUsage(username: string, lobbyId: string, nopeAction: NopeType): Promise<boolean|undefined> {
         
         logger.info("Waiting for player response for Nope usage");
         const petition: BackendGameSelectNopeJSON = {
             error: false,
             errorMsg: "",
             lobbyId: lobbyId,
-            timeOut: TIMEOUT_RESPONSE
+            timeOut: TIMEOUT_RESPONSE,
+            nopeAction: NopeType[nopeAction]
         };
 
         const response: FrontendGameSelectNopeResponseJSON | undefined =
