@@ -272,6 +272,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
     broadcastWinnerNotification(winnerUsername: string, playersHistory: PlayerHistory[]): void {
         
         logger.info(`Notifying all players that player ${winnerUsername} won`);
+        console.log(playersHistory);
         playersHistory.filter((player) => player.disconnected === false).forEach((player) => {
             const msg: BackendWinnerJSON = {
                 error: false,

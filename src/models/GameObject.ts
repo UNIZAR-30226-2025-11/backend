@@ -78,11 +78,11 @@ export class GameObject {
                     return;
                 }
 
-                logger.info(`[GAME] Player ${player.username} has timed out. By default, he draws a card`);
-                const newCard: Card = this.deck.drawLast();
+                logger.info(`[GAME] Player ${player.username} has timed out. By default, he loses`);
+                this.handlePlayerLost(player);
 
-                this.handleNewCard(newCard, player);
                 this.communicateNewState();
+                
             },
             TURN_TIME_LIMIT
         );
