@@ -403,3 +403,17 @@ export type FrontendResponseFriendRequestEnterLobbyJSON = {
     accept: boolean;
     friendSendingRequest: string;
 }
+
+// -----------------------------------------------------------
+// Message to surrender
+// Started by: The frontend
+// Listened by: The backend
+// Ack: No
+// Socket-event: "surrender"
+// -----------------------------------------------------------
+
+export type FrontendSurrenderJSON = {
+    error: boolean;
+    errorMsg: string;
+    lobbyId: string;
+}

@@ -3,15 +3,45 @@ import { GameManager } from "../managers/gameManager.js";
 import { 
     FrontendGamePlayedCardsJSON,
     BackendGamePlayedCardsResponseJSON,
-    FrontendPostMsgJSON
+    FrontendPostMsgJSON,
+    FrontendSurrenderJSON
 } from "../api/socketAPI.js";
 import { CardArray } from "../models/CardArray.js";
 import { handleError } from "../constants/constants.js";
 import logger from "../config/logger.js";
-import { FrontendGamePlayedCardsJSONSchema, FrontendPostMsgJSONSchema} from "../schemas/socketAPI.js";
+import { FrontendGamePlayedCardsJSONSchema, FrontendPostMsgJSONSchema, FrontendSurrenderJSONSchema} from "../schemas/socketAPI.js";
 import { LobbyManager } from "../managers/lobbyManager.js";
 
 export const setupGameHandlers = (socket: Socket) => {
+
+
+    socket.on("surrender", async (data: unknown) => {
+        const username: string = socket.data.user.username;
+
+        logger.info(`User "${username}" sent "surrender" message`);
+        logger.debug(`Received "surrender":\n%j`, data);
+
+        const parsed = FrontendSurrenderJSONSchema.safeParse(data);
+
+        if (!parsed.success) {
+            logger.warn(`Invalid JSON: ${parsed.error}`);
+            return;
+        }
+
+        const surrenderJSON = parsed.data as FrontendSurrenderJSON;
+
+        handleError(surrenderJSON.error, surrenderJSON.errorMsg);
+
+        const lobbyId: string = surrenderJSON.lobbyId;
+
+        if (!await LobbyManager.lobbyExists(lobbyId)) {
+            
+            logger.warn(`Lobby ${lobbyId} does not exist!`);
+            return;
+        }
+
+        GameManager.surrender(username, lobbyId);
+    });
 
     socket.on("game-played-cards", async (data: unknown) => {
         

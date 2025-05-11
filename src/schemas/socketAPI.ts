@@ -100,3 +100,10 @@ export const FrontendRequestConnectedFriendsJSONSchema = z.object({
     errorMsg: z.string(),
     lobbyId: LobbyIdSchema,
 });
+
+
+export const FrontendSurrenderJSONSchema = z.object({
+    error: z.boolean(),
+    errorMsg: z.string(),
+    lobbyId: LobbyIdSchema,
+});

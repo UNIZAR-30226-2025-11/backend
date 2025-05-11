@@ -54,6 +54,9 @@ export enum ActionType {
     // Reconnecting
     Reconnection,
     Disconnection,
+
+    // Surrender
+    Surrender,
 }
 
 export enum NopeType {

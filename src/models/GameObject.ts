@@ -442,6 +442,32 @@ export class GameObject {
         this.communicateNewState();
 
     }
+
+    surrender(playerUsername: string): void {
+
+        logger.info(`[GAME] Player ${playerUsername} has surrendered`);
+
+        const player: Player|undefined = this.getPlayerByUsername(playerUsername);
+
+        if(player === undefined){
+            logger.error(`[GAME] Player ${playerUsername} not found`);
+            return;
+        }
+
+        player.disconnected = true;
+
+        this.callSystem.broadcastAction(ActionType.Surrender, player.username);
+
+        if (player.id === this.turn) {
+            logger.verbose(`[GAME] Player ${player.username} is the current player, so we set the next turn`);
+            this.forceNewTurn(1);
+            this.deck.removeBomb();
+        }
+
+        this.handlePlayerLost(player);
+
+        this.communicateNewState();
+    }
     
     // --------------------------------------------------------------------------------------
     // Game Logic Methods
@@ -488,8 +514,6 @@ export class GameObject {
         
         logger.info(`[GAME] Player ${player.username} has lost`);
         player.active = false;
-        this.callSystem.broadcastAction(ActionType.BombExploded, player.username);
-
 
         const winner: Player | undefined = this.getWinner();
         if(winner === undefined){
@@ -627,6 +651,9 @@ export class GameObject {
             } else {
                 // If the player does not have a deactivate card
                 logger.info(`[GAME] Player ${player.username} has exploded because he did not have a deactivate card`);
+                
+                // Notify the player that he has exploded
+                this.callSystem.broadcastAction(ActionType.BombExploded, player.username);
 
                 // The player has lost
                 this.handlePlayerLost(player);

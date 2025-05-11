@@ -7,8 +7,28 @@ import logger from "../config/logger.js";
 import eventBus from "../events/eventBus.js";
 import { GameEvents } from "../events/gameEvents.js";
 import { PlayerHistory } from "../models/PlayerHistory.js";
+import { LobbyRepository } from "../repositories/lobbyRepository.js";
 
 export class GameManager {
+
+
+    static async surrender(username: string, lobbyId: string): Promise<void> {
+        logger.info(`Handling surrender of ${username} in lobby ${lobbyId}`);
+        const currentGame: GameObject | undefined = LobbyManager.lobbiesGames.get(lobbyId);
+        if (currentGame === undefined){
+            logger.error(`Game not found for lobby ${lobbyId}`);
+            return;
+        }
+        if (!currentGame.isInGame(username)){
+            logger.warn(`Player ${username} not in lobby ${lobbyId}.`);
+            return;
+        }
+
+        currentGame.surrender(username);
+        LobbyRepository.removePlayerFromLobby(username, lobbyId);
+
+        return;
+    }
 
     static addMessage(msg: string, username: string, lobbyId: string): void {
 

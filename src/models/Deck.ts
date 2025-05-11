@@ -22,6 +22,13 @@ export class Deck {
         return new Card(this.id++, cardType);
     }
 
+    removeBomb(): void {
+        const index = this.cards.values.findIndex((card) => card.type === CardType.Bomb);
+        if (index !== -1) {
+            this.cards.values.splice(index, 1);
+        }
+    }
+
     addNewCard(cardType: CardType): void {
         this.cards.push(this.getNewCard(cardType));
     }
