@@ -4,6 +4,7 @@ export class PlayerHistory {
     isWinner: boolean;
     coinsEarned: number;
     gameDate: Date;
+    disconnected: boolean;
     timePlayed: number;
     turnsPlayed: number;
 
@@ -13,6 +14,7 @@ export class PlayerHistory {
         isWinner: boolean,
         coinsEarned: number,
         gameDate: Date,
+        disconnected: boolean,
         timePlayed: number,
         turnsPlayed: number
     ) {
@@ -21,6 +23,7 @@ export class PlayerHistory {
         this.isWinner = isWinner;
         this.coinsEarned = coinsEarned;
         this.gameDate = gameDate;
+        this.disconnected = disconnected;
         this.timePlayed = timePlayed;
         this.turnsPlayed = turnsPlayed;
     }

@@ -1,5 +1,4 @@
 import { GameObject } from "../models/GameObject.js";
-import { socketCommunicationGateway } from "../communication/implementations/socketCommunicationGateway.js"
 import { LobbyRepository } from "../repositories/lobbyRepository.js";
 import { GameManager } from "./gameManager.js";
 import logger from "../config/logger.js";
@@ -44,10 +43,6 @@ export class LobbyManager {
             logger.verbose(`Removing player ${username} from lobby ${lobbyId}.`);
             await LobbyRepository.removePlayerFromLobby(username, lobbyId);
             
-            // const socket: Socket | undefined = SocketManager.getSocket(username);
-            // if (socket !== undefined) {
-            //     SocketManager.removeSocket(username);
-            // }
         }
 
         const game: GameObject | undefined = this.lobbiesGames.get(lobbyId);
@@ -186,10 +181,8 @@ export class LobbyManager {
             return undefined;
         }
 
-        const comm:socketCommunicationGateway = new socketCommunicationGateway(lobbyId);
 
         for(let i = 0; i < numPlayers; i++) {
-            comm.registerPlayer(lobbyPlayersUsernames[i].username);
             await LobbyRepository.setPlayerIdInGame(lobbyPlayersUsernames[i].username, i);
         }
 
@@ -198,7 +191,6 @@ export class LobbyManager {
             numPlayers, 
             lobbyPlayersUsernames,
             leaderUsername, 
-            comm,
         );
 
         this.lobbiesGames.set(lobbyId, game);

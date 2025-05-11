@@ -34,16 +34,16 @@ import { PlayerHistory } from "../../models/PlayerHistory.js";
 export class socketCommunicationGateway implements CommunicationGateway {
 
     lobbyId: string;
-    playersUsernamesInLobby: string[];
+    players: Player[];
 
     constructor(lobbyId: string){
         this.lobbyId = lobbyId;
-        this.playersUsernamesInLobby = [];
+        this.players = [];
     }
 
-    registerPlayer(username: string): void {
-        logger.debug(`Registering player ${username} in Gateway for lobby ${this.lobbyId}`);
-        this.playersUsernamesInLobby.push(username);
+    registerPlayer(player: Player): void {
+        logger.debug(`Registering player ${player.username} in Gateway for lobby ${this.lobbyId}`);
+        this.players.push(player);
     }
 
     broadcastNewMessages(messages: Message[]): void {
@@ -60,13 +60,13 @@ export class socketCommunicationGateway implements CommunicationGateway {
     }
 
     private broadcastMsg<TMsg>(msg: TMsg, socketChannel: string): void {
-        this.playersUsernamesInLobby.forEach((username) => {
-            const socket: Socket|undefined = SocketManager.getSocket(username);
+        this.players.filter((player) => player.disconnected === false).forEach((player) => {
+            const socket: Socket|undefined = SocketManager.getSocket(player.username);
             if(socket == undefined)
             {
-                logger.error(`Socket for user ${username} not found.`)
+                logger.error(`Socket for user ${player.username} not found.`)
             } else {
-                logger.debug(`Sending "${socketChannel}" message to ${username}: %j`, msg);
+                logger.debug(`Sending "${socketChannel}" message to ${player.username}: %j`, msg);
                 socket.emit(socketChannel, msg);
             }
         });
@@ -83,6 +83,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
             timeOut: TIMEOUT_RESPONSE
         };
 
+        const connectedPlayersUsernames: string[] = this.players.filter((player) => player.disconnected === false).map((player) => player.username);
+
         const response: FrontendGameSelectCardTypeResponseJSON | undefined = 
             await SocketManager.waitForPlayerResponse<
                 BackendGameSelectCardTypeJSON, 
@@ -92,7 +94,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-card-type", 
             petition,
-            this.playersUsernamesInLobby,
+            connectedPlayersUsernames,
             {
                 error: false,
                 errorMsg: "",
@@ -127,6 +129,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
             lobbyId: lobbyId,
             timeOut: TIMEOUT_RESPONSE
         };
+
+        const connectedPlayersUsernames: string[] = this.players.filter((player) => player.disconnected === false).map((player) => player.username);
         
         const response: FrontendGameSelectPlayerResponseJSON | undefined = 
             await SocketManager.waitForPlayerResponse<
@@ -137,7 +141,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-player", 
             petition,
-            this.playersUsernamesInLobby,
+            connectedPlayersUsernames,
             {
                 error: false,
                 errorMsg: "",
@@ -172,6 +176,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
             timeOut: TIMEOUT_RESPONSE
         };
 
+        const connectedPlayersUsernames: string[] = this.players.filter((player) => player.disconnected === false).map((player) => player.username);
+
         const response: FrontendGameSelectCardResponseJSON | undefined = 
             await SocketManager.waitForPlayerResponse<
                 BackendGameSelectCardJSON, 
@@ -181,7 +187,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-card", 
             petition,
-            this.playersUsernamesInLobby,
+            connectedPlayersUsernames,
             {
                 error: false,
                 errorMsg: "",
@@ -217,6 +223,8 @@ export class socketCommunicationGateway implements CommunicationGateway {
             nopeAction: NopeType[nopeAction]
         };
 
+        const connectedPlayersUsernames: string[] = this.players.filter((player) => player.disconnected === false).map((player) => player.username);
+
         const response: FrontendGameSelectNopeResponseJSON | undefined =
             await SocketManager.waitForPlayerResponse<
                 BackendGameSelectNopeJSON, 
@@ -226,7 +234,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
             username,
             "game-select-nope", 
             petition,
-            this.playersUsernamesInLobby,
+            connectedPlayersUsernames,
             {
                 error: false,
                 errorMsg: "",
@@ -264,7 +272,7 @@ export class socketCommunicationGateway implements CommunicationGateway {
     broadcastWinnerNotification(winnerUsername: string, playersHistory: PlayerHistory[]): void {
         
         logger.info(`Notifying all players that player ${winnerUsername} won`);
-        playersHistory.forEach((player) => {
+        playersHistory.filter((player) => player.disconnected === false).forEach((player) => {
             const msg: BackendWinnerJSON = {
                 error: false,
                 errorMsg: "",

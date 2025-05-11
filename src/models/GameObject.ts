@@ -12,6 +12,7 @@ import { GameEvents } from "../events/gameEvents.js";
 import { CARD_COUNTS, EXTRA_BOMBS, EXTRA_DEACTIVATES, TURN_TIME_LIMIT } from "../config.js";
 import { ActionType, NopeType } from "./ActionType.js";
 import { PlayerHistory } from "./PlayerHistory.js";
+import { socketCommunicationGateway } from "../communication/implementations/socketCommunicationGateway.js";
 
 export class GameObject {
     lobbyId: string;
@@ -36,13 +37,11 @@ export class GameObject {
         numberOfPlayers: number,
         playersInfo: {username: string, avatar: string}[],
         leaderUsername: string, 
-        comm: CommunicationGateway
     ) {
 
         logger.info(`[GAME] Creating game with ${numberOfPlayers} players`);
         
         this.lobbyId = lobbyId;
-        this.callSystem = comm;
 
         this.deck = new Deck();
         this.deck.addCards(CARD_COUNTS);
@@ -54,6 +53,15 @@ export class GameObject {
         {
             this.players.push(Player.createStandarPlayer(i, playersInfo[i].username, playersInfo[i].avatar, this.deck));
         }
+
+        // Create call system
+        const comm: socketCommunicationGateway = new socketCommunicationGateway(lobbyId);
+
+        this.players.forEach((player) => {
+            comm.registerPlayer(player);
+        });
+
+        this.callSystem = comm;
 
         this.deck.addDeactivates(numberOfPlayers+EXTRA_DEACTIVATES);
         this.deck.addBombs(numberOfPlayers-1+EXTRA_BOMBS);
@@ -167,6 +175,7 @@ export class GameObject {
                 this.winnerUsername === player.username,
                 this.winnerUsername === player.username? 100*this.numberOfPlayers : 50,
                 this.gameDate,
+                player.disconnected,
                 elapsedSeconds,
                 this.turnsPlayed
             );
