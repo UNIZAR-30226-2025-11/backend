@@ -218,6 +218,29 @@ export class LobbyRepository {
         }
     }
 
+    static async getMaxPlayersInLobby(lobbyId: string): Promise<number|undefined>{
+        try {
+            logger.silly(`[DB] AWAIT: Getting max players in lobby ${lobbyId}`);
+            const res = await db.query(
+                `
+                SELECT num_max_players 
+                FROM lobbies 
+                WHERE id = $1
+                `, [lobbyId]);
+    
+            if(res.rows.length > 0){
+                logger.silly(`[DB] DONE: Got max players ${res.rows[0].num_max_players} in lobby ${lobbyId}`);
+                return res.rows[0].num_max_players;
+            }else{
+                logger.warn(`[DB] DONE: Could not fetch the max players for lobby ${lobbyId}`);
+                return undefined;
+            }
+        } catch (error) {
+            logger.error("[DB] Error in database:", error);
+            throw new Error("Error in database");
+        }
+    }
+
     static async getLobbyWithPlayer(username: string): Promise<string | undefined>{
         try {
             logger.silly(`[DB] AWAIT: Getting lobby with player ${username}`);

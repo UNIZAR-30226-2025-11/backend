@@ -257,12 +257,20 @@ export const setupLobbyHandlers = (socket: Socket) => {
 eventBus.on(GameEvents.LOBBY_DISBAND, async (lobbyId: string) => {
     const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
 
+    const maxPlayers: number | undefined = await LobbyRepository.getMaxPlayersInLobby(lobbyId);
+    
+    if(maxPlayers === undefined) {
+        logger.error("Max players not found!");
+        return;
+    }
+    
     const msg: BackendLobbyStateUpdateJSON = {
         error: false,
         errorMsg: "",
         players: [],
         disband: true,
-        lobbyId: lobbyId
+        lobbyId: lobbyId,
+        maxPlayers: maxPlayers
     }
 
     playersInLobby.forEach(player => {
@@ -282,9 +290,17 @@ eventBus.on(GameEvents.LOBBY_DISBAND, async (lobbyId: string) => {
 eventBus.on(GameEvents.NEW_PLAYERS_LOBBY, async (lobbyId: string) => {
     const playersInLobby: {username:string, isLeader:boolean}[] = await LobbyRepository.getPlayersInLobbyBeforeStart(lobbyId);
 
+    const maxPlayers: number | undefined = await LobbyRepository.getMaxPlayersInLobby(lobbyId);
+
+    if(maxPlayers === undefined) {
+        logger.error("Max players not found!");
+        return;
+    }
+
     playersInLobby.forEach(playerInLobby => {
         const socket: Socket | undefined = SocketManager.getSocket(playerInLobby.username);
 
+        
         const msg: BackendLobbyStateUpdateJSON = {
             error: false,
             errorMsg: "",
@@ -298,7 +314,8 @@ eventBus.on(GameEvents.NEW_PLAYERS_LOBBY, async (lobbyId: string) => {
                 }
             ),
             disband: false,
-            lobbyId: lobbyId
+            lobbyId: lobbyId,
+            maxPlayers: maxPlayers
         }
 
         if(socket === undefined) {

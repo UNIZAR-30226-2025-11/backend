@@ -221,6 +221,7 @@ export type BackendLobbyStateUpdateJSON = {
     players: PlayerLobbyJSON[];
     disband: boolean;
     lobbyId: string;
+    maxPlayers: number;
 }
 
 export type PlayerLobbyJSON = {
