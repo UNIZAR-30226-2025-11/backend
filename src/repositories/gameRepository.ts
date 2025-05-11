@@ -94,7 +94,7 @@ export class GameRepository {
             logger.silly(`[DB] DONE: Got max streak win for ${username}`);
 
             if (res.rows.length > 0) {
-                return res.rows[0].max_streak_win;
+                return res.rows[0].max_streak;
             } else {
                 logger.warn(`[DB] No rows found for ${username}`);
                 return 0;
